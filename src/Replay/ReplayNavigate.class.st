@@ -55,10 +55,10 @@ ReplayNavigate >> cancelLabel: aString [
 { #category : 'editing' }
 ReplayNavigate >> editionPresenterOn: editor [
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   spacing: 10;
-				   add: (SpCheckBoxPresenter new
+				   add: (editor newCheckBox
 						    label: 'Skip user navigation';
 						    state: skip;
 						    whenActivatedDo: [ skip := true ];
@@ -66,14 +66,14 @@ ReplayNavigate >> editionPresenterOn: editor [
 				   expand: false;
 				   add: (SpBoxLayout newTopToBottom
 						    add: 'Continue label:' expand: false;
-						    add: (SpTextPresenter new
+						    add: (editor newText
 								     text: self acceptLabel;
 								     whenTextChangedDo: [ :aString |
 									     self acceptLabel: aString ]))
 				   expand: false;
 				   add: (SpBoxLayout newTopToBottom
 						    add: 'Cancel label:' expand: false;
-						    add: (SpTextPresenter new
+						    add: (editor newText
 								     text: self cancelLabel;
 								     whenTextChangedDo: [ :aString |
 									     self cancelLabel: aString ]))

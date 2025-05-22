@@ -53,15 +53,15 @@ ReplayScenario >> edit [
 ReplayScenario >> editionPresenterOn: editor [
 
 	| titlePresenter descriptionPresenter |
-	(titlePresenter := SpTextPresenter new)
+	(titlePresenter := editor newText)
 		text: self title;
 		whenTextChangedDo: [ :aString | self title: aString ].
 
-	(descriptionPresenter := SpTextPresenter new)
+	(descriptionPresenter := editor newText)
 		text: self description;
 		whenTextChangedDo: [ :aString | self description: aString ].
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   add: 'Title:' expand: false;
 				   add: titlePresenter expand: false;

@@ -35,7 +35,7 @@ ReplayOpenPresenter >> helpPresenterOn: editor aboutScript: error [
 	| notAPresenter |
 	notAPresenter := error tag. "The result of the script"
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   spacing: 10;
 				   add: (SpBoxLayout newLeftToRight
@@ -46,13 +46,14 @@ ReplayOpenPresenter >> helpPresenterOn: editor aboutScript: error [
 				   expand: false;
 				   add: (SpBoxLayout newTopToBottom
 						    add: 'Printing the unexpected value:' expand: false;
-						    add: (SpTextPresenter new
+						    add: (editor newText
 								     beWrapWord;
 								     editable: false;
 								     text: notAPresenter printString);
 						    yourself);
 				   add: (self
-						    debugButtonPresenterLabeled: 'Debug the script'
+						    debugButtonPresenterOn: editor
+						    labeled: 'Debug the script'
 						    action: [ self debugScript ])
 				   expand: false;
 				   yourself);
@@ -71,7 +72,7 @@ ReplayOpenPresenter >> printOn: stream [
 { #category : 'editing' }
 ReplayOpenPresenter >> settingsPresenterOn: editor [
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (self
 				   scriptPresenterOn: editor
 				   labeled:

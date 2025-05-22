@@ -98,8 +98,5 @@ ReplayRunner >> scenario: aScenario [
 ReplayRunner >> stop [
 	"End the scenario, can happen before its last step"
 
-	uiManager ifNotNil: [
-		uiManager ui window
-			ifNil: [ uiManager ui delete ]
-			ifNotNil: [ :window | window close ] ]
+	uiManager ifNotNil: [ uiManager close ]
 ]

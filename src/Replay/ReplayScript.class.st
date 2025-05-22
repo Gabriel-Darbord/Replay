@@ -19,14 +19,15 @@ ReplayScript class >> displayName [
 { #category : 'editing' }
 ReplayScript >> editionPresenterOn: editor [
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   spacing: 10;
 				   add: (self
 						    scriptPresenterOn: editor
 						    labeled: 'Write the script that will be executed:');
 				   add: (self
-						    debugButtonPresenterLabeled: 'Debug the script'
+						    debugButtonPresenterOn: editor
+						    labeled: 'Debug the script'
 						    action: [ self debugScript ])
 				   expand: false;
 				   yourself);

@@ -21,7 +21,7 @@ ReplayOpenUI >> isUIOpener [
 ]
 
 { #category : 'managing UI' }
-ReplayOpenUI >> managerOnUI [
+ReplayOpenUI >> managerOfUI [
 	"Return the configured UI manager"
 
 	^ ReplayUIManager new manage: self ui
@@ -31,7 +31,7 @@ ReplayOpenUI >> managerOnUI [
 ReplayOpenUI >> runOn: runner [
 
 	| manager |
-	manager := self managerOnUI.
+	manager := self managerOfUI.
 	runner manager: manager.
 	manager openLabeled: runner scenario title
 ]
@@ -47,7 +47,13 @@ ReplayOpenUI >> ui [
 ReplayOpenUI >> uiEditionPresenterOn: editor [
 
 	| manager |
-	manager := self managerOnUI editor: editor.
+	manager := self managerOfUI editor: editor.
 	manager wrapForEdition.
-	^ SpMorphPresenter new morph: manager ui
+	^ editor newMorph morph: manager ui
+]
+
+{ #category : 'accessing' }
+ReplayOpenUI >> uiViewName [
+
+	^ 'Add UI interaction'
 ]

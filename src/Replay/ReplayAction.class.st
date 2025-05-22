@@ -61,16 +61,16 @@ ReplayAction class >> shouldBeMenuItem [
 
 { #category : 'editing' }
 ReplayAction >> editionPresenterOn: editor [
-	"Build a presenter to configure the action"
+	"Build a presenter on the editor to configure the action"
 
-	^ self noEditionPresenter
+	^ self noEditionPresenterOn: editor
 ]
 
 { #category : 'editing' }
 ReplayAction >> helpPresenterOn: editor about: error [
 	"If an error happens during editing, the action may present some help"
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   spacing: 10;
 				   add: (SpBoxLayout newLeftToRight
@@ -82,10 +82,9 @@ ReplayAction >> helpPresenterOn: editor about: error [
 				   expand: false;
 				   add: (SpBoxLayout newTopToBottom
 						    add: ' Exception message:' expand: false;
-						    add:
-							    (SpTextPresenter new beNotEditable text: error printString);
+						    add: (editor newText beNotEditable text: error printString);
 						    yourself);
-				   add: (SpButtonPresenter new
+				   add: (editor newButton
 						    icon: (self iconNamed: #bug);
 						    label: 'Debug exception';
 						    action: [ error debug ])
@@ -119,10 +118,10 @@ ReplayAction >> isUIOpener [
 ]
 
 { #category : 'editing' }
-ReplayAction >> noEditionPresenter [
+ReplayAction >> noEditionPresenterOn: editor [
 	"For actions that cannot be edited"
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout newLeftToRight
 				   vAlignStart;
 				   spacing: 10;

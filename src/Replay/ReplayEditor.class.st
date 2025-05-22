@@ -33,6 +33,12 @@ ReplayEditor class >> onSton: aScenarioSTONString [
 	^ self on: (STON fromString: aScenarioSTONString)
 ]
 
+{ #category : 'instance creation' }
+ReplayEditor class >> open [
+
+	^ self new open
+]
+
 { #category : 'accessing' }
 ReplayEditor >> actionEditor [
 
@@ -44,7 +50,7 @@ ReplayEditor >> actionEditor: aPresenter [
 	"That doesn't seem right, but it works (might have leak though?)"
 
 	actionEditor replaceAtIndex: 1 with: aPresenter.
-	aPresenter owner: self
+	aPresenter takeKeyboardFocus
 ]
 
 { #category : 'accessing' }
@@ -134,12 +140,6 @@ ReplayEditor >> defaultLayout [
 		  yourself
 ]
 
-{ #category : 'tools' }
-ReplayEditor >> editScenario [
-
-	self actionEditor: (self model scenario editionPresenterOn: self)
-]
-
 { #category : 'layout' }
 ReplayEditor >> editScenarioButton [
 
@@ -147,7 +147,13 @@ ReplayEditor >> editScenarioButton [
 		  icon: (self iconNamed: #edit);
 		  label: 'Edit scenario data';
 		  help: 'Edit the data of the scenario, such as its title';
-		  action: [ self editScenario ]
+		  action: [ self editScenarioData ]
+]
+
+{ #category : 'tools' }
+ReplayEditor >> editScenarioData [
+
+	self actionEditor: (self model scenario editionPresenterOn: self)
 ]
 
 { #category : 'layout' }
@@ -170,7 +176,7 @@ ReplayEditor >> ensureStep [
 { #category : 'layout' }
 ReplayEditor >> homePresenter [
 
-	^ SpPresenter new
+	^ self newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   add: (SpBoxLayout newLeftToRight
 						    spacing: 10;

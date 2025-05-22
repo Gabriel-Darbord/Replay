@@ -23,7 +23,7 @@ TReplayActionWithText >> text: aString [
 TReplayActionWithText >> textPresenterOn: editor labeled: label [
 
 	| textPresenter |
-	(textPresenter := SpTextPresenter new)
+	(textPresenter := editor newText)
 		text: self text;
 		whenTextChangedDo: [ :aString |
 			self text: aString.

@@ -29,6 +29,7 @@ ReplayUIAction >> accumulate: accumulator viewPresentersOn: editor [
 ReplayUIAction >> editionPresenterOn: editor [
 
 	^ ReplayViewSwitcherPresenter new
+		  owner: editor;
 		  setViews:
 			  (self accumulate: OrderedCollection new viewPresentersOn: editor);
 		  yourself

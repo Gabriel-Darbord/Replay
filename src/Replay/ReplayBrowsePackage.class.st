@@ -18,8 +18,7 @@ ReplayBrowsePackage class >> displayName [
 ReplayBrowsePackage >> settingsPresenterOn: editor [
 
 	| presenter |
-	presenter := SpListPresenter new.
-	presenter
+	(presenter := editor newList)
 		help: 'Select the package to browse';
 		items: self class packageOrganizer packages sorted;
 		display: [ :each | each name ];

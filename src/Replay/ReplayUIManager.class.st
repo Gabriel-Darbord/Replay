@@ -80,8 +80,9 @@ ReplayUIManager >> clickBlock: aBlock [
 { #category : 'managing UI' }
 ReplayUIManager >> close [
 
-	root window ifNotNil: [ :window | window close ].
-	root allMorphsDo: [ :morph | morph delete ]
+	root window
+		ifNotNil: [ :window | window close ]
+		ifNil: [ root delete ]
 ]
 
 { #category : 'accessing' }
@@ -135,8 +136,8 @@ ReplayUIManager >> manage: aMorph [
 	"Set the UI to be managed"
 
 	root := Morph new color: Smalltalk ui theme windowColor.
-	overlay := Morph new beTransparent.
 	managed := aMorph.
+	overlay := Morph new beTransparent.
 	root addMorph: managed.
 	root addMorph: overlay.
 
@@ -153,7 +154,7 @@ ReplayUIManager >> managedUI [
 ]
 
 { #category : 'accessing' }
-ReplayUIManager >> managerOnUI [
+ReplayUIManager >> managerOfUI [
 
 	^ managed
 ]

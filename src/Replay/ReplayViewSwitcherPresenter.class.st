@@ -32,6 +32,12 @@ ReplayViewSwitcherPresenter class >> example [
 		  open
 ]
 
+{ #category : 'api - focus' }
+ReplayViewSwitcherPresenter >> defaultKeyboardFocus [
+
+	^ self view
+]
+
 { #category : 'layout' }
 ReplayViewSwitcherPresenter >> defaultLayout [
 
@@ -53,12 +59,12 @@ ReplayViewSwitcherPresenter >> setViews: namesAndActions [
 
 	| buttons |
 	self switcher removeAll.
-	self switchView: SpPresenter new.
+	self switchView: self newPresenter.
 
 	namesAndActions do: [ :nameAndAction |
 		| action |
 		action := nameAndAction value.
-		self switcher add: (SpRadioButtonPresenter new
+		self switcher add: (self newRadioButton
 				 label: nameAndAction key;
 				 whenChangedDo: [ :state |
 					 state ifTrue: [ self switchView: action value ] ]) ].

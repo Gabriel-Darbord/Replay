@@ -22,8 +22,7 @@ ReplayBrowse >> browser [
 	"Use the Calypso browser, free from existing context.
 	For example, an existing package filter would normally transfer to a new window."
 
-	^ (ClyFullBrowserMorph on: ClyNavigationEnvironment currentImage)
-		  prepareInitialState
+	^ ClyFullBrowserMorph onDefaultEnvironment
 ]
 
 { #category : 'printing' }

@@ -19,11 +19,11 @@ TReplayActionWithDebugging >> debug: aBlock [
 ]
 
 { #category : 'editing' }
-TReplayActionWithDebugging >> debugButtonPresenterLabeled: label action: aBlock [
+TReplayActionWithDebugging >> debugButtonPresenterOn: editor labeled: label action: aBlock [
 
 	^ SpBoxLayout newLeftToRight
 		  spacing: 10;
-		  add: (SpButtonPresenter new
+		  add: (editor newButton
 				   icon: (self iconNamed: #bug);
 				   label: label;
 				   action: aBlock)

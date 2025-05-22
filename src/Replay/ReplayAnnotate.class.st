@@ -35,7 +35,7 @@ ReplayAnnotate >> runOn: runner onUI: ui [
 { #category : 'editing' }
 ReplayAnnotate >> settingsPresenterOn: editor [
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   spacing: 10;
 				   add: self pathStatePresenter expand: false;

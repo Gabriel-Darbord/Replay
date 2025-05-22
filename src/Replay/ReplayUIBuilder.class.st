@@ -19,7 +19,7 @@ ReplayUIBuilder >> buildUI [
 	"Asynchronously rebuild the UI, executing the callback when done"
 
 	self manager:
-		((scenario steps at: stepIndex) actions at: actionIndex) managerOnUI.
+		((scenario steps at: stepIndex) actions at: actionIndex) managerOfUI.
 
 	self currentWorld defer: [ self nextAction ].
 

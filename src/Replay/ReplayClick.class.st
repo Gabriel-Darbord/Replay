@@ -25,7 +25,7 @@ ReplayClick >> buttonsPresenterOn: editor [
 	^ SpBoxLayout newTopToBottom
 		  vAlignStart;
 		  add: ' Which buttons to press:';
-		  add: (SpCheckBoxPresenter new
+		  add: (editor newCheckBox
 				   label: 'Left click';
 				   state:
 					   (buttons bitAnd: MouseEvent redButton) = MouseEvent redButton;
@@ -34,7 +34,7 @@ ReplayClick >> buttonsPresenterOn: editor [
 				   whenDeactivatedDo: [
 					   buttons := buttons bitClear: MouseEvent redButton ])
 		  expand: false;
-		  add: (SpCheckBoxPresenter new
+		  add: (editor newCheckBox
 				   label: 'Right click';
 				   state:
 					   (buttons bitAnd: MouseEvent yellowButton)
@@ -44,7 +44,7 @@ ReplayClick >> buttonsPresenterOn: editor [
 				   whenDeactivatedDo: [
 					   buttons := buttons bitClear: MouseEvent yellowButton ])
 		  expand: false;
-		  add: (SpCheckBoxPresenter new
+		  add: (editor newCheckBox
 				   label: 'Middle click';
 				   state:
 					   (buttons bitAnd: MouseEvent blueButton)
@@ -142,7 +142,7 @@ ReplayClick >> runOn: runner onUI: ui [
 ReplayClick >> settingsPresenterOn: editor [
 	"So much hacking with spacing and padding just to avoid clipping..."
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout newLeftToRight
 				   add: (SpBoxLayout newTopToBottom
 						    spacing: 10;
@@ -152,7 +152,8 @@ ReplayClick >> settingsPresenterOn: editor [
 							    path ifNotNil: [
 									    layout
 										    add: (self
-												     debugButtonPresenterLabeled: 'Debug the click event'
+												     debugButtonPresenterOn: editor
+												     labeled: 'Debug the click event'
 												     action: [ self debugClickOn: editor ])
 										    expand: false ] ];
 						    yourself)

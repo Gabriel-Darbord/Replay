@@ -19,13 +19,13 @@ ReplayInform class >> displayName [
 { #category : 'editing' }
 ReplayInform >> editionPresenterOn: editor [
 
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout new
 				   add: (self
 						    textPresenterOn: editor
 						    labeled:
 							    'Write the rich text to display with an information event:');
-				   add: (SpButtonPresenter new
+				   add: (editor newButton
 						    icon: (self iconNamed: #smallDoIt);
 						    label: 'Preview';
 						    action: [ self inform: self text ])

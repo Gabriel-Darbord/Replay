@@ -89,10 +89,10 @@ ReplayUIHandler >> findElementIn: aMorph thenDo: aBlock [
 ReplayUIHandler >> helpPresenterOn: editor aboutMissingUI: error [
 
 	| dropList |
-	(dropList := SpDropListPresenter new)
+	(dropList := editor newDropList)
 		items: ReplayAction actionsThatOpenUI;
 		display: [ :action | action displayName ].
-	^ SpPresenter new
+	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   spacing: 10;
 				   add: (SpBoxLayout newLeftToRight
@@ -103,8 +103,8 @@ ReplayUIHandler >> helpPresenterOn: editor aboutMissingUI: error [
 				   expand: false;
 				   add: 'Choose an action that opens a UI:' expand: false;
 				   add: dropList expand: false;
-				   add: (SpButtonPresenter new
-						    icon: (self iconNamed: #bug);
+				   add: (editor newButton
+						    icon: (self iconNamed: #add);
 						    label: 'Create action';
 						    action: [
 							    editor addAction: dropList selectedItem new before: self ])
@@ -185,6 +185,6 @@ ReplayUIHandler >> uiEditionPresenterOn: editor [
 
 		manager wrapForEdition ].
 
-	^ SpMorphPresenter new morph:
+	^ editor newMorph morph:
 		  (builder uiForAction: self inStep: editor model currentStep)
 ]

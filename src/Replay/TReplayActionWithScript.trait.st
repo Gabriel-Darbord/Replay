@@ -39,7 +39,7 @@ TReplayActionWithScript >> script: aString [
 TReplayActionWithScript >> scriptPresenterOn: editor labeled: label [
 
 	| codePresenter |
-	(codePresenter := SpCodePresenter new)
+	(codePresenter := editor newCode)
 		text: self script;
 		whenTextChangedDo: [ :aString |
 			self script: aString.

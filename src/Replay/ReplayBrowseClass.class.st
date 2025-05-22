@@ -18,8 +18,7 @@ ReplayBrowseClass class >> displayName [
 ReplayBrowseClass >> settingsPresenterOn: editor [
 
 	| presenter |
-	presenter := SpListPresenter new.
-	presenter
+	(presenter := editor newList)
 		help: 'Select the class to browse';
 		items: self class environment allClasses;
 		whenSelectedDo: [ :aClass |

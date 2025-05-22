@@ -18,10 +18,13 @@ ReplayBrowseMethod class >> displayName [
 ReplayBrowseMethod >> settingsPresenterOn: editor [
 
 	| presenter methodList |
-	presenter := SpClassMethodBrowser new classes:
-		             self class environment allClasses.
+	(presenter := SpClassMethodBrowser new)
+		owner: editor;
+		classes: self class environment allClasses.
+
 	methodList := presenter instVarNamed: #methodListPresenter.
 	self targetMethod: methodList items first.
+
 	methodList whenSelectedDo: [ :aMethod |
 		self targetMethod: aMethod.
 		editor actions rebuildLayout ].

@@ -24,8 +24,7 @@ ReplayFocus >> runOn: runner onUI: ui [
 
 { #category : 'editing' }
 ReplayFocus >> settingsPresenterOn: editor [
+	"Nothing yet..."
 
-	^ SpPresenter new
-		  layout: (SpBoxLayout newTopToBottom spacing: 10);
-		  yourself
+	^ self noEditionPresenterOn: editor
 ]
