@@ -88,10 +88,14 @@ ReplayUIHandler >> findElementIn: aMorph thenDo: aBlock [
 { #category : 'editing' }
 ReplayUIHandler >> helpPresenterOn: editor aboutMissingUI: error [
 
-	| dropList |
-	(dropList := editor newDropList)
-		items: ReplayAction actionsThatOpenUI;
-		display: [ :action | action displayName ].
+	| buttons |
+	buttons := SpGridLayout build: [ :grid |
+		           ReplayAction actionsThatOpenUI do: [ :action |
+			           grid add: (editor newButton
+					            icon: (self iconNamed: #add);
+					            label: action displayName;
+					            action: [ editor addAction: action new before: self ]) ] ].
+
 	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   spacing: 10;
@@ -101,14 +105,11 @@ ReplayUIHandler >> helpPresenterOn: editor aboutMissingUI: error [
 						    add: error messageText;
 						    yourself)
 				   expand: false;
-				   add: 'Choose an action that opens a UI:' expand: false;
-				   add: dropList expand: false;
-				   add: (editor newButton
-						    icon: (self iconNamed: #add);
-						    label: 'Create action';
-						    action: [
-							    editor addAction: dropList selectedItem new before: self ])
-				   withConstraints: [ :c | c height: 70 ];
+				   add: (SpBoxLayout newTopToBottom
+						    spacing: -15;
+						    add: 'Choose an action that opens a UI:' expand: false;
+						    add: buttons;
+						    yourself);
 				   yourself);
 		  yourself
 ]

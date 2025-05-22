@@ -23,7 +23,7 @@ ReplayOpenPresenter >> error: notAPresenter [
 	ReplayScriptError new
 		messageText:
 			'Expected the script to return a Spec presenter, but got an instance of '
-			, notAPresenter className;
+			, notAPresenter className , '.';
 		tag: notAPresenter;
 		signal
 ]

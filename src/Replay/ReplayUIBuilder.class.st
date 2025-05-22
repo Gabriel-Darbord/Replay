@@ -57,7 +57,7 @@ ReplayUIBuilder >> uiForAction: targetAction inStep: step [
 			action := actions at: actionIndex.
 			action isUIOpener ifTrue: [ ^ self buildUI ].
 			action isUICloser ifTrue: [
-				ReplayMissingUIError signal: 'UI is closed at this point' ] ].
+				ReplayMissingUIError signal: 'UI is closed at this point.' ] ].
 
 		stepIndex := stepIndex - 1.
 		stepIndex > 0 ifTrue: [
@@ -65,7 +65,7 @@ ReplayUIBuilder >> uiForAction: targetAction inStep: step [
 			actionIndex := actions size + 1 ] ].
 
 	ReplayMissingUIError signal:
-		'No UI context could be found for this action'
+		'No UI context could be found for this action.'
 ]
 
 { #category : 'accessing' }
