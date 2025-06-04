@@ -7,8 +7,9 @@ Class {
 	#instVars : [
 		'path'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'instance creation' }
@@ -121,6 +122,12 @@ ReplayUIHandler >> isUIHandler [
 ]
 
 { #category : 'accessing' }
+ReplayUIHandler >> path [
+
+	^ path
+]
+
+{ #category : 'accessing' }
 ReplayUIHandler >> path: aCollection [
 	"Path through the owner chain, each element is a child index"
 
@@ -128,18 +135,21 @@ ReplayUIHandler >> path: aCollection [
 ]
 
 { #category : 'editing' }
-ReplayUIHandler >> pathStatePresenter [
+ReplayUIHandler >> pathStatePresenterOn: editor [
 
-	^ SpBoxLayout newLeftToRight
-		  spacing: 10;
-		  add:
-			  (self iconNamed: (path ifNil: [ #error ] ifNotNil: [ #smallOk ]))
-		  expand: false;
-		  add: (path
-				   ifNil: [
-					   'Missing target. Use the UI edition view to select one.' ]
-				   ifNotNil: [ 'Target set.' ])
-		  expand: false;
+	^ editor newPresenter
+		  layout: (SpBoxLayout newLeftToRight
+				   spacing: 10;
+				   add:
+					   (self iconNamed:
+							    (path ifNil: [ #error ] ifNotNil: [ #smallOk ]))
+				   expand: false;
+				   add: (path
+						    ifNil: [
+							    'Missing target. Use the UI edition view to select one.' ]
+						    ifNotNil: [ 'Target set.' ])
+				   expand: false;
+				   yourself);
 		  yourself
 ]
 
@@ -147,7 +157,7 @@ ReplayUIHandler >> pathStatePresenter [
 ReplayUIHandler >> runOn: runner [
 	"Has control of runner continuation"
 
-	path ifNil: [ ^ runner nextAction ].
+	path ifNil: [ ^ self runWithoutPathOn: runner ].
 
 	self findElementIn: runner manager managedUI thenDo: [ :ui |
 		self runOn: runner onUI: ui.
@@ -160,6 +170,14 @@ ReplayUIHandler >> runOn: runner [
 ReplayUIHandler >> runOn: runner onUI: ui [
 
 	self subclassResponsibility
+]
+
+{ #category : 'running' }
+ReplayUIHandler >> runWithoutPathOn: runner [
+	"When path is nil, the default behavior is to skip the action.
+	Has control of runner continuation."
+
+	runner nextAction
 ]
 
 { #category : 'editing' }

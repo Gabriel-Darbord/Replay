@@ -19,7 +19,7 @@ ReplayUIBuilder >> buildUI [
 	"Asynchronously rebuild the UI, executing the callback when done"
 
 	self manager:
-		((scenario steps at: stepIndex) actions at: actionIndex) managerOfUI.
+		((self currentStep actions at: actionIndex) uiManagerOn: self).
 
 	self currentWorld defer: [ self nextAction ].
 
@@ -29,13 +29,11 @@ ReplayUIBuilder >> buildUI [
 { #category : 'running' }
 ReplayUIBuilder >> nextAction [
 
-	| step |
 	actionIndex := actionIndex + 1.
 	(stepIndex = endStepIndex and: [ actionIndex = endActionIndex ])
 		ifTrue: [ "Reached target action" ^ callback value ].
 
-	step := scenario steps at: stepIndex.
-	actionIndex > step actions size ifTrue: [ "skip navigation"
+	actionIndex > self currentStep actions size ifTrue: [ "skip navigation"
 		^ self nextStep ].
 
 	self runAction
@@ -61,11 +59,10 @@ ReplayUIBuilder >> uiForAction: targetAction inStep: step [
 
 		stepIndex := stepIndex - 1.
 		stepIndex > 0 ifTrue: [
-			actions := (scenario steps at: stepIndex) actions.
+			actions := self currentStep actions.
 			actionIndex := actions size + 1 ] ].
 
-	ReplayMissingUIError signal:
-		'No UI context could be found for this action.'
+	ReplayMissingUIError signal: 'No UI context found for this action.'
 ]
 
 { #category : 'accessing' }

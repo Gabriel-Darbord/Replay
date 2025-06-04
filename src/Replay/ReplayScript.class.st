@@ -6,8 +6,9 @@ Class {
 	#superclass : 'ReplayAction',
 	#traits : 'TReplayActionWithScript',
 	#classTraits : 'TReplayActionWithScript classTrait',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }
@@ -50,5 +51,5 @@ ReplayScript >> runOn: runner [
 	compiler := Smalltalk compiler isScripting: true.
 	compiler ast: (compiler parse: self script) asDoit.
 	method := compiler compile.
-	method valueWithReceiver: nil arguments: #(  )
+	method valueWithReceiver: runner arguments: #(  )
 ]

@@ -7,14 +7,14 @@ Note that when applying a label, the target must already be open.
 
 % The example is randomized but when a comment is parsed, it is made into a Form and cached so it will not change
 ```script
-TutorialAnnotation example close adapter widget
+ReplayAnnotation example close adapter widget
 ```
 
 % The following line adds a space to separate from the above
  
 Try with a label and moving both it and the window around:
 ```pharoeval
-TutorialAnnotation exampleWithLabel
+ReplayAnnotation exampleWithLabel
 ```
 "
 Class {

@@ -77,8 +77,7 @@ ReplayViewSwitcherPresenter >> setViews: namesAndActions [
 { #category : 'initialization' }
 ReplayViewSwitcherPresenter >> switchView: presenter [
 
-	layout replaceAtIndex: 2 with: presenter.
-	presenter owner: self
+	layout replaceAtIndex: 2 with: presenter
 ]
 
 { #category : 'layout' }

@@ -47,7 +47,7 @@ ReplayEditor >> actionEditor [
 
 { #category : 'accessing' }
 ReplayEditor >> actionEditor: aPresenter [
-	"That doesn't seem right, but it works (might have leak though?)"
+	"Sent by a replay model class that knows how to present itself"
 
 	actionEditor replaceAtIndex: 1 with: aPresenter.
 	aPresenter takeKeyboardFocus
@@ -86,7 +86,7 @@ ReplayEditor >> addAction: action before: another [
 	actionList rebuildLayout
 ]
 
-{ #category : 'event handling' }
+{ #category : 'adding' }
 ReplayEditor >> addActionLast: action [
 
 	self ensureStep.

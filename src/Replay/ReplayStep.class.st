@@ -21,6 +21,12 @@ ReplayStep >> actions [
 	^ actions ifNil: [ actions := OrderedCollection new ]
 ]
 
+{ #category : 'accessing' }
+ReplayStep >> actions: aCollectionOfActions [
+
+	actions := aCollectionOfActions
+]
+
 { #category : 'adding' }
 ReplayStep >> addAction: action [
 

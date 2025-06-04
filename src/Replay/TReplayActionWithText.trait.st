@@ -1,3 +1,6 @@
+"
+Applies to actions that use a string as text.
+"
 Trait {
 	#name : 'TReplayActionWithText',
 	#instVars : [
@@ -7,13 +10,13 @@ Trait {
 	#package : 'Replay'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 TReplayActionWithText >> text [
 
 	^ text ifNil: [ text := '' ]
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 TReplayActionWithText >> text: aString [
 
 	text := aString

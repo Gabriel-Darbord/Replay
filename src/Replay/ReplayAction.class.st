@@ -5,8 +5,9 @@ An action is part of a `ReplayStep`.
 Class {
 	#name : 'ReplayAction',
 	#superclass : 'Object',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'editing' }
@@ -30,7 +31,7 @@ ReplayAction class >> actionsThatOpenUI [
 { #category : 'accessing' }
 ReplayAction class >> displayName [
 
-	self subclassResponsibility
+	^ name allButFirst: 6 "= 'Replay' size"
 ]
 
 { #category : 'testing' }

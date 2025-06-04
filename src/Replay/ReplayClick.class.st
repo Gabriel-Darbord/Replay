@@ -4,13 +4,11 @@ Simulates a mouse click on a UI element.
 Class {
 	#name : 'ReplayClick',
 	#superclass : 'ReplayUIHandler',
-	#traits : 'TReplayActionWithDebugging',
-	#classTraits : 'TReplayActionWithDebugging classTrait',
-	#instVars : [
-		'buttons'
-	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#traits : 'TReplayActionWithDebugging + TReplayActionWithFlags',
+	#classTraits : 'TReplayActionWithDebugging classTrait + TReplayActionWithFlags classTrait',
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }
@@ -21,39 +19,17 @@ ReplayClick class >> displayName [
 
 { #category : 'editing' }
 ReplayClick >> buttonsPresenterOn: editor [
+	"Flags for the buttons to press, a combination of the left, right and middle clicks."
 
-	^ SpBoxLayout newTopToBottom
-		  vAlignStart;
-		  add: ' Which buttons to press:';
-		  add: (editor newCheckBox
-				   label: 'Left click';
-				   state:
-					   (buttons bitAnd: MouseEvent redButton) = MouseEvent redButton;
-				   whenActivatedDo: [
-					   buttons := buttons bitOr: MouseEvent redButton ];
-				   whenDeactivatedDo: [
-					   buttons := buttons bitClear: MouseEvent redButton ])
-		  expand: false;
-		  add: (editor newCheckBox
-				   label: 'Right click';
-				   state:
-					   (buttons bitAnd: MouseEvent yellowButton)
-					   = MouseEvent yellowButton;
-				   whenActivatedDo: [
-					   buttons := buttons bitOr: MouseEvent yellowButton ];
-				   whenDeactivatedDo: [
-					   buttons := buttons bitClear: MouseEvent yellowButton ])
-		  expand: false;
-		  add: (editor newCheckBox
-				   label: 'Middle click';
-				   state:
-					   (buttons bitAnd: MouseEvent blueButton)
-					   = MouseEvent blueButton;
-				   whenActivatedDo: [
-					   buttons := buttons bitOr: MouseEvent blueButton ];
-				   whenDeactivatedDo: [
-					   buttons := buttons bitClear: MouseEvent blueButton ])
-		  expand: false;
+	^ SpBoxLayout new
+		  add: 'Which buttons to press:';
+		  add: (self flagsPresenterOn: editor namesAndValues: {
+						   'Left click'.
+						   MouseEvent redButton.
+						   'Right click'.
+						   MouseEvent yellowButton.
+						   'Middle click'.
+						   MouseEvent blueButton });
 		  yourself
 ]
 
@@ -75,8 +51,8 @@ ReplayClick >> clickOn: ui [
 	(event := MouseButtonEvent new)
 		setType: #mouseDown
 		position: position
-		which: buttons
-		buttons: buttons
+		which: self flags
+		buttons: self flags
 		hand: hand
 		stamp: Time millisecondClockValue.
 
@@ -92,7 +68,7 @@ ReplayClick >> clickOn: ui [
 	(event := MouseButtonEvent new)
 		setType: #mouseUp
 		position: position
-		which: buttons
+		which: self flags
 		buttons: 0
 		hand: hand
 		stamp: Time millisecondClockValue.
@@ -123,7 +99,7 @@ ReplayClick >> debugClickOn: editor [
 { #category : 'initialization' }
 ReplayClick >> initialize [
 
-	buttons := MouseEvent redButton "left lick"
+	flags := MouseEvent redButton "Left lick"
 ]
 
 { #category : 'testing' }
@@ -140,24 +116,20 @@ ReplayClick >> runOn: runner onUI: ui [
 
 { #category : 'editing' }
 ReplayClick >> settingsPresenterOn: editor [
-	"So much hacking with spacing and padding just to avoid clipping..."
 
 	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   add: (SpBoxLayout newTopToBottom
-						    spacing: 10;
-						    add: self pathStatePresenter expand: false;
-						    add: (self buttonsPresenterOn: editor) expand: false;
-						    in: [ :layout |
-							    path ifNotNil: [
-									    layout
-										    add: (self
-												     debugButtonPresenterOn: editor
-												     labeled: 'Debug the click event'
-												     action: [ self debugClickOn: editor ])
-										    expand: false ] ];
-						    yourself)
-				   withConstraints: [ :c | c padding: 10 ];
+		  layout: (SpBoxLayout newTopToBottom
+				   spacing: 10;
+				   add: (self pathStatePresenterOn: editor) expand: false;
+				   add: (self buttonsPresenterOn: editor) expand: false;
+				   in: [ :layout |
+					   path ifNotNil: [
+							   layout
+								   add: (self
+										    debugButtonPresenterOn: editor
+										    labeled: ' Debug the click event'
+										    action: [ self debugClickOn: editor ])
+								   expand: false ] ];
 				   yourself);
 		  yourself
 ]

@@ -6,8 +6,9 @@ Class {
 	#superclass : 'ReplayUIHandler',
 	#traits : 'TReplayActionWithText',
 	#classTraits : 'TReplayActionWithText classTrait',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }
@@ -38,7 +39,7 @@ ReplayAnnotate >> settingsPresenterOn: editor [
 	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   spacing: 10;
-				   add: self pathStatePresenter expand: false;
+				   add: (self pathStatePresenterOn: editor) expand: false;
 				   add: (self
 						    textPresenterOn: editor
 						    labeled: 'Write the rich text to display with the element:');

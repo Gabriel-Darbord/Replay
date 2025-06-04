@@ -6,8 +6,9 @@ Class {
 	#superclass : 'ReplayAction',
 	#traits : 'TReplayActionWithText',
 	#classTraits : 'TReplayActionWithText classTrait',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }

@@ -8,7 +8,8 @@ Class {
 		'scenario',
 		'uiManager',
 		'stepIndex',
-		'actionIndex'
+		'actionIndex',
+		'focus'
 	],
 	#category : 'Replay',
 	#package : 'Replay'
@@ -18,6 +19,30 @@ Class {
 ReplayRunner class >> on: scenario [
 
 	^ self new scenario: scenario
+]
+
+{ #category : 'accessing' }
+ReplayRunner >> currentAction [
+
+	^ self currentStep actions at: actionIndex
+]
+
+{ #category : 'accessing' }
+ReplayRunner >> currentStep [
+
+	^ scenario steps at: stepIndex
+]
+
+{ #category : 'accessing' }
+ReplayRunner >> focus [
+
+	^ focus
+]
+
+{ #category : 'accessing' }
+ReplayRunner >> focus: anObject [
+
+	focus := anObject
 ]
 
 { #category : 'accessing' }
@@ -37,7 +62,7 @@ ReplayRunner >> nextAction [
 
 	| step |
 	actionIndex := actionIndex + 1.
-	step := scenario steps at: stepIndex.
+	step := self currentStep.
 
 	actionIndex > step actions size ifTrue: [ "End of step"
 		^ step navigation runOn: self ].
@@ -56,6 +81,15 @@ ReplayRunner >> nextStep [
 	self nextAction
 ]
 
+{ #category : 'enumerating' }
+ReplayRunner >> previousAction [
+
+	actionIndex = 1 ifFalse: [
+		^ self currentStep actions at: actionIndex - 1 ].
+
+	self shouldBeImplemented
+]
+
 { #category : 'running' }
 ReplayRunner >> run [
 
@@ -67,7 +101,7 @@ ReplayRunner >> run [
 ReplayRunner >> runAction [
 
 	| action |
-	action := (scenario steps at: stepIndex) actions at: actionIndex.
+	action := self currentAction.
 
 	action runOn: self.
 

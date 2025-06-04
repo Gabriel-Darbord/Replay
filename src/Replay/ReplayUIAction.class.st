@@ -4,8 +4,9 @@ I am responsible for opening or interacting with UI.
 Class {
 	#name : 'ReplayUIAction',
 	#superclass : 'ReplayAction',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'testing' }
@@ -50,7 +51,7 @@ ReplayUIAction >> settingsViewName [
 { #category : 'editing' }
 ReplayUIAction >> tryUIEditionPresenterOn: editor [
 	"The scenario can be in an incorrect state that prevents loading the UI.
-	In that case, a helper presenter will take over."
+	In that case, the error will take over with its helper presenter."
 
 	^ [ self uiEditionPresenterOn: editor ]
 		  on: ReplayError

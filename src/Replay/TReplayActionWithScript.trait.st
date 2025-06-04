@@ -1,3 +1,6 @@
+"
+Applies to actions that use a string containing a script.
+"
 Trait {
 	#name : 'TReplayActionWithScript',
 	#instVars : [

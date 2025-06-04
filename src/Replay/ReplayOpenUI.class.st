@@ -4,8 +4,9 @@ I am responsible for opening a UI.
 Class {
 	#name : 'ReplayOpenUI',
 	#superclass : 'ReplayUIAction',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'testing' }
@@ -20,36 +21,35 @@ ReplayOpenUI >> isUIOpener [
 	^ true
 ]
 
-{ #category : 'managing UI' }
-ReplayOpenUI >> managerOfUI [
-	"Return the configured UI manager"
-
-	^ ReplayUIManager new manage: self ui
-]
-
 { #category : 'running' }
 ReplayOpenUI >> runOn: runner [
 
 	| manager |
-	manager := self managerOfUI.
+	manager := self uiManagerOn: runner.
 	runner manager: manager.
 	manager openLabeled: runner scenario title
-]
-
-{ #category : 'managing UI' }
-ReplayOpenUI >> ui [
-	"Return the configured UI as a Morph"
-
-	self subclassResponsibility
 ]
 
 { #category : 'editing' }
 ReplayOpenUI >> uiEditionPresenterOn: editor [
 
 	| manager |
-	manager := self managerOfUI editor: editor.
+	manager := (self uiManagerOn: ReplayRunner new) editor: editor.
 	manager wrapForEdition.
 	^ editor newMorph morph: manager ui
+]
+
+{ #category : 'running' }
+ReplayOpenUI >> uiManagerOn: runner [
+
+	^ ReplayUIManager new manage: (self uiOn: runner)
+]
+
+{ #category : 'managing UI' }
+ReplayOpenUI >> uiOn: runner [
+	"Return the configured UI as a Morph"
+
+	self subclassResponsibility
 ]
 
 { #category : 'accessing' }

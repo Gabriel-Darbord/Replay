@@ -4,8 +4,9 @@ Opens a browser on a package.
 Class {
 	#name : 'ReplayBrowsePackage',
 	#superclass : 'ReplayBrowse',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }
@@ -51,7 +52,7 @@ ReplayBrowsePackage >> targetType [
 ]
 
 { #category : 'managing UI' }
-ReplayBrowsePackage >> ui [
+ReplayBrowsePackage >> uiOn: runner [
 
 	^ self browser selectPackage: self targetPackage
 ]

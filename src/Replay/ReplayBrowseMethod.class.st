@@ -4,8 +4,9 @@ Opens a browser on a method.
 Class {
 	#name : 'ReplayBrowseMethod',
 	#superclass : 'ReplayBrowse',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }
@@ -53,7 +54,7 @@ ReplayBrowseMethod >> targetType [
 ]
 
 { #category : 'managing UI' }
-ReplayBrowseMethod >> ui [
+ReplayBrowseMethod >> uiOn: runner [
 
 	^ self browser selectMethod: self targetMethod
 ]

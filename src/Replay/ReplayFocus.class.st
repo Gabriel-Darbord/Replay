@@ -1,11 +1,12 @@
 "
-Focus on a UI element.
+Focus on a UI element. (WIP)
 "
 Class {
 	#name : 'ReplayFocus',
 	#superclass : 'ReplayUIHandler',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }
@@ -16,10 +17,12 @@ ReplayFocus class >> displayName [
 
 { #category : 'running' }
 ReplayFocus >> runOn: runner onUI: ui [
-	"TODO really set focus, as if clicking but without the click event.
-	Also maybe remember focused element on the runner?"
+	"TODO really set focus, as if clicking but without the click event."
 
-	ui keyboardFocusChange: true
+	ui keyboardFocusChange: true. "takeKeyboardFocus but without affecting the active hand"
+
+	"Store the focused element on the runner so following actions may use it"
+	runner focus: ui
 ]
 
 { #category : 'editing' }

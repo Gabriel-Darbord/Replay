@@ -6,8 +6,9 @@ Class {
 	#superclass : 'ReplayOpenUI',
 	#traits : 'TReplayActionWithScript',
 	#classTraits : 'TReplayActionWithScript classTrait',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }
@@ -87,11 +88,14 @@ ReplayOpenPresenter >> settingsViewName [
 ]
 
 { #category : 'managing UI' }
-ReplayOpenPresenter >> ui [
+ReplayOpenPresenter >> uiOn: runner [
 	"Evaluate the script to obtain a Spec presenter"
 
 	| presenter |
-	presenter := Smalltalk compiler evaluate: self script.
+	presenter := Smalltalk compiler
+		             receiver: runner;
+		             isScripting: true;
+		             evaluate: self script.
 
 	(presenter isNil or: [ (presenter isKindOf: SpAbstractPresenter) not ])
 		ifTrue: [ self error: presenter ].

@@ -12,8 +12,9 @@ Class {
 		'acceptLabel',
 		'cancelLabel'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }

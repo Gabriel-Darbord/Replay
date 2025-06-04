@@ -7,8 +7,9 @@ Class {
 	#instVars : [
 		'target'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'testing' }

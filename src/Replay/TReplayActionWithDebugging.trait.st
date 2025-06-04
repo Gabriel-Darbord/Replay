@@ -1,3 +1,6 @@
+"
+Applies to actions that can be debugged.
+"
 Trait {
 	#name : 'TReplayActionWithDebugging',
 	#category : 'Replay',

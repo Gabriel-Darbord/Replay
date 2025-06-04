@@ -5,8 +5,9 @@ I am not a UI action, because I don't depend on UI.
 Class {
 	#name : 'ReplayCloseUI',
 	#superclass : 'ReplayAction',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Actions',
+	#package : 'Replay',
+	#tag : 'Actions'
 }
 
 { #category : 'accessing' }

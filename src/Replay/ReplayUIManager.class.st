@@ -244,7 +244,7 @@ ReplayUIManager >> wrapMorph: morph atDepth: depth [
 	| wrapper |
 	(wrapper := ReplayWrapperMorph new)
 		wrappedMorph: morph;
-		bounds: morph bounds;
+		bounds: (morph boundsIn: managed);
 		on: #mouseEnter send: #onMouseEnter: to: wrapper;
 		on: #mouseLeave send: #onMouseLeave: to: wrapper;
 		on: #mouseUp send: #onClick:onWrapper: to: self.
