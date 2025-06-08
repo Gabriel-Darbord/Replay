@@ -10,6 +10,13 @@ Trait {
 	#package : 'Replay'
 }
 
+{ #category : 'adding' }
+TReplayActionWithFlags >> addFlags: anInteger [
+
+	self flags: (self flags bitOr: anInteger).
+	^ anInteger
+]
+
 { #category : 'accessing' }
 TReplayActionWithFlags >> flags [
 
@@ -32,7 +39,20 @@ TReplayActionWithFlags >> flagsPresenterOn: editor namesAndValues: pairs [
 		  pairs pairsDo: [ :name :value |
 			  layout add: (editor newCheckBox
 					   label: name;
-					   state: (self flags bitAnd: value) = value;
-					   whenActivatedDo: [ self flags: (self flags bitOr: value) ];
-					   whenDeactivatedDo: [ self flags: (self flags bitClear: value) ]) ] ]
+					   state: (self hasFlags: value);
+					   whenActivatedDo: [ self addFlags: value ];
+					   whenDeactivatedDo: [ self removeFlags: value ]) ] ]
+]
+
+{ #category : 'testing' }
+TReplayActionWithFlags >> hasFlags: anInteger [
+
+	^ (self flags bitAnd: anInteger) = anInteger
+]
+
+{ #category : 'removing' }
+TReplayActionWithFlags >> removeFlags: anInteger [
+
+	self flags: (self flags bitClear: anInteger).
+	^ anInteger
 ]

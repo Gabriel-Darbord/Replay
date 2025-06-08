@@ -10,6 +10,14 @@ Trait {
 	#package : 'Replay'
 }
 
+{ #category : 'accessing - text' }
+TReplayActionWithText >> appendText: aCharacterOrString [
+
+	self text: (aCharacterOrString isString
+			 ifTrue: [ self text , aCharacterOrString ]
+			 ifFalse: [ self text copyWith: aCharacterOrString ])
+]
+
 { #category : 'accessing' }
 TReplayActionWithText >> text [
 
