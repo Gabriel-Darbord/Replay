@@ -163,7 +163,7 @@ ReplayUIManager >> managerOfUI [
 ReplayUIManager >> maxWrapDepth [
 	"How deep to wrap morphs on a single pass"
 
-	^ 7
+	^ 6 "6 plays nicely with Calypso?"
 ]
 
 { #category : 'event handling' }
