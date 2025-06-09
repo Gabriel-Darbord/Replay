@@ -134,19 +134,102 @@ ReplayUIHandler >> path: aCollection [
 ]
 
 { #category : 'editing' }
-ReplayUIHandler >> pathStatePresenterOn: editor [
+ReplayUIHandler >> pathOkPresenterOn: editor [
+	"When the path is set"
 
 	^ editor newPresenter
 		  layout: (SpBoxLayout newLeftToRight
 				   spacing: 10;
-				   add:
-					   (self iconNamed:
-							    (path ifNil: [ #error ] ifNotNil: [ #smallOk ]))
+				   add: (self iconNamed: #smallOk) expand: false;
+				   add: 'Target set.' expand: false;
+				   yourself);
+		  yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> pathOrWorldPresenterOn: editor [
+	"Add a button that allows unsetting the path to target the current World."
+
+	| layout pathStatePresenter targetWorldButton |
+	layout := SpBoxLayout newLeftToRight.
+	pathStatePresenter := self pathStatePresenterOn: editor.
+	(targetWorldButton := editor newButton)
+		icon: (self iconNamed: #edit);
+		label: 'Target World';
+		action: [
+			path ifNotNil: [
+					| newPresenter |
+					self targetWorld.
+					layout
+						replace: pathStatePresenter
+						with: (newPresenter := self pathUnsetPresenterOn: editor).
+					editor actionEditor view rebuildLayout.
+					pathStatePresenter := newPresenter ] ].
+
+	^ editor newPresenter
+		  layout: (layout
+				   vAlignCenter;
+				   spacing: 10;
+				   add: targetWorldButton expand: false;
+				   add: pathStatePresenter;
+				   yourself);
+		  yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> pathPresenterOn: editor [
+	"Hook to let actions decide which presenter to use for representing and editing the path."
+
+	^ self pathOrWorldPresenterOn: editor
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> pathRequiredPresenterOn: editor [
+	"When the path is not set, indicate it is necessary and explain how to set it."
+
+	^ editor newPresenter
+		  layout: (SpBoxLayout newLeftToRight
+				   spacing: 10;
+				   add: (self iconNamed: #error) expand: false;
+				   add: 'Missing target. Use the UI edition view to select one.'
 				   expand: false;
-				   add: (path
-						    ifNil: [
-							    'Missing target. Use the UI edition view to select one.' ]
-						    ifNotNil: [ 'Target set.' ])
+				   yourself);
+		  yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> pathSetPresenterOn: editor [
+	"Hook to let actions decide which presenter to use when the path is set."
+
+	^ self pathOkPresenterOn: editor
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> pathStatePresenterOn: editor [
+	"Use a different presenter whether the path is set or not."
+
+	^ path
+		  ifNil: [ self pathUnsetPresenterOn: editor ]
+		  ifNotNil: [ self pathSetPresenterOn: editor ]
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> pathUnsetPresenterOn: editor [
+	"Hook to let actions decide which presenter to use when the path is *NOT* set."
+
+	^ self pathWorldPresenterOn: editor
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> pathWorldPresenterOn: editor [
+	"When the path is not set, inform that the World is targeted."
+
+	^ editor newPresenter
+		  layout: (SpBoxLayout newLeftToRight
+				   spacing: 10;
+				   add: (self iconNamed: #smallInfo) expand: false;
+				   add:
+					   'Targeting current World. Use the UI edition view to change target.'
 				   expand: false;
 				   yourself);
 		  yourself
@@ -173,10 +256,20 @@ ReplayUIHandler >> runOn: runner onUI: ui [
 
 { #category : 'running' }
 ReplayUIHandler >> runWithoutPathOn: runner [
-	"When path is nil, the default behavior is to skip the action.
+	"When path is nil, the default behavior is to target the current World.
 	Has control of runner continuation."
 
-	runner nextAction
+	self runOn: runner onUI: self currentWorld.
+
+	"Await UI process before continuing"
+	self currentWorld defer: [ runner nextAction ]
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> targetWorld [
+	"Target the current World when the path is unset"
+
+	path := nil
 ]
 
 { #category : 'editing' }

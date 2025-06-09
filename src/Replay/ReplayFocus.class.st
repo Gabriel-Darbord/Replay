@@ -19,7 +19,8 @@ ReplayFocus class >> displayName [
 ReplayFocus >> runOn: runner onUI: ui [
 	"TODO really set focus, as if clicking but without the click event."
 
-	ui keyboardFocusChange: true. "takeKeyboardFocus but without affecting the active hand"
+	"ui keyboardFocusChange: true." "takeKeyboardFocus but without affecting the active hand"
+	ui takeKeyboardFocus. "Set the focus of the active hand"
 
 	"Store the focused element on the runner so following actions may use it"
 	runner focus: ui
@@ -27,7 +28,7 @@ ReplayFocus >> runOn: runner onUI: ui [
 
 { #category : 'editing' }
 ReplayFocus >> settingsPresenterOn: editor [
-	"Nothing yet..."
+	"There's only the path to edit. Can target the World."
 
-	^ self noEditionPresenterOn: editor
+	^ self pathPresenterOn: editor
 ]

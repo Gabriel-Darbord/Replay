@@ -39,66 +39,10 @@ ReplayShortcut >> modifierPresenterOn: editor [
 		  yourself
 ]
 
-{ #category : 'editing' }
-ReplayShortcut >> pathPresenterOn: editor [
-
-	| layout pathStatePresenter targetWorldButton |
-	layout := SpBoxLayout newLeftToRight.
-	pathStatePresenter := self pathStatePresenterOn: editor.
-	(targetWorldButton := editor newButton)
-		icon: (self iconNamed: #edit);
-		label: 'Target World';
-		action: [
-			path ifNotNil: [
-					| newPresenter |
-					path := nil.
-					layout
-						replace: pathStatePresenter
-						with: (newPresenter := self pathStatePresenterOn: editor).
-					editor actionEditor view rebuildLayout.
-					pathStatePresenter := newPresenter ] ].
-
-	^ layout
-		  vAlignCenter;
-		  spacing: 10;
-		  add: targetWorldButton expand: false;
-		  add: pathStatePresenter;
-		  yourself
-]
-
-{ #category : 'editing' }
-ReplayShortcut >> pathStatePresenterOn: editor [
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   spacing: 10;
-				   add:
-					   (self iconNamed:
-							    (path ifNil: [ #smallInfo ] ifNotNil: [ #smallOk ]))
-				   expand: false;
-				   add: (path
-						    ifNil: [ 'Targeting current World.' ]
-						    ifNotNil: [ 'Targeting managed UI.' ])
-				   expand: false;
-				   yourself);
-		  yourself
-]
-
 { #category : 'running' }
 ReplayShortcut >> runOn: runner onUI: ui [
 
 	self shortcutOn: ui
-]
-
-{ #category : 'running' }
-ReplayShortcut >> runWithoutPathOn: runner [
-	"Targets the current World by default.
-	Has control of runner continuation."
-
-	self shortcutOn: self currentWorld.
-
-	"Await UI process before continuing"
-	self currentWorld defer: [ runner nextAction ]
 ]
 
 { #category : 'editing' }

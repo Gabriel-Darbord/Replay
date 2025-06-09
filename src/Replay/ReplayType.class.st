@@ -1,3 +1,6 @@
+"
+Type some text using the keyboard.
+"
 Class {
 	#name : 'ReplayType',
 	#superclass : 'ReplayKeyboardEvent',
@@ -24,7 +27,7 @@ ReplayType >> settingsPresenterOn: editor [
 	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom
 				   spacing: 10;
-				   add: (self pathStatePresenterOn: editor) expand: false;
+				   add: (self pathPresenterOn: editor) expand: false;
 				   add:
 					   (self
 						    textPresenterOn: editor
