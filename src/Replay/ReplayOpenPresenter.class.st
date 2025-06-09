@@ -17,18 +17,6 @@ ReplayOpenPresenter class >> displayName [
 	^ 'Open Presenter'
 ]
 
-{ #category : 'error handling' }
-ReplayOpenPresenter >> error: notAPresenter [
-	"The script evaluated to something else than a Spec presenter"
-
-	ReplayScriptError new
-		messageText:
-			'Expected the script to return a Spec presenter, but got an instance of '
-			, notAPresenter className , '.';
-		tag: notAPresenter;
-		signal
-]
-
 { #category : 'editing' }
 ReplayOpenPresenter >> helpPresenterOn: editor aboutScript: error [
 	"The script evaluated to something else than a Spec presenter"
@@ -98,7 +86,19 @@ ReplayOpenPresenter >> uiOn: runner [
 		             evaluate: self script.
 
 	(presenter isNil or: [ (presenter isKindOf: SpAbstractPresenter) not ])
-		ifTrue: [ self error: presenter ].
+		ifTrue: [ self unexpectedResult: presenter ].
 
 	^ ReplayUIManager buildMorphFromSpec: presenter
+]
+
+{ #category : 'error handling' }
+ReplayOpenPresenter >> unexpectedResult: notAPresenter [
+	"The script evaluated to something else than a Spec presenter"
+
+	ReplayScriptError new
+		messageText:
+			'Expected the script to return a Spec presenter, but got an instance of '
+			, notAPresenter className , '.';
+		tag: notAPresenter;
+		signal
 ]
