@@ -168,7 +168,7 @@ ReplayUIHandler >> pathOrWorldPresenterOn: editor [
 
 	^ editor newPresenter
 		  layout: (layout
-				   vAlignCenter;
+				   vAlignStart;
 				   spacing: 10;
 				   add: targetWorldButton expand: false;
 				   add: pathStatePresenter;
