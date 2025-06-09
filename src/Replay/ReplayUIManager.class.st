@@ -170,7 +170,7 @@ ReplayUIManager >> maxWrapDepth [
 ReplayUIManager >> onClick: event onWrapper: morph [
 
 	event yellowButtonChanged ifTrue: [ "right click"
-		SpMenuPresenter new
+		editor newMenu
 			addItem: [ :item |
 				item
 					name: 'Add action (Click)';
@@ -245,6 +245,7 @@ ReplayUIManager >> wrapMorph: morph atDepth: depth [
 	(wrapper := ReplayWrapperMorph new)
 		wrappedMorph: morph;
 		bounds: (morph boundsIn: managed);
+		setBalloonText: morph className;
 		on: #mouseEnter send: #onMouseEnter: to: wrapper;
 		on: #mouseLeave send: #onMouseLeave: to: wrapper;
 		on: #mouseUp send: #onClick:onWrapper: to: self.
