@@ -127,7 +127,7 @@ ReplayAction >> noEditionPresenterOn: editor [
 				   vAlignStart;
 				   spacing: 10;
 				   add: (self iconNamed: #info) expand: false;
-				   add: 'This action cannot be edited';
+				   add: 'This action cannot be edited.';
 				   yourself);
 		  yourself
 ]

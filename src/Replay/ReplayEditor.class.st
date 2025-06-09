@@ -206,11 +206,10 @@ ReplayEditor >> initializePresenters [
 	stepList := SpEditableListPresenter new.
 	actionList := SpEditableListPresenter new.
 
-	actionDropList := self newDropList.
-	actionDropList
+	(actionDropList := self newDropList)
 		items: ReplayAction actionsForDropList;
 		display: [ :action | action displayName ];
-		help: 'Choose the type of action to add'.
+		help: 'Choose an action to add to the current step.'.
 
 	actionEditor := SpBoxLayout newLeftToRight.
 	actionEditor add: self homePresenter
@@ -242,8 +241,7 @@ ReplayEditor >> removeItem: item from: specList [
 	"Elegantly remove an item from a Spec list"
 
 	| items nextIndex |
-	items := specList items.
-	items ifEmpty: [ ^ self ].
+	(items := specList items) ifEmpty: [ ^ self ].
 
 	items size = 1 ifTrue: [ "Delete the only step in the list"
 		^ specList removeItem: item "Also unselects! `items remove:` when it matters" ].
@@ -325,7 +323,7 @@ ReplayEditor >> selectStep: step [
 { #category : 'layout' }
 ReplayEditor >> stepNavigationEditor [
 
-	^ SpButtonPresenter new
+	^ self newButton
 		  icon: (self iconNamed: #edit);
 		  label: 'Edit step navigation';
 		  help:
@@ -344,43 +342,28 @@ ReplayEditor >> steps [
 ReplayEditor >> toolbar [
 	"I wish SpToolbarPresenter made buttons of equal size"
 
-	^ SpToolbarPresenter new
-		  add: (SpToolbarButtonPresenter new
+	^ self newToolbar
+		  addStyle: 'stToolbar';
+		  add: (self newToolbarButton
+				   label: 'Save';
 				   icon: (self iconNamed: #save);
-				   label: 'Save scenario';
+				   help:
+					   'Copy the current scenario to the clipboard as a STON string.';
 				   action: [ self saveScenario ]);
-		  add: (SpToolbarButtonPresenter new
+		  add: (self newToolbarButton
+				   label: 'Import';
 				   icon: (self iconNamed: #smallLoadProject);
-				   label: 'Import scenario';
+				   help: 'Import a serialized scenario from a STON string.';
 				   action: [ self importScenario ]);
-		  add: (SpToolbarButtonPresenter new
-				   icon: (self iconNamed: #smallDoIt);
-				   label: 'Run scenario';
+		  add: (self newToolbarButton
+				   label: 'Run';
+				   icon: (self iconNamed: #go);
+				   help: 'Execute the current scenario.';
 				   action: [ self runScenario ]);
-		  add: (SpToolbarButtonPresenter new
-				   icon: (self iconNamed: #smallForward);
+		  add: (self newToolbarButton
 				   label: 'Run step';
+				   icon: (self iconNamed: #smallForward);
+				   help: 'Execute the currently selected step.';
 				   action: [ self runStep ]);
 		  yourself
-
-	"^ SpPresenter new
-		  layout: (SpBoxLayout newLeftToRight
-				   add: (SpButtonPresenter new
-						    icon: (self iconNamed: #save);
-						    label: 'Save scenario';
-						    action: [ self saveScenario ]);
-				   add: (SpButtonPresenter new
-						    icon: (self iconNamed: #smallLoadProject);
-						    label: 'Import scenario';
-						    action: [ self importScenario ]);
-				   add: (SpButtonPresenter new
-						    icon: (self iconNamed: #smallDoIt);
-						    label: 'Run scenario';
-						    action: [ self runScenario ]);
-				   add: (SpButtonPresenter new
-						    icon: (self iconNamed: #smallForward);
-						    label: 'Run step';
-						    action: [ self runStep ]);
-				   yourself);
-		  yourself"
 ]
