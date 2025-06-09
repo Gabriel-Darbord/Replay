@@ -1,5 +1,5 @@
 "
-Opens a browser on a package.
+Open a browser on a package.
 "
 Class {
 	#name : 'ReplayBrowsePackage',

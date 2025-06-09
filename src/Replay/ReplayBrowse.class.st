@@ -1,5 +1,5 @@
 "
-I am responsible for browsing.
+I am responsible for opening a code browser.
 "
 Class {
 	#name : 'ReplayBrowse',

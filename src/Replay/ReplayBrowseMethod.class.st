@@ -1,5 +1,5 @@
 "
-Opens a browser on a method.
+Open a browser on a method.
 "
 Class {
 	#name : 'ReplayBrowseMethod',
@@ -36,7 +36,7 @@ ReplayBrowseMethod >> settingsPresenterOn: editor [
 ReplayBrowseMethod >> targetMethod [
 
 	| parts class |
-	parts := $# split: target.
+	parts := $# split: target. "= '{class}#{selector}'"
 	class := self class environment at: parts first asSymbol.
 	^ class >> parts second asSymbol
 ]

@@ -1,3 +1,6 @@
+"
+Trigger a shortcut using a key combination.
+"
 Class {
 	#name : 'ReplayShortcut',
 	#superclass : 'ReplayKeyboardEvent',
@@ -16,6 +19,7 @@ ReplayShortcut class >> displayName [
 
 { #category : 'editing' }
 ReplayShortcut >> beForKeymap: aKMKeymap [
+	"Adopt the characters and modifiers of the keymap to replay it."
 
 	self text: ''.
 	self flags: 0.
@@ -164,7 +168,7 @@ ReplayShortcut >> shortcutOn: ui [
 	self text do: [ :character |
 		(self keyDown: character buttons: self flags) sentTo: ui ]
 
-	"Is it needed to keyUp? When is that ever used???"
+	"What listens to keyUp? Doesn't seem required for shortcuts"
 	"self text do: [ :character |
 		(self keyUp: character buttons: self flags) sentTo: ui ]"
 ]

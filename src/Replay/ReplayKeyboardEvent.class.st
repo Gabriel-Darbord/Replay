@@ -1,3 +1,6 @@
+"
+I am responsible for triggering keyboard events.
+"
 Class {
 	#name : 'ReplayKeyboardEvent',
 	#superclass : 'ReplayUIHandler',
@@ -22,7 +25,7 @@ ReplayKeyboardEvent >> keyDown: aCharacter [
 
 { #category : 'events' }
 ReplayKeyboardEvent >> keyDown: aCharacter buttons: buttons [
-	"Mostly meant for shortcuts"
+	"Mostly used for shortcuts"
 
 	| code |
 	code := aCharacter asInteger.
@@ -61,7 +64,7 @@ ReplayKeyboardEvent >> keyUp: aCharacter buttons: buttons [
 
 { #category : 'events' }
 ReplayKeyboardEvent >> keystroke: aCharacter [
-	"Mostly meant for typing"
+	"Mostly used for typing"
 
 	| code |
 	code := aCharacter asInteger.

@@ -55,8 +55,7 @@ ReplayUIHandler >> findElementIn: aMorph at: index deferCount: count thenDo: aBl
 			| element |
 			element := submorphs at: (path at: index).
 			index = path size
-				ifTrue: [ "self currentWorld defer: [" "Found it, now wait for it to get drawn"
-					aBlock value: element "]" ]
+				ifTrue: [ "Found the target" aBlock value: element ]
 				ifFalse: [ "Element at index is present, continue down the path"
 					self
 						findElementIn: element

@@ -1,5 +1,5 @@
 "
-Opens a browser on a class.
+Open a browser on a class.
 "
 Class {
 	#name : 'ReplayBrowseClass',
