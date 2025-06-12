@@ -48,7 +48,7 @@ ReplayUIHandler >> findElementIn: aMorph at: index deferCount: count thenDo: aBl
 					  findElementIn: aMorph
 					  at: index
 					  deferCount: count + 1
-					  thenDo: aBlock ] forkAt: Processor userSchedulingPriority - 1 ] ].
+					  thenDo: aBlock ] forkAt: thisProcess priority - 1 ] ].
 
 	aMorph submorphs
 		ifNotEmpty: [ :submorphs |
@@ -70,7 +70,7 @@ ReplayUIHandler >> findElementIn: aMorph at: index deferCount: count thenDo: aBl
 					findElementIn: aMorph
 					at: index
 					deferCount: count + 1
-					thenDo: aBlock ] forkAt: Processor userSchedulingPriority - 1 ] ]
+					thenDo: aBlock ] forkAt: thisProcess priority - 1 ] ]
 ]
 
 { #category : 'enumerating' }
@@ -83,7 +83,7 @@ ReplayUIHandler >> findElementIn: aMorph thenDo: aBlock [
 		findElementIn: aMorph
 		at: 1
 		deferCount: 0
-		thenDo: aBlock ] forkAt: Processor userSchedulingPriority - 1
+		thenDo: aBlock ] forkAt: thisProcess priority - 1
 ]
 
 { #category : 'editing' }
@@ -246,7 +246,8 @@ ReplayUIHandler >> runOn: runner [
 		self runOn: runner onUI: ui.
 
 		"Await UI process before continuing"
-		self currentWorld defer: [ runner nextAction ] ]
+		self currentWorld defer: [
+			[ runner nextAction ] forkAt: thisProcess priority - 1 ] ]
 ]
 
 { #category : 'running' }
