@@ -16,7 +16,7 @@ Metacello new
 
 Open the editor and create your scenario using the GUI.
 ```st
-ReplayEditor new
+ReplayEditor open
 ```
 
 Saving your scenario gives you a STON string.
