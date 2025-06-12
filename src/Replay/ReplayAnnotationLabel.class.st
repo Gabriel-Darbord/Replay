@@ -15,32 +15,54 @@ ReplayAnnotationLabel new contents: (self iconNamed: #pharo) asText
 Class {
 	#name : 'ReplayAnnotationLabel',
 	#superclass : 'Morph',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Morphs',
+	#package : 'Replay',
+	#tag : 'Morphs'
 }
 
 { #category : 'accessing' }
 ReplayAnnotationLabel >> contents: aStringOrText [
-
-	| editorMorph |
-	self removeAllMorphs.
-
 	"Use an editor to display the rich text"
-	(editorMorph := RubEditingArea new)
-		borderStyle: self borderStyle;
-		setTextWith: aStringOrText.
 
-	self addMorph: editorMorph.
-	self extent: editorMorph extent.
+	| displayMorph |
+	displayMorph := self morphDisplaying: aStringOrText.
 
-	"Add an overlay over the editor to prevent edition and make it draggable"
-	self addMorph: (Morph new beTransparent extent: self extent)
+	submorphs size = 1
+		ifTrue: [ self addMorphBack: displayMorph ]
+		ifFalse: [ self replaceSubmorph: (submorphs at: 2) by: displayMorph ].
+
+	self extent: displayMorph extent.
+	self overlay extent: displayMorph extent
+]
+
+{ #category : 'initialization' }
+ReplayAnnotationLabel >> initialize [
+
+	super initialize.
+
+	"Add an overlay over the text display to prevent edition and make it draggable"
+	self addMorph: Morph new beTransparent
+]
+
+{ #category : 'accessing' }
+ReplayAnnotationLabel >> morphDisplaying: aStringOrText [
+
+	^ RubEditingArea new withoutAnyDecorator
+		  readOnly: true;
+		  borderStyle: self borderStyle;
+		  setTextWith: aStringOrText
 ]
 
 { #category : 'wiw support' }
 ReplayAnnotationLabel >> morphicLayerNumber [
 
 	^ ReplayAnnotation morphicLayerNumber
+]
+
+{ #category : 'modes' }
+ReplayAnnotationLabel >> overlay [
+
+	^ submorphs at: 1
 ]
 
 { #category : 'accessing' }

@@ -55,7 +55,8 @@ ReplayAnnotate >> settingsPresenterOn: editor [
 				   add: (self pathPresenterOn: editor) expand: false;
 				   add: (self
 						    textPresenterOn: editor
-						    labeled: 'Write the rich text to display with the element:');
+						    labeled:
+							    'Write the rich text to display next to the annotated UI element:');
 				   yourself);
 		  yourself
 ]

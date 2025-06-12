@@ -76,7 +76,7 @@ ReplayWrapperMorph >> onMouseLeave: event [
 ReplayWrapperMorph >> outOfWorld: aWorld [
 
 	wrappedMorph := nil.
-	self submorphsDo: [ :m | m outOfWorld: aWorld ]
+	super outOfWorld: aWorld
 ]
 
 { #category : 'accessing' }

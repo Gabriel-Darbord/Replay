@@ -4,8 +4,9 @@ I am the line between an annotation and its label.
 Class {
 	#name : 'ReplayAnnotationLine',
 	#superclass : 'PolygonMorph',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Morphs',
+	#package : 'Replay',
+	#tag : 'Morphs'
 }
 
 { #category : 'initialization' }

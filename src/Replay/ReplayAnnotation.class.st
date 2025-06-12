@@ -24,8 +24,9 @@ Class {
 		'label',
 		'line'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Morphs',
+	#package : 'Replay',
+	#tag : 'Morphs'
 }
 
 { #category : 'instance creation' }
@@ -45,9 +46,9 @@ ReplayAnnotation class >> annotate: bounds label: label [
 ]
 
 { #category : 'instance creation' }
-ReplayAnnotation class >> annotateMorph: aMorph [
+ReplayAnnotation class >> annotateMorph: morph [
 
-	^ self annotate: aMorph bounds
+	^ self annotate: morph bounds
 ]
 
 { #category : 'instance creation' }
@@ -82,11 +83,10 @@ ReplayAnnotation class >> example [
 ReplayAnnotation class >> exampleWithLabel [
 
 	<example>
-	| buttons randomMorph annotation root window |
-	buttons := SpDemoTextInputPresenter new open close presenter adapter
-		           widget position: 0 @ 0.
-	randomMorph := buttons submorphs atRandom.
-	(root := Morph new beTransparent) addMorph: buttons.
+	| demo annotation root window |
+	demo := SpDemoTextInputPresenter new open close presenter adapter
+		        widget position: 0 @ 0.
+	(root := Morph new) beTransparent addMorph: demo.
 
 	"When using a label, the annotated element must already be open!"
 	(window := SpMorphPresenter new
@@ -95,9 +95,10 @@ ReplayAnnotation class >> exampleWithLabel [
 		initialExtent: 390 @ 166;
 		title: 'Example annotation';
 		open.
+
 	annotation := ReplayAnnotation
-		              annotate: randomMorph bounds
-		              label: 'This is annotated.
+		              annotate: demo submorphs atRandom bounds
+		              label: 'This is **annotated** at _random_.
 Try moving me or the window around!'.
 
 	root addMorph: annotation.
@@ -106,7 +107,7 @@ Try moving me or the window around!'.
 
 { #category : 'wiw support' }
 ReplayAnnotation class >> morphicLayerNumber [
-	"In front of most other UI morphs, below user or meta Morphs such as selection or halo"
+	"In front of most other UI morphs, below user or meta morphs such as selection or halo"
 
 	^ 9
 ]
@@ -150,10 +151,9 @@ ReplayAnnotation >> edgeBetween: rectA and: rectB [
 	bB := rectB bottom.
 
 	(aL <= bR and: [ aR >= bL and: [ aT <= bB and: [ aB >= bT ] ] ])
-		ifTrue: [ "Rectangles overlap in 2D, no edge" ^ { (0 @ 0) } ].
+		ifTrue: [ ^ { (0 @ 0) } ]. "Rectangles overlap in 2D, no edge"
 
-	"Check X overlap (vertical alignment)"
-	(aR > bL and: [ bR > aL ]) ifTrue: [
+	(aR > bL and: [ bR > aL ]) ifTrue: [ "Check X overlap (vertical alignment)"
 		center := (aL max: bL) + (aR min: bR) / 2.
 		^ {
 			  (center @ (aB < bT
@@ -163,8 +163,7 @@ ReplayAnnotation >> edgeBetween: rectA and: rectB [
 				    ifTrue: [ bT ]
 				    ifFalse: [ bB ])) "B's top or bottom" } ].
 
-	"Check Y overlap (horizontal alignment)"
-	(aB > bT and: [ bB > aT ]) ifTrue: [
+	(aB > bT and: [ bB > aT ]) ifTrue: [ "Check Y overlap (horizontal alignment)"
 		center := (aT max: bT) + (aB min: bB) / 2.
 		^ {
 			  ((aR < bL
@@ -174,8 +173,7 @@ ReplayAnnotation >> edgeBetween: rectA and: rectB [
 				    ifTrue: [ bL ]
 				    ifFalse: [ bR ]) @ center) "B's left or right" } ].
 
-	"No overlap, use a diagonal line"
-	^ self diagonalBetween: rectA and: rectB
+	^ self diagonalBetween: rectA and: rectB "No overlap, use a diagonal line"
 ]
 
 { #category : 'initialization' }
@@ -232,7 +230,7 @@ ReplayAnnotation >> outOfWorld: aWorld [
 
 	label ifNotNil: [ label delete ].
 	line ifNotNil: [ line delete ].
-	self submorphsDo: [ :m | m outOfWorld: aWorld ]
+	super outOfWorld: aWorld
 ]
 
 { #category : 'stepping and presenter' }
@@ -241,17 +239,10 @@ ReplayAnnotation >> step [
 	| vertices |
 	label ifNil: [ ^ self ].
 
-	"Trying out 'wantsToBeTopmost' instead of updating"
-	"(hasMoved := lastBounds ~= bounds) ifTrue: [
-		label comeToFront.
-		line comeToFront ]."
-
 	"Verify if label moved and update the line"
 	vertices := self edgeBetween: self bounds and: label bounds.
 	line vertices = vertices ifTrue: [ ^ self ].
 	line setVertices: vertices
-
-	"hasMoved ifFalse: [ line comeToFront ]"
 ]
 
 { #category : 'accessing' }

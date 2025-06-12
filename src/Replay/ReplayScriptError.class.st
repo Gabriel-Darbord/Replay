@@ -1,8 +1,9 @@
 Class {
 	#name : 'ReplayScriptError',
 	#superclass : 'ReplayError',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Exceptions',
+	#package : 'Replay',
+	#tag : 'Exceptions'
 }
 
 { #category : 'editing' }
