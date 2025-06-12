@@ -194,11 +194,10 @@ ReplayAnnotation >> label [
 
 { #category : 'accessing' }
 ReplayAnnotation >> label: string [
-	"To decide: Microdown or not...?"
 
 	(label := ReplayAnnotationLabel new)
-		contents: (Microdown asRichText: string);
-		borderStyle: (BorderStyle color: Color red width: 1).
+		borderStyle: (BorderStyle color: Color red width: 1);
+		contents: (Microdown asRichText: string).
 
 	line := ReplayAnnotationLine new lock
 ]
