@@ -20,15 +20,15 @@ ReplayBrowseClass >> settingsPresenterOn: editor [
 
 	| presenter |
 	(presenter := editor newList)
-		help: 'Select the class to browse';
+		help: 'Select class browse';
 		items: self class environment allClasses;
 		whenSelectedDo: [ :aClass |
 			self targetClass: aClass.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: presenter named: 'Browse class target'.
 	target
 		ifNil: [ presenter selectFirst ]
-		ifNotNil: [
-		presenter selectItem: self targetClass scrollToSelection: true ].
+		ifNotNil: [ presenter selectItem: self targetClass scrollToSelection: true ].
 	^ presenter
 ]
 

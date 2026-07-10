@@ -17,6 +17,12 @@ TReplayActionWithFlags >> addFlags: anInteger [
 	^ anInteger
 ]
 
+{ #category : 'editing' }
+TReplayActionWithFlags >> flagTargetNameFor: aString [
+
+	^ (aString asString copyReplaceAll: '/' with: ' ') asLowercase
+]
+
 { #category : 'accessing' }
 TReplayActionWithFlags >> flags [
 
@@ -32,16 +38,22 @@ TReplayActionWithFlags >> flags: anInteger [
 { #category : 'editing' }
 TReplayActionWithFlags >> flagsPresenterOn: editor namesAndValues: pairs [
 	"Pairs contain:
-	1. Display string of the flag.
-	2. Integer encoding the flag."
+	1. Display string of flag.
+	2. Integer encoding flag."
 
 	^ SpGridLayout build: [ :layout |
-		  pairs pairsDo: [ :name :value |
-			  layout add: (editor newCheckBox
-					   label: name;
-					   state: (self hasFlags: value);
-					   whenActivatedDo: [ self addFlags: value ];
-					   whenDeactivatedDo: [ self removeFlags: value ]) ] ]
+		pairs pairsDo: [ :name :value |
+			| checkbox targetName |
+			targetName := self flagTargetNameFor: name.
+			checkbox := editor newCheckBox
+				label: name;
+				state: (self hasFlags: value);
+				whenActivatedDo: [ self addFlags: value ];
+				whenDeactivatedDo: [ self removeFlags: value ];
+				yourself.
+			editor registerReplayPresenter: checkbox named: 'Action ' , targetName.
+			editor registerReplayPresenter: checkbox named: self class displayName , ' ' , targetName.
+			layout add: checkbox ] ]
 ]
 
 { #category : 'testing' }

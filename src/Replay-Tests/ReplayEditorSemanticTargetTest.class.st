@@ -15,6 +15,41 @@ ReplayEditorSemanticTargetTest >> newEditor [
 ]
 
 { #category : 'tests' }
+ReplayEditorSemanticTargetTest >> testBrowseTargetsAreRegistered [
+
+	| editor |
+	editor := self newEditor.
+	ReplayBrowseClass new settingsPresenterOn: editor.
+	self assert: (editor replayPresenterAt: 'Browse class target' ifAbsent: [ nil ]) notNil.
+
+	editor clearReplayPresenterTargets.
+	ReplayBrowsePackage new settingsPresenterOn: editor.
+	self assert: (editor replayPresenterAt: 'Browse package target' ifAbsent: [ nil ]) notNil.
+
+	editor clearReplayPresenterTargets.
+	ReplayBrowseMethod new settingsPresenterOn: editor.
+	self assert: (editor replayPresenterAt: 'Browse method browser' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Browse method target' ifAbsent: [ nil ]) notNil
+]
+
+{ #category : 'tests' }
+ReplayEditorSemanticTargetTest >> testFlagTargetsAreRegistered [
+
+	| editor |
+	editor := self newEditor.
+	ReplayClick new buttonsPresenterOn: editor.
+	self assert: (editor replayPresenterAt: 'Action left click' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Click left click' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action right click' ifAbsent: [ nil ]) notNil.
+
+	editor clearReplayPresenterTargets.
+	ReplayShortcut new modifierPresenterOn: editor.
+	self assert: (editor replayPresenterAt: 'Action shift' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Shortcut shift' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action alt option' ifAbsent: [ nil ]) notNil
+]
+
+{ #category : 'tests' }
 ReplayEditorSemanticTargetTest >> testRegistersAndClearsDynamicReplayTargets [
 
 	| editor presenter |

@@ -20,16 +20,16 @@ ReplayBrowsePackage >> settingsPresenterOn: editor [
 
 	| presenter |
 	(presenter := editor newList)
-		help: 'Select the package to browse';
+		help: 'Select package browse';
 		items: self class packageOrganizer packages sorted;
 		display: [ :each | each name ];
 		whenSelectedDo: [ :aPackage |
 			self targetPackage: aPackage.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: presenter named: 'Browse package target'.
 	target
 		ifNil: [ presenter selectFirst ]
-		ifNotNil: [
-		presenter selectItem: self targetPackage scrollToSelection: true ].
+		ifNotNil: [ presenter selectItem: self targetPackage scrollToSelection: true ].
 	^ presenter
 ]
 

@@ -22,8 +22,10 @@ ReplayBrowseMethod >> settingsPresenterOn: editor [
 	(presenter := SpClassMethodBrowser new)
 		owner: editor;
 		classes: self class environment allClasses.
+	editor registerReplayPresenter: presenter named: 'Browse method browser'.
 
 	methodList := presenter instVarNamed: #methodListPresenter.
+	editor registerReplayPresenter: methodList named: 'Browse method target'.
 	self targetMethod: methodList items first.
 
 	methodList whenSelectedDo: [ :aMethod |
