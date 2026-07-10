@@ -8,6 +8,34 @@ Class {
 	#package : 'Replay-Tests'
 }
 
+{ #category : 'support' }
+ReplayScenarioSerializationTest >> roundTripAction: anAction [
+
+	| scenario step copy |
+	scenario := ReplayScenario new.
+	step := ReplayStep new.
+	step addAction: anAction.
+	scenario addStep: step.
+	copy := STON fromString: (STON toString: scenario).
+	^ copy steps first actions first
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testOpenPlacementRoundTripsThroughSton [
+
+	| action copy |
+	action := ReplayOpenPresenter new
+		script: 'SpPresenter new';
+		extent: 1083 @ 532;
+		bounds: (10 @ 20 corner: 300 @ 400);
+		yourself.
+	copy := self roundTripAction: action.
+	self assert: copy class equals: ReplayOpenPresenter.
+	self assert: copy script equals: 'SpPresenter new'.
+	self assert: copy extent equals: 1083 @ 532.
+	self assert: copy bounds equals: (10 @ 20 corner: 300 @ 400)
+]
+
 { #category : 'tests' }
 ReplayScenarioSerializationTest >> testScenarioRoundTripsThroughSton [
 
@@ -37,4 +65,20 @@ ReplayScenarioSerializationTest >> testScenarioRoundTripsThroughSton [
 	copyAction := copyStep actions first.
 	self assert: copyAction class equals: ReplayScript.
 	self assert: copyAction script equals: '1 + 1'
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testSelectTextActionRoundTripsThroughSton [
+
+	| action copy |
+	action := ReplaySelectText new
+		targetNamed: 'Action script';
+		startIndex: 2;
+		stopIndex: 5;
+		yourself.
+	copy := self roundTripAction: action.
+	self assert: copy class equals: ReplaySelectText.
+	self assert: copy targetName equals: 'Action script'.
+	self assert: copy startIndex equals: 2.
+	self assert: copy stopIndex equals: 5
 ]
