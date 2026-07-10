@@ -32,6 +32,11 @@ ReplayUIHandler class >> shouldBeMenuItem [
 ]
 
 { #category : 'testing' }
+ReplayUIHandler >> allowsWorldTarget [
+	^ true
+]
+
+{ #category : 'testing' }
 ReplayUIHandler >> controlsRunnerContinuation [
 
 	^ true
@@ -45,6 +50,14 @@ ReplayUIHandler >> findElementIn: aMorph thenDo: aBlock [
 		resolve: self uiReference
 		thenDo: [ :resolved | aBlock value: resolved morph ]
 		onMissing: [ :error | error signal ]
+]
+
+{ #category : 'testing' }
+ReplayUIHandler >> hasSpecificTarget [
+
+	path ifNotNil: [ ^ true ].
+	reference ifNil: [ ^ false ].
+	^ reference isWorld not
 ]
 
 { #category : 'editing' }
@@ -93,8 +106,7 @@ ReplayUIHandler >> path: aCollection [
 	"Path through owner chain, each element child index"
 
 	path := aCollection.
-	reference := nil.
-	^ self
+	reference := nil
 ]
 
 { #category : 'editing' }
@@ -112,39 +124,16 @@ ReplayUIHandler >> pathOkPresenterOn: editor [
 
 { #category : 'editing' }
 ReplayUIHandler >> pathOrWorldPresenterOn: editor [
-	"Add a button that allows unsetting the path to target the current World."
+	"Compatibility hook for older editor code."
 
-	| layout pathStatePresenter targetWorldButton |
-	layout := SpBoxLayout newLeftToRight.
-	pathStatePresenter := self pathStatePresenterOn: editor.
-	(targetWorldButton := editor newButton)
-		icon: (self iconNamed: #edit);
-		label: 'Target World';
-		action: [
-			path ifNotNil: [
-					| newPresenter |
-					self targetWorld.
-					layout
-						replace: pathStatePresenter
-						with: (newPresenter := self pathUnsetPresenterOn: editor).
-					editor actionEditor view rebuildLayout.
-					pathStatePresenter := newPresenter ] ].
-
-	^ editor newPresenter
-		  layout: (layout
-				   vAlignStart;
-				   spacing: 10;
-				   add: targetWorldButton expand: false;
-				   add: pathStatePresenter;
-				   yourself);
-		  yourself
+	^ self targetPresenterOn: editor
 ]
 
 { #category : 'editing' }
 ReplayUIHandler >> pathPresenterOn: editor [
-	"Hook to let actions decide which presenter to use for representing and editing the path."
+	"Hook to let actions decide which presenter to use for representing and editing the UI target."
 
-	^ self pathOrWorldPresenterOn: editor
+	^ self targetPresenterOn: editor
 ]
 
 { #category : 'editing' }
@@ -170,11 +159,9 @@ ReplayUIHandler >> pathSetPresenterOn: editor [
 
 { #category : 'editing' }
 ReplayUIHandler >> pathStatePresenterOn: editor [
-	"Use a different presenter whether the path is set or not."
+	"Use a different presenter depending on the selected UI target."
 
-	^ path
-		  ifNil: [ self pathUnsetPresenterOn: editor ]
-		  ifNotNil: [ self pathSetPresenterOn: editor ]
+	^ self targetStatePresenterOn: editor
 ]
 
 { #category : 'editing' }
@@ -209,8 +196,7 @@ ReplayUIHandler >> reference [
 ReplayUIHandler >> reference: aReplayUIReference [
 
 	reference := aReplayUIReference.
-	path := nil.
-	^ self
+	path := nil
 ]
 
 { #category : 'running' }
@@ -261,10 +247,102 @@ ReplayUIHandler >> runWithoutPathOn: runner [
 	self currentWorld defer: [ runner nextAction ]
 ]
 
+{ #category : 'editing' }
+ReplayUIHandler >> semanticTargetPresenterOn: editor [
+
+	| targetNamePresenter |
+	(targetNamePresenter := editor newText)
+		text: self targetName;
+		whenTextChangedDo: [ :aString |
+			self targetName: aString.
+			editor actions rebuildLayout ].
+
+	^ SpBoxLayout newTopToBottom
+		spacing: 4;
+		add: 'Semantic target name:' expand: false;
+		add: targetNamePresenter expand: false;
+		yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetControlsPresenterOn: editor [
+
+	| layout |
+	layout := SpBoxLayout newLeftToRight
+		vAlignStart;
+		spacing: 10;
+		yourself.
+	self allowsWorldTarget ifTrue: [
+		layout add: (self targetWorldButtonPresenterOn: editor) expand: false ].
+	layout add: (self targetStatePresenterOn: editor) expand: false.
+
+	^ editor newPresenter
+		layout: layout;
+		yourself
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> targetName [
+
+	^ (reference notNil and: [ reference isNamed ])
+		ifTrue: [ reference value ]
+		ifFalse: [ '' ]
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> targetName: aString [
+
+	| trimmed |
+	trimmed := aString
+		ifNil: [ '' ]
+		ifNotNil: [ aString trimBoth ].
+	trimmed
+		ifEmpty: [
+			reference ifNotNil: [
+				reference isNamed ifTrue: [ reference := nil ] ] ]
+		ifNotEmpty: [ self targetNamed: trimmed ]
+]
+
 { #category : 'accessing' }
 ReplayUIHandler >> targetNamed: aString [
 
-	^ self reference: (ReplayUIReference named: aString)
+	self reference: (ReplayUIReference named: aString)
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetNamedPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newLeftToRight
+				spacing: 10;
+				add: (self iconNamed: #smallOk) expand: false;
+				add: ('Semantic target: ' , self targetName) expand: false;
+				yourself);
+		yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self targetControlsPresenterOn: editor) expand: false;
+				add: (self semanticTargetPresenterOn: editor) expand: false;
+				yourself);
+		yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetStatePresenterOn: editor [
+
+	(reference notNil and: [ reference isNamed ])
+		ifTrue: [ ^ self targetNamedPresenterOn: editor ].
+	(path notNil or: [ reference notNil and: [ reference isMorphicPath ] ])
+		ifTrue: [ ^ self pathSetPresenterOn: editor ].
+	^ self allowsWorldTarget
+		ifTrue: [ self pathWorldPresenterOn: editor ]
+		ifFalse: [ self pathUnsetPresenterOn: editor ]
 ]
 
 { #category : 'accessing' }
@@ -272,8 +350,19 @@ ReplayUIHandler >> targetWorld [
 	"Target current World when path unset"
 
 	path := nil.
-	reference := nil.
-	^ self
+	reference := nil
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetWorldButtonPresenterOn: editor [
+
+	^ editor newButton
+		icon: (self iconNamed: #edit);
+		label: 'Target World';
+		action: [
+			self targetWorld.
+			editor actionEditor view rebuildLayout ];
+		yourself
 ]
 
 { #category : 'editing' }

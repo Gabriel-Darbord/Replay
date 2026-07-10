@@ -219,3 +219,57 @@ ReplayUIBackendTest >> testSpecResolverReportsMissingSemanticNameImmediately [
 
 	self assert: capturedError class equals: ReplayMissingUIError
 ]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testUIHandlerClearingSemanticNameReturnsToWorldTarget [
+
+	| action reference |
+	action := ReplayFocus new.
+	action targetNamed: 'Field'.
+	action targetName: '   '.
+	reference := action uiReference.
+
+	self assert: action reference isNil.
+	self assert: reference isWorld.
+	self deny: action hasSpecificTarget
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testUIHandlerPathClearsSemanticReference [
+
+	| action reference |
+	action := ReplayFocus new.
+	action targetNamed: 'Field'.
+	action path: #( 1 2 ).
+	reference := action uiReference.
+
+	self assert: action reference isNil.
+	self assert: reference isMorphicPath.
+	self assert: reference value equals: #( 1 2 ).
+	self assert: action hasSpecificTarget
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testUIHandlerTargetNamedCreatesSemanticReference [
+
+	| action reference |
+	action := ReplayFocus new.
+	action targetNamed: 'Field'.
+	reference := action uiReference.
+
+	self assert: reference isNamed.
+	self assert: reference value equals: 'Field'.
+	self assert: action path isNil.
+	self assert: action hasSpecificTarget
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testUIHandlerTargetPresenterBuildsForSemanticTarget [
+
+	| action presenter |
+	action := ReplayFocus new.
+	action targetNamed: 'Field'.
+	presenter := action pathPresenterOn: ReplayEditor new.
+
+	self assert: presenter notNil
+]

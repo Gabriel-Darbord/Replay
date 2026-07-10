@@ -103,8 +103,7 @@ ReplayUIResolver >> resolvedElementFor: aReference nativeElement: anObject morph
 { #category : 'resolving' }
 ReplayUIResolver >> schedule: aBlock [
 
-	self currentWorld defer: aBlock.
-	^ self
+	self currentWorld defer: aBlock
 ]
 
 { #category : 'testing' }

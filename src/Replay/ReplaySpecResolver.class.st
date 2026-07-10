@@ -37,7 +37,7 @@ ReplaySpecResolver >> attemptResolveNamed [
 			missingReference: reference
 			reason: 'Spec presenter ', reference value printString, ' was found, but no rendered widget was available.'
 			onMissing: whenMissing ].
-	^ self schedule: [ self attemptResolveNamed ]
+	self schedule: [ self attemptResolveNamed ]
 ]
 
 { #category : 'resolving' }

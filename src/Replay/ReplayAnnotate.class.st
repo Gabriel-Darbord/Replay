@@ -17,11 +17,9 @@ ReplayAnnotate class >> displayName [
 	^ 'Annotate'
 ]
 
-{ #category : 'editing' }
-ReplayAnnotate >> pathPresenterOn: editor [
-	"Can't target the World"
-
-	^ self pathStatePresenterOn: editor
+{ #category : 'testing' }
+ReplayAnnotate >> allowsWorldTarget [
+	^ false
 ]
 
 { #category : 'editing' }

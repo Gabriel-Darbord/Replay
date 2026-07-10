@@ -118,20 +118,20 @@ ReplayClick >> runOn: runner onUI: ui [
 ReplayClick >> settingsPresenterOn: editor [
 
 	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (self pathPresenterOn: editor) expand: false;
-				   add: (self buttonsPresenterOn: editor) expand: false;
-				   in: [ :layout |
-					   path ifNotNil: [
-							   layout
-								   add: (self
-										    debugButtonPresenterOn: editor
-										    labeled: ' Debug the click event'
-										    action: [ self debugClickOn: editor ])
-								   expand: false ] ];
-				   yourself);
-		  yourself
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self pathPresenterOn: editor) expand: false;
+				add: (self buttonsPresenterOn: editor) expand: false;
+				in: [ :layout |
+					self hasSpecificTarget ifTrue: [
+							layout
+								add: (self
+										debugButtonPresenterOn: editor
+										labeled: ' Debug click event'
+										action: [ self debugClickOn: editor ])
+								expand: false ] ];
+				yourself);
+		yourself
 ]
 
 { #category : 'accessing' }

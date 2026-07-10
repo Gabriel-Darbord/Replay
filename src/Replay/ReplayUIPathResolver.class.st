@@ -170,8 +170,7 @@ ReplayUIPathResolver >> path [
 { #category : 'accessing' }
 ReplayUIPathResolver >> path: aCollection [
 
-	path := aCollection.
-	^ self
+	path := aCollection
 ]
 
 { #category : 'resolving' }
@@ -221,8 +220,7 @@ ReplayUIPathResolver >> root [
 { #category : 'accessing' }
 ReplayUIPathResolver >> root: aMorph [
 
-	root := aMorph.
-	^ self
+	root := aMorph
 ]
 
 { #category : 'resolving' }
@@ -242,13 +240,11 @@ ReplayUIPathResolver >> shouldWaitFor: aMorph [
 { #category : 'accessing' }
 ReplayUIPathResolver >> whenFound: aBlock [
 
-	whenFound := aBlock.
-	^ self
+	whenFound := aBlock
 ]
 
 { #category : 'accessing' }
 ReplayUIPathResolver >> whenMissing: aBlock [
 
-	whenMissing := aBlock.
-	^ self
+	whenMissing := aBlock
 ]
