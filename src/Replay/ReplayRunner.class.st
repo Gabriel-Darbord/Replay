@@ -141,5 +141,7 @@ ReplayRunner >> stop [
 
 	stepIndex := nil.
 	actionIndex := nil.
-	uiManager ifNotNil: [ uiManager close ]
+	uiManager ifNotNil: [ :manager |
+		manager close.
+		uiManager := nil ]
 ]

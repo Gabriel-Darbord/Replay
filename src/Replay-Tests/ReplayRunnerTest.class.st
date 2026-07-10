@@ -86,3 +86,17 @@ ReplayRunnerTest >> testRunExecutesActionsInStepOrderWithoutOpeningNavigation [
 	scenario run.
 	self assert: log asArray equals: #( first second )
 ]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testStopClosesAndClearsManager [
+
+	| runner manager |
+	runner := ReplayRunner new.
+	manager := ReplayUIManager new manage: (Morph new extent: 100 @ 50); yourself.
+	runner manager: manager.
+
+	runner stop.
+
+	self assert: runner isStopped.
+	self assert: runner manager isNil
+]
