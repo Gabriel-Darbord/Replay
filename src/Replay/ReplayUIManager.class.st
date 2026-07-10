@@ -88,7 +88,7 @@ ReplayUIManager >> attachTo: aMorph usingBackend: aReplayUIBackend [
 	backend := aReplayUIBackend.
 	managed := aMorph.
 	root := owner.
-	overlay := self newOverlay.
+	overlay := self newAttachedOverlay.
 	overlay bounds: managed bounds.
 	root addMorphFront: overlay.
 	self syncManagedLayout.
@@ -282,6 +282,17 @@ ReplayUIManager >> maxWrapDepth [
 	"How deep to wrap morphs on a single pass"
 
 	^ 6 "6 plays nicely with Calypso?"
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> newAttachedOverlay [
+	"Create an overlay for an existing UI owner. It must not participate in the owner's layout."
+
+	^ self newOverlay
+		hResizing: #rigid;
+		vResizing: #rigid;
+		disableTableLayout: true;
+		yourself
 ]
 
 { #category : 'managing UI' }

@@ -117,6 +117,33 @@ ReplayUIBackendTest >> testAttachedMorphManagerResolvesRelativeToManagedMorph [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testAttachedOverlayDoesNotParticipateInOwnerTableLayout [
+
+	| root target manager originalBounds overlay |
+	root := Morph new
+		extent: 200 @ 100;
+		changeTableLayout;
+		yourself.
+	target := Morph new
+		bounds: (0 @ 0 extent: 200 @ 100);
+		hResizing: #spaceFill;
+		vResizing: #spaceFill;
+		yourself.
+	root addMorph: target.
+	root doLayoutIn: root bounds.
+	originalBounds := target bounds.
+	manager := ReplayUIManager new attachTo: target.
+	overlay := manager overlay.
+	root doLayoutIn: root bounds.
+
+	self assert: target bounds equals: originalBounds.
+	self assert: overlay bounds equals: originalBounds.
+	self assert: overlay disableTableLayout.
+	self assert: overlay hResizing equals: #rigid.
+	self assert: overlay vResizing equals: #rigid
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testClearAnnotationsActionEditionPresenterBuilds [
 
 	| presenter |
