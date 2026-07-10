@@ -144,6 +144,7 @@ ReplayUIHandler >> runOn: runner [
 
 	runner manager
 		resolve: uiReference
+		forAction: self
 		thenDo: [ :resolved |
 			runner isStopped ifFalse: [
 				self runOn: runner resolvedUI: resolved.

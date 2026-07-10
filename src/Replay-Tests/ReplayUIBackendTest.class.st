@@ -355,6 +355,27 @@ ReplayUIBackendTest >> testSpecBackendUsesPresenterAsSemanticScriptReceiver [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testSpecResolverDoesNotResolveNonNativeClickBeforeMorphExists [
+
+	| presenter backend action resolver capturedError |
+	presenter := ReplayButtonSemanticPresenter new.
+	backend := ReplaySpecBackend presenter: presenter morph: nil.
+	action := ReplayClick new.
+	action flags: MouseEvent yellowButton.
+	resolver := ReplaySpecResolver on: backend.
+	resolver maxAttempts: 1.
+
+	resolver
+		resolve: (ReplayUIReference named: 'Button')
+		forAction: action
+		thenDo: [ :element | self fail: 'Unexpected native-only resolution' ]
+		onMissing: [ :error | capturedError := error ].
+
+	self assert: capturedError class equals: ReplayMissingUIError.
+	self deny: presenter clicked
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testSpecResolverKeepsSemanticPresenterAsNativeElement [
 
 	| presenter manager resolved |
@@ -382,6 +403,27 @@ ReplayUIBackendTest >> testSpecResolverReportsMissingSemanticNameImmediately [
 		onMissing: [ :error | capturedError := error ].
 
 	self assert: capturedError class equals: ReplayMissingUIError
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecResolverResolvesNativeButtonClickBeforeMorphExists [
+
+	| presenter backend action resolved |
+	presenter := ReplayButtonSemanticPresenter new.
+	backend := ReplaySpecBackend presenter: presenter morph: nil.
+	action := ReplayClick new.
+
+	backend
+		resolve: (ReplayUIReference named: 'Button')
+		forAction: action
+		thenDo: [ :element | resolved := element ]
+		onMissing: [ :error | error signal ].
+
+	self assert: resolved notNil.
+	self assert: resolved nativeElement equals: presenter button.
+	self deny: resolved hasMorph.
+	action runOn: ReplayRunner new resolvedUI: resolved.
+	self assert: presenter clicked
 ]
 
 { #category : 'tests' }

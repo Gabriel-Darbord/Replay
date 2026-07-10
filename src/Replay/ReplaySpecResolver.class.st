@@ -17,27 +17,34 @@ Class {
 { #category : 'resolving' }
 ReplaySpecResolver >> attemptResolveNamed [
 
-	| presenter morph |
+	^ self attemptResolveNamedForAction: nil
+]
+
+{ #category : 'resolving' }
+ReplaySpecResolver >> attemptResolveNamedForAction: anAction [
+
+	| targetPresenter targetMorph |
 	attemptCount := self attemptCount + 1.
-	presenter := backend
+	targetPresenter := backend
 		presenterNamed: reference value
 		ifAbsent: [
 			^ self
 				missingReference: reference
-				reason: 'No Spec presenter named ', reference value printString, ' was exposed by the managed presenter.'
+				reason: 'No Spec presenter named ' , reference value printString , ' was exposed by managed presenter.'
 				onMissing: whenMissing ].
-	morph := self morphForPresenter: presenter.
-	morph ifNotNil: [
-		^ whenFound value: (self
-			resolvedElementFor: reference
-			nativeElement: presenter
-			morph: morph) ].
+	targetMorph := self morphForPresenter: targetPresenter.
+	targetMorph ifNotNil: [
+		^ whenFound value:
+			(self resolvedElementFor: reference nativeElement: targetPresenter morph: targetMorph) ].
+	(backend canRun: anAction nativelyOn: targetPresenter) ifTrue: [
+		^ whenFound value:
+			(self resolvedElementFor: reference nativeElement: targetPresenter morph: nil) ].
 	attemptCount >= self maxAttempts ifTrue: [
 		^ self
 			missingReference: reference
-			reason: 'Spec presenter ', reference value printString, ' was found, but no rendered widget was available.'
+			reason: 'Spec presenter ' , reference value printString , ' was found, but no rendered widget was available.'
 			onMissing: whenMissing ].
-	self schedule: [ self attemptResolveNamed ]
+	self schedule: [ self attemptResolveNamedForAction: anAction ]
 ]
 
 { #category : 'resolving' }
@@ -54,6 +61,18 @@ ReplaySpecResolver >> morphForPresenter: aPresenter [
 ReplaySpecResolver >> reference [
 
 	^ reference
+]
+
+{ #category : 'resolving' }
+ReplaySpecResolver >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
+
+	aReference isNamed ifTrue: [
+		^ self
+			resolveNamed: aReference
+			forAction: anAction
+			thenDo: foundBlock
+			onMissing: missingBlock ].
+	^ self resolve: aReference thenDo: foundBlock onMissing: missingBlock
 ]
 
 { #category : 'resolving' }
@@ -76,13 +95,23 @@ ReplaySpecResolver >> resolve: aReference thenDo: foundBlock onMissing: missingB
 ]
 
 { #category : 'resolving' }
-ReplaySpecResolver >> resolveNamed: aReference thenDo: foundBlock onMissing: missingBlock [
+ReplaySpecResolver >> resolveNamed: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
 
 	reference := aReference.
 	whenFound := foundBlock.
 	whenMissing := missingBlock.
 	attemptCount := 0.
-	^ self attemptResolveNamed
+	^ self attemptResolveNamedForAction: anAction
+]
+
+{ #category : 'resolving' }
+ReplaySpecResolver >> resolveNamed: aReference thenDo: foundBlock onMissing: missingBlock [
+
+	^ self
+		resolveNamed: aReference
+		forAction: nil
+		thenDo: foundBlock
+		onMissing: missingBlock
 ]
 
 { #category : 'testing' }

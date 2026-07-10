@@ -32,6 +32,14 @@ ReplaySpecBackend >> canPerformNativeClickOn: aPresenter [
 						or: [ aPresenter isKindOf: SpToolbarToggleButtonPresenter ] ] ]
 ]
 
+{ #category : 'testing' }
+ReplaySpecBackend >> canRun: anAction nativelyOn: nativeElement [
+
+	(anAction isKindOf: ReplayClick) ifFalse: [ ^ false ].
+	^ anAction flags = MouseEvent redButton
+		and: [ self canPerformNativeClickOn: nativeElement ]
+]
+
 { #category : 'accessing' }
 ReplaySpecBackend >> managedPresenter [
 

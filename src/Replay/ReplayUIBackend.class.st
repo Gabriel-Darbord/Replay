@@ -9,6 +9,12 @@ Class {
 	#tag : 'Backends'
 }
 
+{ #category : 'testing' }
+ReplayUIBackend >> canRun: anAction nativelyOn: nativeElement [
+
+	^ false
+]
+
 { #category : 'accessing' }
 ReplayUIBackend >> managedPresenter [
 
@@ -19,6 +25,16 @@ ReplayUIBackend >> managedPresenter [
 ReplayUIBackend >> managedUI [
 
 	^ nil
+]
+
+{ #category : 'resolving' }
+ReplayUIBackend >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
+
+	^ self resolver
+		resolve: aReference
+		forAction: anAction
+		thenDo: foundBlock
+		onMissing: missingBlock
 ]
 
 { #category : 'resolving' }

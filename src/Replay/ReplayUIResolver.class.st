@@ -76,6 +76,15 @@ ReplayUIResolver >> missingReference: aReference reason: aString onMissing: miss
 ]
 
 { #category : 'resolving' }
+ReplayUIResolver >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
+
+	^ self
+		resolve: aReference
+		thenDo: foundBlock
+		onMissing: missingBlock
+]
+
+{ #category : 'resolving' }
 ReplayUIResolver >> resolve: aReference thenDo: foundBlock [
 
 	^ self

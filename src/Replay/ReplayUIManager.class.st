@@ -312,6 +312,16 @@ ReplayUIManager >> overlay [
 ]
 
 { #category : 'resolving' }
+ReplayUIManager >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
+
+	^ backend
+		resolve: aReference
+		forAction: anAction
+		thenDo: foundBlock
+		onMissing: missingBlock
+]
+
+{ #category : 'resolving' }
 ReplayUIManager >> resolve: aReference thenDo: foundBlock [
 
 	^ self
