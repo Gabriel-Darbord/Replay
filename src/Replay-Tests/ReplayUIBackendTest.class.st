@@ -64,6 +64,17 @@ ReplayUIBackendTest >> testManagingMorphUsesMorphicBackend [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testManagingMorphUsesMorphicResolver [
+
+	| manager morph |
+	morph := Morph new.
+	manager := ReplayUIManager new manage: morph; yourself.
+
+	self assert: manager resolver class equals: ReplayMorphicResolver.
+	self assert: manager surfaceMorph equals: morph
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testManagingPresenterUsesSpecBackend [
 
 	| manager presenter |
@@ -73,6 +84,18 @@ ReplayUIBackendTest >> testManagingPresenterUsesSpecBackend [
 	self assert: manager backend managedPresenter equals: presenter.
 	self assert: manager managedPresenter equals: presenter.
 	self assert: manager managedUI isMorph
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testManagingPresenterUsesSpecResolver [
+
+	| manager presenter |
+	presenter := ReplaySemanticPresenter new.
+	manager := ReplayUIManager new managePresenter: presenter; yourself.
+
+	self assert: manager resolver class equals: ReplaySpecResolver.
+	self assert: manager backend root equals: presenter.
+	self assert: manager surfaceMorph isMorph
 ]
 
 { #category : 'tests' }
@@ -144,10 +167,55 @@ ReplayUIBackendTest >> testOpenLabeledPreservesManagedContentExtent [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testSpecBackendResolvesNamedPresenterSemantically [
+
+	| presenter manager action runner |
+	presenter := ReplaySemanticPresenter new.
+	manager := ReplayUIManager new managePresenter: presenter.
+	runner := ReplayRunner new manager: manager.
+	action := ReplayFocus new targetNamed: 'Field'.
+
+	[
+		manager openLabeled: 'Replay semantic resolver test'.
+		self shouldnt: [ action runOn: runner ] raise: Error ]
+		ensure: [ manager close ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testSpecBackendUsesPresenterAsSemanticScriptReceiver [
 
 	| presenter backend |
 	presenter := ReplayEditor new.
 	backend := ReplaySpecBackend presenter: presenter morph: Morph new.
 	self assert: backend semanticScriptReceiver equals: presenter
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecResolverKeepsSemanticPresenterAsNativeElement [
+
+	| presenter manager resolved |
+	presenter := ReplaySemanticPresenter new.
+	manager := ReplayUIManager new managePresenter: presenter.
+
+	manager
+		resolve: (ReplayUIReference named: 'Field')
+		thenDo: [ :element | resolved := element ].
+
+	self assert: resolved nativeElement equals: presenter field.
+	self assert: resolved morph isMorph
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecResolverReportsMissingSemanticNameImmediately [
+
+	| presenter manager capturedError |
+	presenter := ReplaySemanticPresenter new.
+	manager := ReplayUIManager new managePresenter: presenter.
+
+	manager
+		resolve: (ReplayUIReference named: 'Missing')
+		thenDo: [ :element | self fail ]
+		onMissing: [ :error | capturedError := error ].
+
+	self assert: capturedError class equals: ReplayMissingUIError
 ]

@@ -90,7 +90,7 @@ ReplayUIPathResolver >> childSummaryFor: aMorph at: index [
 { #category : 'resolving' }
 ReplayUIPathResolver >> found: aMorph [
 
-	self currentWorld defer: [ whenFound value: aMorph ].
+	whenFound value: aMorph.
 	^ aMorph
 ]
 
@@ -170,15 +170,15 @@ ReplayUIPathResolver >> path [
 { #category : 'accessing' }
 ReplayUIPathResolver >> path: aCollection [
 
-	path := aCollection
+	path := aCollection.
+	^ self
 ]
 
 { #category : 'resolving' }
 ReplayUIPathResolver >> resolve [
 
 	(path isNil or: [ path isEmpty ]) ifTrue: [ ^ self found: root ].
-	self scheduleAttempt.
-	^ self
+	^ self attemptResolve
 ]
 
 { #category : 'resolving' }
@@ -221,7 +221,8 @@ ReplayUIPathResolver >> root [
 { #category : 'accessing' }
 ReplayUIPathResolver >> root: aMorph [
 
-	root := aMorph
+	root := aMorph.
+	^ self
 ]
 
 { #category : 'resolving' }
@@ -241,11 +242,13 @@ ReplayUIPathResolver >> shouldWaitFor: aMorph [
 { #category : 'accessing' }
 ReplayUIPathResolver >> whenFound: aBlock [
 
-	whenFound := aBlock
+	whenFound := aBlock.
+	^ self
 ]
 
 { #category : 'accessing' }
 ReplayUIPathResolver >> whenMissing: aBlock [
 
-	whenMissing := aBlock
+	whenMissing := aBlock.
+	^ self
 ]

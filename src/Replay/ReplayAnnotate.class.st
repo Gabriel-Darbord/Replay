@@ -47,6 +47,17 @@ ReplayAnnotate >> runOn: runner onUI: ui [
 			(ReplayAnnotation annotateMorph: ui label: self text) ]
 ]
 
+{ #category : 'running' }
+ReplayAnnotate >> runOn: runner resolvedUI: resolvedUI [
+
+	| bounds |
+	bounds := resolvedUI boundsInSurface.
+	bounds ifNil: [ ^ super runOn: runner resolvedUI: resolvedUI ].
+	self currentWorld defer: [
+		runner manager addOverlay:
+			(ReplayAnnotation annotate: bounds label: self text) ]
+]
+
 { #category : 'editing' }
 ReplayAnnotate >> settingsPresenterOn: editor [
 

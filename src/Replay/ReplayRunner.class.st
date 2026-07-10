@@ -45,6 +45,12 @@ ReplayRunner >> focus: anObject [
 	focus := anObject
 ]
 
+{ #category : 'testing' }
+ReplayRunner >> isStopped [
+
+	^ actionIndex isNil
+]
+
 { #category : 'accessing' }
 ReplayRunner >> manager [
 

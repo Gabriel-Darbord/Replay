@@ -79,6 +79,47 @@ ReplayUIPathResolverTest >> testAttemptResolveReportsMissingAfterMaximumAttempts
 ]
 
 { #category : 'tests' }
+ReplayUIPathResolverTest >> testMorphicResolverResolvesExistingPathWithoutDeferring [
+
+	| root child resolver resolved |
+	root := Morph new.
+	child := Morph new.
+	root addMorph: child.
+	resolver := ReplayUIPathResolver new
+		root: root;
+		path: #( 1 );
+		whenFound: [ :morph | resolved := morph ];
+		whenMissing: [ :error | error signal ];
+		yourself.
+
+	resolver resolve.
+	self assert: resolved equals: child.
+	self assert: resolver attemptCount equals: 1
+]
+
+{ #category : 'tests' }
+ReplayUIPathResolverTest >> testMorphicResolverWaitsOnlyUntilNextCycleForLateChild [
+
+	| root child resolved resolver |
+	root := Morph new.
+	child := Morph new.
+	resolver := ReplayUIPathResolver new
+		root: root;
+		path: #( 1 );
+		whenFound: [ :morph | resolved := morph ];
+		whenMissing: [ :error | error signal ];
+		yourself.
+
+	resolver resolve.
+	self assert: resolved isNil.
+	self assert: resolver attemptCount equals: 1.
+	root addMorph: child.
+	World doOneCycle.
+	self assert: resolved equals: child.
+	self assert: resolver attemptCount equals: 2
+]
+
+{ #category : 'tests' }
 ReplayUIPathResolverTest >> testResolvedTargetFindsNestedMorph [
 
 	| root child target resolver |

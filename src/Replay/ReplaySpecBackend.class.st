@@ -58,8 +58,39 @@ ReplaySpecBackend >> presenter: aSpecPresenter [
 	presenter := aSpecPresenter
 ]
 
+{ #category : 'resolving' }
+ReplaySpecBackend >> presenterNamed: aString ifAbsent: absentBlock [
+
+	presenter ifNil: [ ^ absentBlock value ].
+	^ presenter replayPresenterAt: aString ifAbsent: absentBlock
+]
+
+{ #category : 'accessing' }
+ReplaySpecBackend >> resolver [
+
+	^ ReplaySpecResolver on: self
+]
+
+{ #category : 'accessing' }
+ReplaySpecBackend >> root [
+
+	^ presenter
+]
+
 { #category : 'accessing' }
 ReplaySpecBackend >> semanticScriptReceiver [
 
 	^ presenter
+]
+
+{ #category : 'accessing' }
+ReplaySpecBackend >> surfaceMorph [
+
+	^ morph
+]
+
+{ #category : 'accessing' }
+ReplaySpecBackend >> surfaceRoot [
+
+	^ morph
 ]

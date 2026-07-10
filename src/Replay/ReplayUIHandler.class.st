@@ -5,7 +5,8 @@ Class {
 	#name : 'ReplayUIHandler',
 	#superclass : 'ReplayUIAction',
 	#instVars : [
-		'path'
+		'path',
+		'reference'
 	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
@@ -38,13 +39,12 @@ ReplayUIHandler >> controlsRunnerContinuation [
 
 { #category : 'enumerating' }
 ReplayUIHandler >> findElementIn: aMorph thenDo: aBlock [
-	"Asynchronously wait for the Morph to be built and then find the target element."
+	"Compatibility path for editor highlights that resolve against an explicit Morph."
 
-	^ ReplayUIPathResolver
-		  findPath: (path ifNil: [ #(  ) ])
-		  in: aMorph
-		  thenDo: aBlock
-		  onMissing: [ :error | error signal ]
+	^ (ReplayMorphicResolver on: (ReplayMorphicBackend on: aMorph))
+		resolve: self uiReference
+		thenDo: [ :resolved | aBlock value: resolved morph ]
+		onMissing: [ :error | error signal ]
 ]
 
 { #category : 'editing' }
@@ -90,9 +90,11 @@ ReplayUIHandler >> path [
 
 { #category : 'accessing' }
 ReplayUIHandler >> path: aCollection [
-	"Path through the owner chain, each element is a child index"
+	"Path through owner chain, each element child index"
 
-	path := aCollection
+	path := aCollection.
+	reference := nil.
+	^ self
 ]
 
 { #category : 'editing' }
@@ -197,22 +199,55 @@ ReplayUIHandler >> pathWorldPresenterOn: editor [
 		  yourself
 ]
 
+{ #category : 'accessing' }
+ReplayUIHandler >> reference [
+
+	^ reference
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> reference: aReplayUIReference [
+
+	reference := aReplayUIReference.
+	path := nil.
+	^ self
+]
+
 { #category : 'running' }
 ReplayUIHandler >> runOn: runner [
-	"Has control of runner continuation."
+	"Has control over runner continuation."
 
-	path ifNil: [ ^ self runWithoutPathOn: runner ].
+	| uiReference |
+	uiReference := self uiReference.
+	uiReference isWorld ifTrue: [ ^ self runWithoutPathOn: runner ].
 
-	self findElementIn: runner manager managedUI thenDo: [ :ui |
-		self runOn: runner onUI: ui.
-		"Let Morphic process effects from this action before continuing."
-		self currentWorld defer: [ runner nextAction ] ]
+	runner manager
+		resolve: uiReference
+		thenDo: [ :resolved |
+			runner isStopped ifFalse: [
+				self runOn: runner resolvedUI: resolved.
+				"Let UI process action effects before continuing."
+				self currentWorld defer: [
+					runner isStopped ifFalse: [ runner nextAction ] ] ] ]
+		onMissing: [ :error |
+			runner isStopped ifFalse: [ error signal ] ]
 ]
 
 { #category : 'running' }
 ReplayUIHandler >> runOn: runner onUI: ui [
 
 	self subclassResponsibility
+]
+
+{ #category : 'running' }
+ReplayUIHandler >> runOn: runner resolvedUI: resolvedUI [
+
+	resolvedUI morph ifNil: [
+		ReplayMissingUIError new
+			messageText: 'Resolved UI element has no rendered Morph available.';
+			tag: resolvedUI;
+			signal ].
+	^ self runOn: runner onUI: resolvedUI morph
 ]
 
 { #category : 'running' }
@@ -227,10 +262,18 @@ ReplayUIHandler >> runWithoutPathOn: runner [
 ]
 
 { #category : 'accessing' }
-ReplayUIHandler >> targetWorld [
-	"Target the current World when the path is unset"
+ReplayUIHandler >> targetNamed: aString [
 
-	path := nil
+	^ self reference: (ReplayUIReference named: aString)
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> targetWorld [
+	"Target current World when path unset"
+
+	path := nil.
+	reference := nil.
+	^ self
 ]
 
 { #category : 'editing' }
@@ -259,4 +302,13 @@ ReplayUIHandler >> uiEditionPresenterOn: editor [
 
 	^ editor newMorph morph:
 		  (builder uiForAction: self inStep: editor model currentStep)
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> uiReference [
+
+	reference ifNotNil: [ ^ reference ].
+	^ path
+		ifNil: [ ReplayUIReference world ]
+		ifNotNil: [ ReplayUIReference morphicPath: path ]
 ]

@@ -311,6 +311,38 @@ ReplayUIManager >> overlay [
 	^ overlay
 ]
 
+{ #category : 'resolving' }
+ReplayUIManager >> resolve: aReference thenDo: foundBlock [
+
+	^ self
+		resolve: aReference
+		thenDo: foundBlock
+		onMissing: [ :error | error signal ]
+]
+
+{ #category : 'resolving' }
+ReplayUIManager >> resolve: aReference thenDo: foundBlock onMissing: missingBlock [
+
+	^ self resolver
+		resolve: aReference
+		thenDo: foundBlock
+		onMissing: missingBlock
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> resolver [
+
+	^ backend resolver
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> surfaceMorph [
+
+	^ backend
+		ifNil: [ managed ]
+		ifNotNil: [ backend surfaceMorph ]
+]
+
 { #category : 'managing UI' }
 ReplayUIManager >> syncManagedLayout [
 	"Keep managed content and overlay aligned with the root extent."
