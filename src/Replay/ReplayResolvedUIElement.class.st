@@ -147,6 +147,12 @@ ReplayResolvedUIElement >> runPressKey: aReplayPressKey [
 ]
 
 { #category : 'running' }
+ReplayResolvedUIElement >> runSelectText: aReplaySelectText [
+
+	^ backend runSelectText: aReplaySelectText on: self
+]
+
+{ #category : 'running' }
 ReplayResolvedUIElement >> runShortcut: aReplayShortcut [
 
 	^ backend runShortcut: aReplayShortcut on: self

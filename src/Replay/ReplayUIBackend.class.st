@@ -80,6 +80,17 @@ ReplayUIBackend >> runPressKey: aReplayPressKey on: aResolvedUI [
 ]
 
 { #category : 'running' }
+ReplayUIBackend >> runSelectText: aReplaySelectText on: aResolvedUI [
+
+	| native |
+	native := aResolvedUI nativeElement.
+	(aReplaySelectText canSelectTextIn: native) ifTrue: [
+		^ aReplaySelectText selectTextIn: native ].
+	aReplaySelectText selectTextIn:
+		(aResolvedUI morphRequiredFor: aReplaySelectText class displayName)
+]
+
+{ #category : 'running' }
 ReplayUIBackend >> runShortcut: aReplayShortcut on: aResolvedUI [
 
 	aReplayShortcut shortcutOn: aResolvedUI keyboardTarget

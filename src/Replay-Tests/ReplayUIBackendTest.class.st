@@ -461,6 +461,91 @@ ReplayUIBackendTest >> testResolvedUIElementKeyboardTargetUsesMorph [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testSelectTextActionDelegatesToResolvedUIBackend [
+
+	| backend action resolved |
+	backend := ReplayRecordingBackend new.
+	action := ReplaySelectText new.
+	action
+		startIndex: 2;
+		stopIndex: 5.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: ReplaySelectableTarget new
+		morph: Morph new.
+
+	action runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: backend lastInteraction equals: #selectText.
+	self assert: backend lastAction equals: action.
+	self assert: backend lastResolvedUI equals: resolved
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSelectTextBackendFallsBackToMorph [
+
+	| action morph resolved |
+	action := ReplaySelectText new
+		startIndex: 3;
+		stopIndex: 4;
+		yourself.
+	morph := ReplaySelectableTarget new.
+	resolved := ReplayResolvedUIElement
+		backend: ReplayUIBackend new
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: Object new
+		morph: morph.
+
+	action runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: morph selectionInterval equals: (3 to: 4)
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSelectTextBackendPrefersNativeElement [
+
+	| action native morph resolved |
+	action := ReplaySelectText new
+		startIndex: 2;
+		stopIndex: 5;
+		yourself.
+	native := ReplaySelectableTarget new.
+	morph := ReplaySelectableTarget new.
+	resolved := ReplayResolvedUIElement
+		backend: ReplayUIBackend new
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: native
+		morph: morph.
+
+	action runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: native selectionInterval equals: (2 to: 5).
+	self assert: morph selectionInterval isNil
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSelectTextNormalizesStopBeforeStart [
+
+	| action |
+	action := ReplaySelectText new
+		startIndex: 4;
+		stopIndex: 2;
+		yourself.
+	self assert: action selectionInterval equals: (4 to: 4)
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSelectTextRejectsUnsupportedTarget [
+
+	| action |
+	action := ReplaySelectText new.
+	self
+		should: [ action selectTextIn: Object new ]
+		raise: ReplayError
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testShortcutActionDelegatesToResolvedUIBackend [
 
 	| backend action resolved |
