@@ -21,6 +21,12 @@ ReplayType >> runOn: runner onUI: ui [
 	self typeOn: ui
 ]
 
+{ #category : 'running' }
+ReplayType >> runOn: runner resolvedUI: resolvedUI [
+
+	self typeOn: resolvedUI keyboardTarget
+]
+
 { #category : 'editing' }
 ReplayType >> settingsPresenterOn: editor [
 

@@ -167,6 +167,68 @@ ReplayUIBackendTest >> testOpenLabeledPreservesManagedContentExtent [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testResolvedUIElementClickTargetRequiresMorph [
+
+	| resolved |
+	resolved := ReplayResolvedUIElement
+		backend: ReplayUIBackend new
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: Object new
+		morph: nil.
+
+	self
+		should: [ resolved clickTarget ]
+		raise: ReplayMissingUIError
+		withExceptionDo: [ :error |
+			self assert: (error messageText includesSubstring: 'click').
+			self assert: error tag equals: resolved ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testResolvedUIElementFocusTargetFallsBackToMorph [
+
+	| morph resolved |
+	morph := Morph new.
+	resolved := ReplayResolvedUIElement
+		backend: ReplayUIBackend new
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: nil
+		morph: morph.
+
+	self assert: resolved focusTarget == morph
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testResolvedUIElementFocusTargetPrefersNativeElement [
+
+	| native morph resolved |
+	native := Morph new.
+	morph := Morph new.
+	resolved := ReplayResolvedUIElement
+		backend: ReplayUIBackend new
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: native
+		morph: morph.
+
+	self assert: resolved focusTarget == native
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testResolvedUIElementKeyboardTargetUsesMorph [
+
+	| native morph resolved |
+	native := Object new.
+	morph := Morph new.
+	resolved := ReplayResolvedUIElement
+		backend: ReplayUIBackend new
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: native
+		morph: morph.
+
+	self assert: resolved keyboardTarget == morph
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testSpecBackendResolvesNamedPresenterSemantically [
 
 	| presenter manager action runner |
@@ -218,6 +280,25 @@ ReplayUIBackendTest >> testSpecResolverReportsMissingSemanticNameImmediately [
 		onMissing: [ :error | capturedError := error ].
 
 	self assert: capturedError class equals: ReplayMissingUIError
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testTypeActionRequiresKeyboardTargetFromResolvedUI [
+
+	| action resolved |
+	action := ReplayType new.
+	action text: 'a'.
+	resolved := ReplayResolvedUIElement
+		backend: ReplayUIBackend new
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: Object new
+		morph: nil.
+
+	self
+		should: [ action runOn: ReplayRunner new resolvedUI: resolved ]
+		raise: ReplayMissingUIError
+		withExceptionDo: [ :error |
+			self assert: (error messageText includesSubstring: 'keyboard') ]
 ]
 
 { #category : 'tests' }

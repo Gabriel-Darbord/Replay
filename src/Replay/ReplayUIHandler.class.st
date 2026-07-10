@@ -228,12 +228,7 @@ ReplayUIHandler >> runOn: runner onUI: ui [
 { #category : 'running' }
 ReplayUIHandler >> runOn: runner resolvedUI: resolvedUI [
 
-	resolvedUI morph ifNil: [
-		ReplayMissingUIError new
-			messageText: 'Resolved UI element has no rendered Morph available.';
-			tag: resolvedUI;
-			signal ].
-	^ self runOn: runner onUI: resolvedUI morph
+	^ self runOn: runner onUI: (resolvedUI morphRequiredFor: self class displayName)
 ]
 
 { #category : 'running' }

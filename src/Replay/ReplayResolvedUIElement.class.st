@@ -49,10 +49,28 @@ ReplayResolvedUIElement >> boundsInSurface [
 	^ morph boundsIn: surface
 ]
 
+{ #category : 'running' }
+ReplayResolvedUIElement >> clickTarget [
+
+	^ self morphRequiredFor: 'click'
+]
+
+{ #category : 'running' }
+ReplayResolvedUIElement >> focusTarget [
+
+	^ nativeElement ifNil: [ morph ]
+]
+
 { #category : 'testing' }
 ReplayResolvedUIElement >> hasMorph [
 
 	^ morph notNil
+]
+
+{ #category : 'running' }
+ReplayResolvedUIElement >> keyboardTarget [
+
+	^ self morphRequiredFor: 'keyboard'
 ]
 
 { #category : 'accessing' }
@@ -65,6 +83,16 @@ ReplayResolvedUIElement >> morph [
 ReplayResolvedUIElement >> morph: aMorph [
 
 	morph := aMorph
+]
+
+{ #category : 'running' }
+ReplayResolvedUIElement >> morphRequiredFor: interactionName [
+
+	morph ifNotNil: [ ^ morph ].
+	ReplayMissingUIError new
+		messageText: 'Resolved UI element has no Morphic ' , interactionName , ' target.';
+		tag: self;
+		signal
 ]
 
 { #category : 'accessing' }

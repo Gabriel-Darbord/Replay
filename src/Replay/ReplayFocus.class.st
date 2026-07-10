@@ -25,7 +25,7 @@ ReplayFocus >> runOn: runner onUI: ui [
 ReplayFocus >> runOn: runner resolvedUI: resolvedUI [
 
 	| target |
-	target := resolvedUI nativeElement ifNil: [ resolvedUI morph ].
+	target := resolvedUI focusTarget.
 	target ifNil: [ ^ super runOn: runner resolvedUI: resolvedUI ].
 	target takeKeyboardFocus
 ]

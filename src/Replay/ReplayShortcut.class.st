@@ -45,6 +45,12 @@ ReplayShortcut >> runOn: runner onUI: ui [
 	self shortcutOn: ui
 ]
 
+{ #category : 'running' }
+ReplayShortcut >> runOn: runner resolvedUI: resolvedUI [
+
+	self shortcutOn: resolvedUI keyboardTarget
+]
+
 { #category : 'editing' }
 ReplayShortcut >> settingsPresenterOn: editor [
 
