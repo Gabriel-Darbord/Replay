@@ -32,6 +32,44 @@ ReplayUIBackendTest >> testClearAnnotationsActionRemovesOverlayMorphs [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testClickActionDelegatesToResolvedUIBackend [
+
+	| backend action resolved |
+	backend := ReplayRecordingBackend new.
+	action := ReplayClick new.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Button')
+		nativeElement: Object new
+		morph: Morph new.
+
+	action runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: backend lastInteraction equals: #click.
+	self assert: backend lastAction equals: action.
+	self assert: backend lastResolvedUI equals: resolved
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testFocusActionDelegatesToResolvedUIBackend [
+
+	| backend action resolved |
+	backend := ReplayRecordingBackend new.
+	action := ReplayFocus new.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: Object new
+		morph: Morph new.
+
+	action runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: backend lastInteraction equals: #focus.
+	self assert: backend lastAction equals: action.
+	self assert: backend lastResolvedUI equals: resolved
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testManagedMorphAndOverlayResizeWithRootWindow [
 
 	| manager morph resizedExtent window |
@@ -229,6 +267,50 @@ ReplayUIBackendTest >> testResolvedUIElementKeyboardTargetUsesMorph [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testShortcutActionDelegatesToResolvedUIBackend [
+
+	| backend action resolved |
+	backend := ReplayRecordingBackend new.
+	action := ReplayShortcut new.
+	action text: 's'.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Shortcut target')
+		nativeElement: Object new
+		morph: Morph new.
+
+	action runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: backend lastInteraction equals: #shortcut.
+	self assert: backend lastAction equals: action.
+	self assert: backend lastResolvedUI equals: resolved
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecBackendKeepsNonLeftButtonClickOnMorphicFallback [
+
+	| clicked button backend action resolved |
+	clicked := false.
+	button := SpButtonPresenter new.
+	button action: [ clicked := true ].
+	backend := ReplaySpecBackend presenter: button morph: nil.
+	action := ReplayClick new.
+	action flags: MouseEvent yellowButton.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Button')
+		nativeElement: button
+		morph: nil.
+
+	self
+		should: [ backend runClick: action on: resolved ]
+		raise: ReplayMissingUIError
+		withExceptionDo: [ :error |
+			self assert: (error messageText includesSubstring: 'click') ].
+	self deny: clicked
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testSpecBackendResolvesNamedPresenterSemantically [
 
 	| presenter manager action runner |
@@ -241,6 +323,26 @@ ReplayUIBackendTest >> testSpecBackendResolvesNamedPresenterSemantically [
 		manager openLabeled: 'Replay semantic resolver test'.
 		self shouldnt: [ action runOn: runner ] raise: Error ]
 		ensure: [ manager close ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecBackendRunsNativeButtonClick [
+
+	| clicked button backend action resolved |
+	clicked := false.
+	button := SpButtonPresenter new.
+	button action: [ clicked := true ].
+	backend := ReplaySpecBackend presenter: button morph: nil.
+	action := ReplayClick new.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Button')
+		nativeElement: button
+		morph: nil.
+
+	backend runClick: action on: resolved.
+
+	self assert: clicked
 ]
 
 { #category : 'tests' }
@@ -280,6 +382,26 @@ ReplayUIBackendTest >> testSpecResolverReportsMissingSemanticNameImmediately [
 		onMissing: [ :error | capturedError := error ].
 
 	self assert: capturedError class equals: ReplayMissingUIError
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testTypeActionDelegatesToResolvedUIBackend [
+
+	| backend action resolved |
+	backend := ReplayRecordingBackend new.
+	action := ReplayType new.
+	action text: 'abc'.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: Object new
+		morph: Morph new.
+
+	action runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: backend lastInteraction equals: #type.
+	self assert: backend lastAction equals: action.
+	self assert: backend lastResolvedUI equals: resolved
 ]
 
 { #category : 'tests' }

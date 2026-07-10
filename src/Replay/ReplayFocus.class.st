@@ -24,10 +24,7 @@ ReplayFocus >> runOn: runner onUI: ui [
 { #category : 'running' }
 ReplayFocus >> runOn: runner resolvedUI: resolvedUI [
 
-	| target |
-	target := resolvedUI focusTarget.
-	target ifNil: [ ^ super runOn: runner resolvedUI: resolvedUI ].
-	target takeKeyboardFocus
+	resolvedUI runFocus: self
 ]
 
 { #category : 'editing' }

@@ -42,6 +42,33 @@ ReplayUIBackend >> root [
 	^ self managedUI
 ]
 
+{ #category : 'running' }
+ReplayUIBackend >> runClick: aReplayClick on: aResolvedUI [
+
+	aReplayClick clickOn: aResolvedUI clickTarget
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runFocus: aReplayFocus on: aResolvedUI [
+
+	| target |
+	target := aResolvedUI focusTarget.
+	target ifNil: [ target := aResolvedUI morphRequiredFor: 'focus' ].
+	target takeKeyboardFocus
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runShortcut: aReplayShortcut on: aResolvedUI [
+
+	aReplayShortcut shortcutOn: aResolvedUI keyboardTarget
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runType: aReplayType on: aResolvedUI [
+
+	aReplayType typeOn: aResolvedUI keyboardTarget
+]
+
 { #category : 'accessing' }
 ReplayUIBackend >> semanticScriptReceiver [
 

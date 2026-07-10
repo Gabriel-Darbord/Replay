@@ -48,7 +48,7 @@ ReplayShortcut >> runOn: runner onUI: ui [
 { #category : 'running' }
 ReplayShortcut >> runOn: runner resolvedUI: resolvedUI [
 
-	self shortcutOn: resolvedUI keyboardTarget
+	resolvedUI runShortcut: self
 ]
 
 { #category : 'editing' }

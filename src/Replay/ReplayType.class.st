@@ -24,7 +24,7 @@ ReplayType >> runOn: runner onUI: ui [
 { #category : 'running' }
 ReplayType >> runOn: runner resolvedUI: resolvedUI [
 
-	self typeOn: resolvedUI keyboardTarget
+	resolvedUI runType: self
 ]
 
 { #category : 'editing' }

@@ -22,6 +22,16 @@ ReplaySpecBackend class >> presenter: aSpecPresenter morph: aMorph [
 		  yourself
 ]
 
+{ #category : 'testing' }
+ReplaySpecBackend >> canPerformNativeClickOn: aPresenter [
+
+	aPresenter ifNil: [ ^ false ].
+	^ (aPresenter isKindOf: SpButtonPresenter)
+		or: [ (aPresenter isKindOf: SpLinkPresenter)
+				or: [ (aPresenter isKindOf: SpToolbarButtonPresenter)
+						or: [ aPresenter isKindOf: SpToolbarToggleButtonPresenter ] ] ]
+]
+
 { #category : 'accessing' }
 ReplaySpecBackend >> managedPresenter [
 
@@ -75,6 +85,17 @@ ReplaySpecBackend >> resolver [
 ReplaySpecBackend >> root [
 
 	^ presenter
+]
+
+{ #category : 'running' }
+ReplaySpecBackend >> runClick: aReplayClick on: aResolvedUI [
+
+	| targetPresenter |
+	targetPresenter := aResolvedUI nativeElement.
+	(aReplayClick flags = MouseEvent redButton
+		and: [ self canPerformNativeClickOn: targetPresenter ])
+		ifTrue: [ targetPresenter performAction ]
+		ifFalse: [ super runClick: aReplayClick on: aResolvedUI ]
 ]
 
 { #category : 'accessing' }

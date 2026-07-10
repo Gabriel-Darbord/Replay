@@ -117,7 +117,7 @@ ReplayClick >> runOn: runner onUI: ui [
 { #category : 'running' }
 ReplayClick >> runOn: runner resolvedUI: resolvedUI [
 
-	self clickOn: resolvedUI clickTarget
+	resolvedUI runClick: self
 ]
 
 { #category : 'editing' }

@@ -127,3 +127,27 @@ ReplayResolvedUIElement >> reference: aReference [
 
 	reference := aReference
 ]
+
+{ #category : 'running' }
+ReplayResolvedUIElement >> runClick: aReplayClick [
+
+	^ backend runClick: aReplayClick on: self
+]
+
+{ #category : 'running' }
+ReplayResolvedUIElement >> runFocus: aReplayFocus [
+
+	^ backend runFocus: aReplayFocus on: self
+]
+
+{ #category : 'running' }
+ReplayResolvedUIElement >> runShortcut: aReplayShortcut [
+
+	^ backend runShortcut: aReplayShortcut on: self
+]
+
+{ #category : 'running' }
+ReplayResolvedUIElement >> runType: aReplayType [
+
+	^ backend runType: aReplayType on: self
+]
