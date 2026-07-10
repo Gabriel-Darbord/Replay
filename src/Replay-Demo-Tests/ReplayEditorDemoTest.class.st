@@ -18,6 +18,17 @@ ReplayEditorDemoTest >> testDemoScenarioRoundTripsThroughSton [
 ]
 
 { #category : 'tests' }
+ReplayEditorDemoTest >> testEditingStepAnnotatesScriptSourceField [
+
+	| annotation |
+	annotation := ReplayEditorDemo new editingStep actions
+		detect: [ :action |
+			(action isKindOf: ReplayAnnotate) and: [
+				action text = 'The selected Script action exposes an editable source field.' ] ].
+	self assert: annotation targetName equals: 'Action script'
+]
+
+{ #category : 'tests' }
 ReplayEditorDemoTest >> testReplayEditorExposesDemoSemanticTargets [
 
 	| editor missing |

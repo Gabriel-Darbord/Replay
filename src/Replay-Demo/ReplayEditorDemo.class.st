@@ -100,7 +100,7 @@ ReplayEditorDemo >> editingStep [
 		self clearAnnotationsAction.
 		self addScriptActionInEditor.
 		self annotate: 'Action list' text: 'A Script action was inserted into the current step.'.
-		self annotate: 'Action editor' text: 'The selected Script action exposes an editable source field.' }
+		self annotate: 'Action script' text: 'The selected Script action exposes an editable source field.' }
 ]
 
 { #category : 'configuration' }
