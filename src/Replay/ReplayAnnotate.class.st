@@ -42,8 +42,9 @@ ReplayAnnotate >> printOn: stream [
 { #category : 'running' }
 ReplayAnnotate >> runOn: runner onUI: ui [
 
-	runner manager addOverlay:
-		(ReplayAnnotation annotateMorph: ui label: self text)
+	self currentWorld defer: [
+		runner manager addOverlay:
+			(ReplayAnnotation annotateMorph: ui label: self text) ]
 ]
 
 { #category : 'editing' }

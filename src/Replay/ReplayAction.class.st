@@ -31,7 +31,11 @@ ReplayAction class >> actionsThatOpenUI [
 { #category : 'accessing' }
 ReplayAction class >> displayName [
 
-	^ name allButFirst: 6 "= 'Replay' size"
+	| className |
+	className := self name asString.
+	^ (className beginsWith: 'Replay')
+		ifTrue: [ className allButFirst: 6 ]
+		ifFalse: [ className ]
 ]
 
 { #category : 'testing' }
@@ -56,6 +60,13 @@ ReplayAction class >> shouldBeDropListElement [
 
 { #category : 'testing' }
 ReplayAction class >> shouldBeMenuItem [
+
+	^ false
+]
+
+{ #category : 'testing' }
+ReplayAction >> controlsRunnerContinuation [
+	"Answer whether this action will explicitly continue the runner later."
 
 	^ false
 ]

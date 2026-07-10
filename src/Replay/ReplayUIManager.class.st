@@ -9,6 +9,8 @@ Class {
 		'root',
 		'overlay',
 		'managed',
+		'managedPresenter',
+		'backend',
 		'editor',
 		'clickBlock'
 	],
@@ -18,49 +20,62 @@ Class {
 
 { #category : 'utilities' }
 ReplayUIManager class >> buildMorphFromSpec: aSpecPresenter [
-	"Utility method to build the Morph of a Spec presenter.
-	Basically inlining the relevant parts of `aSpecPresenter open`.
-	Plus a bit of customization with extents to work better with the editor.
-	
-	^ aSpecPresenter open close adapter widget"
+	"Build the Morphic content for a Spec presenter without embedding a nested Spec window."
 
 	| presenter |
 	aSpecPresenter isWindowPresenter
 		ifTrue: [ presenter := aSpecPresenter ]
-		ifFalse: [ "Make a window and conserve the extent if it was set"
+		ifFalse: [
 			presenter := aSpecPresenter asWindow.
 			presenter extent: aSpecPresenter extent ].
 	presenter extent ifNil: [ presenter extent: presenter initialExtent ].
-
 	^ SpBindings value: presenter application adapterBindings during: [
-		  | adapter widget container |
-		  adapter := presenter defaultLayout
-			             buildAdapterFor: presenter
-			             bindings: SpBindings value.
-		  presenter adapter: adapter.
-
-		  adapter widget extent: presenter extent.
-		  widget := presenter presenter buildWithLayout:
-			            presenter presenter layout.
-		  presenter presenter adapter applyStyle.
-		  container := adapter newContainerMorph.
-		  container layoutFrame: widget layoutFrame.
-		  container addMorphBack: widget.
-		  widget
-			  hResizing: #spaceFill;
-			  vResizing: #spaceFill.
-		  adapter model hasStatusBar ifTrue: [
-			  adapter addStatusBarTo: container ].
-		  adapter add: container toWindow: adapter widget.
-		  presenter updateTitle.
-
-		  adapter widget ]
+		| adapter widget container |
+		adapter := presenter defaultLayout
+			buildAdapterFor: presenter
+			bindings: SpBindings value.
+		presenter adapter: adapter.
+		adapter widget extent: presenter extent.
+		widget := presenter presenter buildWithLayout: presenter presenter layout.
+		presenter presenter adapter applyStyle.
+		container := adapter newContainerMorph.
+		container
+			layoutFrame: widget layoutFrame;
+			extent: presenter extent.
+		container addMorphBack: widget.
+		widget
+			hResizing: #spaceFill;
+			vResizing: #spaceFill.
+		adapter model hasStatusBar ifTrue: [ adapter addStatusBarTo: container ].
+		adapter add: container toWindow: adapter widget.
+		presenter updateTitle.
+		container delete.
+		container
+			hResizing: #spaceFill;
+			vResizing: #spaceFill;
+			extent: presenter extent;
+			layoutChanged;
+			doLayoutIn: container bounds.
+		container fullBounds.
+		container ]
 ]
 
 { #category : 'managing UI' }
 ReplayUIManager >> addOverlay: ui [
 
 	overlay addMorph: ui
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> backend [
+
+	^ backend
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> backend: aReplayUIBackend [
+
+	backend := aReplayUIBackend
 ]
 
 { #category : 'managing UI' }
@@ -133,30 +148,78 @@ ReplayUIManager >> hideOverlay [
 
 { #category : 'managing UI' }
 ReplayUIManager >> manage: aMorph [
-	"Set the UI to be managed"
+	"Set a Morphic UI to be managed."
 
-	root := Morph new color: Smalltalk ui theme windowColor.
+	^ self
+		  manage: aMorph
+		  usingBackend: (ReplayMorphicBackend on: aMorph)
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> manage: aMorph usingBackend: aReplayUIBackend [
+	"Set the UI backend and manage the morph in a full-window layout."
+
+	backend := aReplayUIBackend.
+	root := ReplayRootMorph new
+		manager: self;
+		color: Smalltalk ui theme windowColor;
+		changeProportionalLayout;
+		hResizing: #spaceFill;
+		vResizing: #spaceFill;
+		yourself.
 	managed := aMorph.
-	overlay := Morph new beTransparent.
-	root addMorph: managed.
-	root addMorph: overlay.
+	overlay := Morph new
+		beTransparent;
+		hResizing: #spaceFill;
+		vResizing: #spaceFill;
+		yourself.
+	root addMorph: managed fullFrame: LayoutFrame identity.
+	root addMorph: overlay fullFrame: LayoutFrame identity.
+	"Prevent direct interaction with the managed UI by catching all events."
+	#( mouseDown mouseMove mouseStillDown mouseUp mouseEnter mouseLeave mouseEnterDragging mouseLeaveDragging doubleClick ) do: [ :event |
+		overlay on: event send: #yourself to: overlay ].
+	^ self
+]
 
-	"Prevent direct interaction with the managed UI by catching all events"
-	#( mouseDown mouseMove mouseStillDown mouseUp mouseEnter mouseLeave
-	   mouseEnterDragging mouseLeaveDragging doubleClick ) do: [ :event |
-		overlay on: event send: #yourself to: overlay ]
+{ #category : 'managing UI' }
+ReplayUIManager >> managePresenter: aSpecPresenter [
+	"Manage a Spec presenter rendered as Morphic UI."
+
+	| morph |
+	morph := self class buildMorphFromSpec: aSpecPresenter.
+	^ self
+		  manage: morph
+		  usingBackend: (ReplaySpecBackend presenter: aSpecPresenter morph: morph)
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> managedPresenter [
+
+	^ backend
+		  ifNil: [ managedPresenter ]
+		  ifNotNil: [ backend managedPresenter ]
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> managedPresenter: aPresenter [
+	"Compatibility hook for tests and scripts that inject a presenter directly."
+
+	managedPresenter := aPresenter.
+	backend := ReplaySpecBackend presenter: aPresenter morph: managed
 ]
 
 { #category : 'accessing' }
 ReplayUIManager >> managedUI [
 
-	^ managed
+	^ backend
+		  ifNil: [ managed ]
+		  ifNotNil: [ backend managedUI ]
 ]
 
 { #category : 'accessing' }
 ReplayUIManager >> managerOfUI [
 
-	^ managed
+	^ self managedUI
 ]
 
 { #category : 'accessing' }
@@ -205,12 +268,39 @@ ReplayUIManager >> onClick: event onWrapper: morph [
 
 { #category : 'instance creation' }
 ReplayUIManager >> openLabeled: title [
-	"Open the managed UI element and cover it with the overlay"
+	"Open managed UI using its natural extent and default Morphic placement."
 
+	^ self
+		openLabeled: title
+		extent: nil
+		bounds: nil
+]
+
+{ #category : 'instance creation' }
+ReplayUIManager >> openLabeled: title extent: requestedExtent bounds: requestedBounds [
+	"Open managed UI and optionally control content extent and exact window bounds."
+
+	| targetExtent window frameDelta contentExtent |
+	targetExtent := requestedExtent ifNil: [
+		requestedBounds
+			ifNil: [ managed ifNil: [ root extent ] ifNotNil: [ managed extent ] ]
+			ifNotNil: [ requestedBounds extent ] ].
+	root extent: targetExtent.
 	root openInWindowLabeled: title.
+	window := root window.
+	window ifNotNil: [
+		frameDelta := window extent - root extent.
+		requestedBounds
+			ifNotNil: [
+				window bounds: requestedBounds.
+				contentExtent := (requestedBounds extent x - frameDelta x max: 1)
+					@ (requestedBounds extent y - frameDelta y max: 1).
+				root extent: contentExtent ]
+			ifNil: [
+				window extent: targetExtent + frameDelta.
+				root extent: targetExtent ] ].
 
-	self currentWorld defer: [ "We finally know the size of the managed UI"
-		overlay extent: managed extent ]
+	self currentWorld defer: [ self syncManagedLayout ]
 ]
 
 { #category : 'accessing' }
@@ -219,6 +309,27 @@ ReplayUIManager >> overlay [
 	It also serves as a canvas for adding ui on top."
 
 	^ overlay
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> syncManagedLayout [
+	"Keep managed content and overlay aligned with the root extent."
+
+	| targetExtent |
+	(root isNil or: [ managed isNil or: [ overlay isNil ] ]) ifTrue: [
+		^ self ].
+	targetExtent := root extent.
+	targetExtent isZero ifTrue: [ ^ self ].
+	managed extent: targetExtent.
+	overlay extent: targetExtent.
+	root layoutChanged.
+	root doLayoutIn: root bounds.
+	managed layoutChanged.
+	managed doLayoutIn: managed bounds.
+	managed fullBounds.
+	overlay layoutChanged.
+	overlay doLayoutIn: overlay bounds.
+	^ self
 ]
 
 { #category : 'accessing' }

@@ -30,60 +30,21 @@ ReplayUIHandler class >> shouldBeMenuItem [
 	^ true
 ]
 
-{ #category : 'enumerating' }
-ReplayUIHandler >> findElementIn: aMorph at: index deferCount: count thenDo: aBlock [
-	"Asynchronously wait for the Morphs to be built to find the target element"
+{ #category : 'testing' }
+ReplayUIHandler >> controlsRunnerContinuation [
 
-	(count > 0 and: [ count \\ 5 = 0 ]) ifTrue: [ "Prevent infinite loops.
-		If you see this warning, the UI is taking suspiciously long to build.
-		When you're reading this, it should be loaded, or the element does not exist."
-		Warning signal:
-			'Could not find target within 5 UI cycles. Try again?' ].
-
-	(aMorph class == ClyQueryViewMorph and: [ aMorph areItemsLoaded not ])
-		ifTrue: [ "This morph works asynchronously, so we have to dance with it"
-			^ self currentWorld defer: [
-				  [ "Fork to avoid blocking the UI process"
-				  self
-					  findElementIn: aMorph
-					  at: index
-					  deferCount: count + 1
-					  thenDo: aBlock ] forkAt: thisProcess priority - 1 ] ].
-
-	aMorph submorphs
-		ifNotEmpty: [ :submorphs |
-			| element |
-			element := submorphs at: (path at: index).
-			index = path size
-				ifTrue: [ "Found the target, try to wait for it to be drawn"
-					self currentWorld defer: [ aBlock value: element ] ]
-				ifFalse: [ "Element at index is present, continue down the path"
-					self
-						findElementIn: element
-						at: index + 1
-						deferCount: 0
-						thenDo: aBlock ] ]
-		ifEmpty: [ "Retry the same element on the next UI cycle"
-			self currentWorld defer: [
-				[ "Fork to avoid blocking the UI process"
-				self
-					findElementIn: aMorph
-					at: index
-					deferCount: count + 1
-					thenDo: aBlock ] forkAt: thisProcess priority - 1 ] ]
+	^ true
 ]
 
 { #category : 'enumerating' }
 ReplayUIHandler >> findElementIn: aMorph thenDo: aBlock [
-	"Asynchronously wait for the Morph to be built and then find the target element"
+	"Asynchronously wait for the Morph to be built and then find the target element."
 
-	path ifEmpty: [ ^ aBlock value: aMorph ].
-	[
-	self
-		findElementIn: aMorph
-		at: 1
-		deferCount: 0
-		thenDo: aBlock ] forkAt: thisProcess priority - 1
+	^ ReplayUIPathResolver
+		  findPath: (path ifNil: [ #(  ) ])
+		  in: aMorph
+		  thenDo: aBlock
+		  onMissing: [ :error | error signal ]
 ]
 
 { #category : 'editing' }
@@ -238,16 +199,14 @@ ReplayUIHandler >> pathWorldPresenterOn: editor [
 
 { #category : 'running' }
 ReplayUIHandler >> runOn: runner [
-	"Has control of runner continuation"
+	"Has control of runner continuation."
 
 	path ifNil: [ ^ self runWithoutPathOn: runner ].
 
 	self findElementIn: runner manager managedUI thenDo: [ :ui |
 		self runOn: runner onUI: ui.
-
-		"Await UI process before continuing"
-		self currentWorld defer: [
-			[ runner nextAction ] forkAt: thisProcess priority - 1 ] ]
+		"Let Morphic process effects from this action before continuing."
+		self currentWorld defer: [ runner nextAction ] ]
 ]
 
 { #category : 'running' }

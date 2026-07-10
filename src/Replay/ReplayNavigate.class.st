@@ -120,6 +120,18 @@ ReplayNavigate >> runOn: runner [
 ]
 
 { #category : 'accessing' }
+ReplayNavigate >> skip [
+
+	^ skip ifNil: [ skip := false ]
+]
+
+{ #category : 'accessing' }
+ReplayNavigate >> skip: aBoolean [
+
+	skip := aBoolean
+]
+
+{ #category : 'accessing' }
 ReplayNavigate >> text [
 
 	^ text ifNil: [ text := 'Proceed?' ]

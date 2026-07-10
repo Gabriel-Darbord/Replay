@@ -36,6 +36,7 @@ ReplayEditor class >> onSton: aScenarioSTONString [
 { #category : 'instance creation' }
 ReplayEditor class >> open [
 
+	<script>
 	^ self new open
 ]
 

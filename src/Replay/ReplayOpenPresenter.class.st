@@ -49,6 +49,20 @@ ReplayOpenPresenter >> helpPresenterOn: editor aboutScript: error [
 		  yourself
 ]
 
+{ #category : 'managing UI' }
+ReplayOpenPresenter >> presenterOn: runner [
+	"Evaluate script to obtain a Spec presenter."
+
+	| presenter |
+	presenter := Smalltalk compiler
+		             receiver: runner;
+		             isScripting: true;
+		             evaluate: self script.
+	(presenter isNil or: [ (presenter isKindOf: SpAbstractPresenter) not ])
+		ifTrue: [ self unexpectedResult: presenter ].
+	^ presenter
+]
+
 { #category : 'printing' }
 ReplayOpenPresenter >> printOn: stream [
 
@@ -75,20 +89,18 @@ ReplayOpenPresenter >> settingsViewName [
 	^ 'Presenter settings'
 ]
 
+{ #category : 'running' }
+ReplayOpenPresenter >> uiManagerOn: runner [
+
+	^ ReplayUIManager new managePresenter: (self presenterOn: runner)
+]
+
 { #category : 'managing UI' }
 ReplayOpenPresenter >> uiOn: runner [
-	"Evaluate the script to obtain a Spec presenter"
+	"Evaluate script to obtain a Spec presenter and answer its Morph.
+	Kept for compatibility; uiManagerOn: preserves the presenter for semantic actions."
 
-	| presenter |
-	presenter := Smalltalk compiler
-		             receiver: runner;
-		             isScripting: true;
-		             evaluate: self script.
-
-	(presenter isNil or: [ (presenter isKindOf: SpAbstractPresenter) not ])
-		ifTrue: [ self unexpectedResult: presenter ].
-
-	^ ReplayUIManager buildMorphFromSpec: presenter
+	^ ReplayUIManager buildMorphFromSpec: (self presenterOn: runner)
 ]
 
 { #category : 'error handling' }

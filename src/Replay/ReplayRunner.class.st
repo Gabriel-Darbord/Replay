@@ -61,6 +61,7 @@ ReplayRunner >> manager: aReplayUIManager [
 ReplayRunner >> nextAction [
 
 	| step |
+	actionIndex ifNil: [ ^ self ].
 	actionIndex := actionIndex + 1.
 	step := self currentStep.
 
@@ -105,7 +106,7 @@ ReplayRunner >> runAction [
 
 	action runOn: self.
 
-	action isUIHandler ifFalse: [ "UI handlers have continuation control"
+	action controlsRunnerContinuation ifFalse: [
 		self nextAction ]
 ]
 
@@ -130,7 +131,9 @@ ReplayRunner >> scenario: aScenario [
 
 { #category : 'running' }
 ReplayRunner >> stop [
-	"End the scenario, can happen before its last step"
+	"End the scenario, can happen before its last step."
 
+	stepIndex := nil.
+	actionIndex := nil.
 	uiManager ifNotNil: [ uiManager close ]
 ]

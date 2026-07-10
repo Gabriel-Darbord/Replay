@@ -12,5 +12,8 @@ BaselineOfReplay >> baseline: spec [
 	spec for: #common do: [
 		spec
 			package: 'Replay';
-			package: 'Replay-Tests' with: [ spec requires: 'Replay' ] ]
+			package: 'Replay-Tests' with: [ spec requires: 'Replay' ].
+		spec group: 'core' with: #( 'Replay' ).
+		spec group: 'tests' with: #( 'Replay-Tests' ).
+		spec group: 'default' with: #( 'core' ) ]
 ]
