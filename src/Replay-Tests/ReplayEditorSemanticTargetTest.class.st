@@ -21,15 +21,18 @@ ReplayEditorSemanticTargetTest >> testBrowseTargetsAreRegistered [
 	editor := self newEditor.
 	ReplayBrowseClass new settingsPresenterOn: editor.
 	self assert: (editor replayPresenterAt: 'Browse class target' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action extent width' ifAbsent: [ nil ]) notNil.
 
 	editor clearReplayPresenterTargets.
 	ReplayBrowsePackage new settingsPresenterOn: editor.
 	self assert: (editor replayPresenterAt: 'Browse package target' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action bounds left' ifAbsent: [ nil ]) notNil.
 
 	editor clearReplayPresenterTargets.
 	ReplayBrowseMethod new settingsPresenterOn: editor.
 	self assert: (editor replayPresenterAt: 'Browse method browser' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Browse method target' ifAbsent: [ nil ]) notNil
+	self assert: (editor replayPresenterAt: 'Browse method target' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action clear placement' ifAbsent: [ nil ]) notNil
 ]
 
 { #category : 'tests' }
@@ -47,6 +50,42 @@ ReplayEditorSemanticTargetTest >> testFlagTargetsAreRegistered [
 	self assert: (editor replayPresenterAt: 'Action shift' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Shortcut shift' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Action alt option' ifAbsent: [ nil ]) notNil
+]
+
+{ #category : 'tests' }
+ReplayEditorSemanticTargetTest >> testOpenPlacementDimensionSetters [
+
+	| action |
+	action := ReplayOpenPresenter new.
+	action extentWidth: 1083.
+	action extentHeight: 532.
+	self assert: action extent equals: 1083 @ 532.
+
+	action boundsLeft: 10.
+	action boundsTop: 20.
+	action boundsRight: 300.
+	action boundsBottom: 400.
+	self assert: action bounds equals: (10 @ 20 corner: 300 @ 400).
+
+	action clearPlacement.
+	self assert: action extent isNil.
+	self assert: action bounds isNil
+]
+
+{ #category : 'tests' }
+ReplayEditorSemanticTargetTest >> testOpenPlacementTargetsAreRegistered [
+
+	| editor |
+	editor := self newEditor.
+	ReplayOpenPresenter new settingsPresenterOn: editor.
+	self assert: (editor replayPresenterAt: 'Action extent width' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Open Presenter extent width' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action extent height' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action bounds left' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action bounds top' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action bounds right' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action bounds bottom' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action clear placement' ifAbsent: [ nil ]) notNil
 ]
 
 { #category : 'tests' }

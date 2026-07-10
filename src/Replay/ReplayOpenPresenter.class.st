@@ -76,11 +76,14 @@ ReplayOpenPresenter >> printOn: stream [
 ReplayOpenPresenter >> settingsPresenterOn: editor [
 
 	^ editor newPresenter
-		  layout: (self
-				   scriptPresenterOn: editor
-				   labeled:
-					   'Write the script that creates and returns the Spec presenter:');
-		  yourself
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self
+						scriptPresenterOn: editor
+						labeled: 'Write the script that creates and returns the Spec presenter:');
+				add: (self placementPresenterOn: editor) expand: false;
+				yourself);
+		yourself
 ]
 
 { #category : 'accessing' }

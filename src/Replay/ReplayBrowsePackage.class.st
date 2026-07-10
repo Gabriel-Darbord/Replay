@@ -30,7 +30,13 @@ ReplayBrowsePackage >> settingsPresenterOn: editor [
 	target
 		ifNil: [ presenter selectFirst ]
 		ifNotNil: [ presenter selectItem: self targetPackage scrollToSelection: true ].
-	^ presenter
+	^ editor newPresenter
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: presenter;
+				add: (self placementPresenterOn: editor) expand: false;
+				yourself);
+		yourself
 ]
 
 { #category : 'accessing' }

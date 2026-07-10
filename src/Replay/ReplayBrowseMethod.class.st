@@ -31,7 +31,13 @@ ReplayBrowseMethod >> settingsPresenterOn: editor [
 	methodList whenSelectedDo: [ :aMethod |
 		self targetMethod: aMethod.
 		editor actions rebuildLayout ].
-	^ presenter
+	^ editor newPresenter
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: presenter;
+				add: (self placementPresenterOn: editor) expand: false;
+				yourself);
+		yourself
 ]
 
 { #category : 'accessing' }
