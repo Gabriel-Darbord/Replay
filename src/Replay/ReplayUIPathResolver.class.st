@@ -226,8 +226,7 @@ ReplayUIPathResolver >> root: aMorph [
 { #category : 'resolving' }
 ReplayUIPathResolver >> scheduleAttempt [
 
-	self currentWorld defer: [ self attemptResolve ].
-	^ self
+	self currentWorld defer: [ self attemptResolve ]
 ]
 
 { #category : 'testing' }
