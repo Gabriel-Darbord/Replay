@@ -21,6 +21,31 @@ ReplayScenarioSerializationTest >> roundTripAction: anAction [
 ]
 
 { #category : 'tests' }
+ReplayScenarioSerializationTest >> testNavigatePlacementRoundTripsThroughSton [
+
+	| scenario positionedStep boundedStep copy positionedNavigation boundedNavigation |
+	scenario := ReplayScenario new.
+	positionedStep := ReplayStep new.
+	positionedStep navigation
+		position: 12 @ 34;
+		extent: 320 @ 140.
+	scenario addStep: positionedStep.
+	boundedStep := ReplayStep new.
+	boundedStep navigation bounds: (50 @ 70 extent: 360 @ 150).
+	scenario addStep: boundedStep.
+
+	copy := STON fromString: (STON toString: scenario).
+	positionedNavigation := copy steps first navigation.
+	boundedNavigation := copy steps second navigation.
+	self assert: positionedNavigation position equals: 12 @ 34.
+	self assert: positionedNavigation extent equals: 320 @ 140.
+	self assert: positionedNavigation bounds isNil.
+	self assert: boundedNavigation bounds equals: (50 @ 70 extent: 360 @ 150).
+	self assert: boundedNavigation position isNil.
+	self assert: boundedNavigation extent isNil
+]
+
+{ #category : 'tests' }
 ReplayScenarioSerializationTest >> testOpenPlacementRoundTripsThroughSton [
 
 	| action copy |

@@ -36,6 +36,48 @@ ReplayRunnerTest >> testDelayActionPrintsConfiguredSeconds [
 ]
 
 { #category : 'tests' }
+ReplayRunnerTest >> testNavigateActionEditionPresenterBuilds [
+
+	| action presenter |
+	action := ReplayNavigate new.
+	presenter := action editionPresenterOn: ReplayEditor new.
+
+	self assert: presenter notNil
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testNavigateBoundsOverridePositionAndExtent [
+
+	| action window requestedBounds |
+	requestedBounds := 50 @ 70 extent: 360 @ 150.
+	action := ReplayNavigate new
+		position: 12 @ 34;
+		extent: 320 @ 140;
+		bounds: requestedBounds;
+		yourself.
+	window := SpPresenter new asDialogWindow.
+	action applyPlacementTo: window.
+	self assert: action position isNil.
+	self assert: action extent isNil.
+	self assert: window initialPosition equals: requestedBounds origin.
+	self assert: window initialExtent equals: requestedBounds extent
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testNavigatePlacementAppliesPositionAndExtent [
+
+	| action window |
+	action := ReplayNavigate new
+		position: 12 @ 34;
+		extent: 320 @ 140;
+		yourself.
+	window := SpPresenter new asDialogWindow.
+	action applyPlacementTo: window.
+	self assert: window initialPosition equals: 12 @ 34.
+	self assert: window initialExtent equals: 320 @ 140
+]
+
+{ #category : 'tests' }
 ReplayRunnerTest >> testNextActionAfterStopDoesNothing [
 
 	| scenario step runner |

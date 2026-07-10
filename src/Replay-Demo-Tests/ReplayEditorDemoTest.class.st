@@ -43,8 +43,9 @@ ReplayEditorDemoTest >> testScenarioEditsCurrentActionScriptField [
 { #category : 'tests' }
 ReplayEditorDemoTest >> testScenarioStructure [
 
-	| scenario |
+	| scenario expectedNavigationPosition |
 	scenario := ReplayEditorDemo scenario.
+	expectedNavigationPosition := ReplayEditorDemo new navigationPosition.
 	self assert: scenario title equals: 'Replay Editor Feature Tour'.
 	self assert: scenario steps size equals: 7.
 	self assert: (scenario steps first actions anySatisfy: [ :action | action isKindOf: ReplayAttachUI ]).
@@ -58,7 +59,11 @@ ReplayEditorDemoTest >> testScenarioStructure [
 		step actions anySatisfy: [ :action | action isKindOf: ReplayType ] ]).
 	self assert: (scenario steps noneSatisfy: [ :step |
 		step actions anySatisfy: [ :action | action isKindOf: ReplayDelay ] ]).
-	self assert: (scenario steps noneSatisfy: [ :step | step navigation skip ])
+	self assert: (scenario steps noneSatisfy: [ :step | step navigation skip ]).
+	self assert: (scenario steps allSatisfy: [ :step |
+		step navigation position = expectedNavigationPosition ]).
+	self assert: (scenario steps allSatisfy: [ :step | step navigation extent isNil ]).
+	self assert: (scenario steps allSatisfy: [ :step | step navigation bounds isNil ])
 ]
 
 { #category : 'tests' }
@@ -71,4 +76,15 @@ ReplayEditorDemoTest >> testScriptActionRunsWithRunnerAsReceiver [
 		yourself.
 	action runOn: runner.
 	self assert: runner focus equals: #scriptRan
+]
+
+{ #category : 'tests' }
+ReplayEditorDemoTest >> testSetupEditorActionPositionsWindowWithoutChangingExtent [
+
+	| action script |
+	action := ReplayEditorDemo new setupEditorAction.
+	script := action script.
+	self assert: (script includesSubstring: 'initialPosition:').
+	self assert: (script includesSubstring: ReplayEditorDemo new editorPosition storeString).
+	self deny: (script includesSubstring: 'initialExtent:')
 ]

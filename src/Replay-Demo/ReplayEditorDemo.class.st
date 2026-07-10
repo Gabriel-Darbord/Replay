@@ -103,6 +103,12 @@ ReplayEditorDemo >> editingStep [
 		self annotate: 'Action editor' text: 'The selected Script action exposes an editable source field.' }
 ]
 
+{ #category : 'configuration' }
+ReplayEditorDemo >> editorPosition [
+
+	^ 20 @ 40
+]
+
 { #category : 'steps' }
 ReplayEditorDemo >> keyboardStep [
 
@@ -110,6 +116,12 @@ ReplayEditorDemo >> keyboardStep [
 		self clearAnnotationsAction.
 		self annotate: 'Action chooser' text: 'Keyboard actions can drive focused widgets, such as moving through this chooser.'.
 		self pressDownInActionChooser }
+]
+
+{ #category : 'configuration' }
+ReplayEditorDemo >> navigationPosition [
+
+	^ 40 @ 620
 ]
 
 { #category : 'actions' }
@@ -199,7 +211,7 @@ ReplayEditorDemo >> selectTextIn: targetName from: startIndex to: stopIndex [
 { #category : 'actions' }
 ReplayEditorDemo >> setupEditorAction [
 
-	^ self script: '| scenario editor |
+	^ self script: '| scenario editor window |
 scenario := ReplayScenario new
 	title: ''Scenario edited by Replay'';
 	description: ''This small scenario is the target used by the Replay editor demo.'';
@@ -207,7 +219,9 @@ scenario := ReplayScenario new
 scenario addStep: ReplayStep new.
 editor := ReplayEditor on: scenario.
 self focus: editor.
-editor open'
+window := editor asWindow.
+window initialPosition: ', self editorPosition storeString, '.
+window open'
 ]
 
 { #category : 'building' }
@@ -226,6 +240,7 @@ ReplayEditorDemo >> stepNamed: aString with: actions [
 	actions do: [ :action | step addAction: action ].
 	step navigation
 		text: aString;
+		position: self navigationPosition;
 		skip: false.
 	^ step
 ]
