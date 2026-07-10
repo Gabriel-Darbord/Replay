@@ -175,6 +175,19 @@ ReplayUIBackendTest >> testCloseAttachedMorphManagerRemovesOnlyReplayOverlay [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testCloseUIActionClearsRunnerManager [
+
+	| runner manager |
+	runner := ReplayRunner new.
+	manager := ReplayUIManager new manage: (Morph new extent: 100 @ 50); yourself.
+	runner manager: manager.
+
+	ReplayCloseUI new runOn: runner.
+
+	self assert: runner manager isNil
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testFocusActionDelegatesToResolvedUIBackend [
 
 	| backend action resolved |
@@ -746,6 +759,17 @@ ReplayUIBackendTest >> testSpecResolverResolvesNativeSelectTextBeforeMorphExists
 	self deny: resolved hasMorph.
 	action runOn: ReplayRunner new resolvedUI: resolved.
 	self assert: presenter field selectionInterval equals: (1 to: 4)
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecificTargetUIActionWithoutManagerRaisesMissingUI [
+
+	| action |
+	action := ReplayFocus new.
+	action targetNamed: 'Field'.
+	self
+		should: [ action runOn: ReplayRunner new ]
+		raise: ReplayMissingUIError
 ]
 
 { #category : 'tests' }

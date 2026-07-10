@@ -95,6 +95,15 @@ ReplayUIHandler >> isUIHandler [
 	^ true
 ]
 
+{ #category : 'error handling' }
+ReplayUIHandler >> missingManagerFor: runner [
+
+	ReplayMissingUIError new
+		messageText: 'No Replay UI is available for target ', self uiReference printString, '.';
+		tag: runner;
+		signal
+]
+
 { #category : 'editing' }
 ReplayUIHandler >> missingTargetPresenterOn: editor [
 
@@ -138,11 +147,13 @@ ReplayUIHandler >> reference: aReplayUIReference [
 ReplayUIHandler >> runOn: runner [
 	"Has control over runner continuation."
 
-	| uiReference |
+	| uiReference manager |
 	uiReference := self uiReference.
 	uiReference isWorld ifTrue: [ ^ self runWithoutPathOn: runner ].
 
-	runner manager
+	manager := runner manager.
+	manager ifNil: [ ^ self missingManagerFor: runner ].
+	manager
 		resolve: uiReference
 		forAction: self
 		thenDo: [ :resolved |

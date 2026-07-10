@@ -25,5 +25,7 @@ ReplayCloseUI >> isUICloser [
 { #category : 'running' }
 ReplayCloseUI >> runOn: runner [
 
-	runner manager ifNotNil: [ :manager | manager close ]
+	runner manager ifNotNil: [ :manager |
+		manager close.
+		runner manager: nil ]
 ]
