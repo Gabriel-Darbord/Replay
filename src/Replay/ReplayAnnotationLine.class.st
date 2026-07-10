@@ -27,9 +27,3 @@ ReplayAnnotationLine >> morphicLayerNumber [
 
 	^ ReplayAnnotation morphicLayerNumber
 ]
-
-{ #category : 'accessing' }
-ReplayAnnotationLine >> wantsToBeTopmost [
-
-	^ true
-]

@@ -64,9 +64,3 @@ ReplayAnnotationLabel >> overlay [
 
 	^ submorphs at: 1
 ]
-
-{ #category : 'accessing' }
-ReplayAnnotationLabel >> wantsToBeTopmost [
-
-	^ true
-]

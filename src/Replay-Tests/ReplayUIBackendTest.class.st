@@ -9,6 +9,78 @@ Class {
 }
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testAddingLabeledAnnotationToNonWorldOverlayDoesNotFail [
+
+	| root target manager annotation |
+	root := Morph new extent: 300 @ 200.
+	target := Morph new bounds: (10 @ 10 extent: 80 @ 40).
+	root addMorph: target.
+	manager := ReplayUIManager new attachTo: target.
+	annotation := ReplayAnnotation annotate: target bounds label: 'Detached annotation'.
+
+	self shouldnt: [ manager addOverlay: annotation ] raise: Error.
+	self deny: annotation label isInWorld.
+	manager close
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAnnotationLabelStaysInsideVisibleWorldNearRightEdge [
+
+	| worldBounds root manager annotation targetBounds |
+	worldBounds := World visibleClearArea.
+	root := Morph new
+		bounds: ((worldBounds right - 180) @ (worldBounds top + 40) extent: 160 @ 120);
+		yourself.
+	root openInWorld.
+	manager := ReplayUIManager new attachTo: root.
+	targetBounds := 100 @ 20 extent: 50 @ 40.
+	annotation := ReplayAnnotation annotate: targetBounds label: 'Right edge annotation'.
+
+	[
+		manager addOverlay: annotation.
+		self assert: annotation label bounds right <= worldBounds right.
+		self assert: annotation label bounds left >= worldBounds left.
+		self deny: (annotation label bounds intersects: annotation targetBoundsInWorld) ]
+		ensure: [
+			manager close.
+			root delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAnnotationLabelsAndLinesAreNotWorldTopmost [
+
+	self deny: ReplayAnnotationLabel new wantsToBeTopmost.
+	self deny: ReplayAnnotationLine new wantsToBeTopmost
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAnnotationLayoutAvoidsSiblingLabelOverlap [
+
+	| root manager firstAnnotation secondAnnotation |
+	root := Morph new
+		bounds: (100 @ 100 extent: 400 @ 260);
+		yourself.
+	root openInWorld.
+	manager := ReplayUIManager new attachTo: root.
+	firstAnnotation := ReplayAnnotation
+		annotate: (20 @ 20 extent: 90 @ 40)
+		label: 'First annotation label'.
+	secondAnnotation := ReplayAnnotation
+		annotate: (20 @ 70 extent: 90 @ 40)
+		label: 'Second annotation label'.
+
+	[
+		manager addOverlay: firstAnnotation.
+		manager addOverlay: secondAnnotation.
+		self deny: (firstAnnotation label bounds intersects: secondAnnotation label bounds).
+		self deny: (firstAnnotation label bounds intersects: firstAnnotation targetBoundsInWorld).
+		self deny: (secondAnnotation label bounds intersects: secondAnnotation targetBoundsInWorld) ]
+		ensure: [
+			manager close.
+			root delete ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testAttachToMorphWithoutOwnerFails [
 
 	| target |

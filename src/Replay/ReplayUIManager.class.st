@@ -64,7 +64,33 @@ ReplayUIManager class >> buildMorphFromSpec: aSpecPresenter [
 { #category : 'managing UI' }
 ReplayUIManager >> addOverlay: ui [
 
-	overlay ifNotNil: [ overlay addMorph: ui ]
+	overlay ifNotNil: [
+		overlay addMorph: ui.
+		self layoutAnnotations ]
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> annotationLabelMargin [
+
+	^ 20
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> annotationLayoutBounds [
+
+	| world |
+	overlay ifNil: [ ^ 0 @ 0 corner: 0 @ 0 ].
+	world := overlay world.
+	world ifNil: [ ^ overlay bounds ].
+	^ world visibleClearArea
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> annotationsWithLabels [
+
+	overlay ifNil: [ ^ #() ].
+	^ overlay submorphs select: [ :each |
+		(each isKindOf: ReplayAnnotation) and: [ each hasLabel ] ]
 ]
 
 { #category : 'managing UI' }
@@ -125,6 +151,41 @@ ReplayUIManager >> backend: aReplayUIBackend [
 	backend := aReplayUIBackend
 ]
 
+{ #category : 'annotation layout' }
+ReplayUIManager >> bestLabelBoundsFor: anAnnotation avoiding: placedBounds [
+
+	| layoutBounds targetBounds bestBounds bestScore candidates |
+	layoutBounds := self annotationLayoutBounds.
+	targetBounds := anAnnotation targetBoundsInWorld.
+	candidates := self labelCandidatesFor: anAnnotation.
+	candidates withIndexDo: [ :rawBounds :index |
+		| candidateBounds score |
+		candidateBounds := self clampRectangle: rawBounds within: layoutBounds.
+		score := self
+			scoreLabelBounds: candidateBounds
+			rawBounds: rawBounds
+			target: targetBounds
+			avoiding: placedBounds
+			preference: index.
+		(bestScore isNil or: [ score < bestScore ]) ifTrue: [
+			bestScore := score.
+			bestBounds := candidateBounds ] ].
+	^ bestBounds
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> clampRectangle: aRectangle within: containerBounds [
+
+	| x y |
+	containerBounds width >= aRectangle width
+		ifTrue: [ x := (aRectangle left max: containerBounds left) min: containerBounds right - aRectangle width ]
+		ifFalse: [ x := containerBounds left ].
+	containerBounds height >= aRectangle height
+		ifTrue: [ y := (aRectangle top max: containerBounds top) min: containerBounds bottom - aRectangle height ]
+		ifFalse: [ y := containerBounds top ].
+	^ x @ y extent: aRectangle extent
+]
+
 { #category : 'managing UI' }
 ReplayUIManager >> clearOverlay [
 
@@ -151,6 +212,12 @@ ReplayUIManager >> close [
 		ifFalse: [
 			overlay ifNotNil: [ overlay delete ].
 			overlay := nil ]
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> distanceFrom: firstPoint to: secondPoint [
+
+	^ (firstPoint x - secondPoint x) abs + (firstPoint y - secondPoint y) abs
 ]
 
 { #category : 'accessing' }
@@ -204,6 +271,41 @@ ReplayUIManager >> installBlockingHandlersOn: aMorph [
 
 	#( mouseDown mouseMove mouseStillDown mouseUp mouseEnter mouseLeave mouseEnterDragging mouseLeaveDragging doubleClick ) do: [ :event |
 		aMorph on: event send: #yourself to: aMorph ]
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> labelCandidatesFor: anAnnotation [
+
+	| target extent margin centeredX centeredY |
+	target := anAnnotation targetBoundsInWorld.
+	extent := anAnnotation label extent.
+	margin := self annotationLabelMargin.
+	centeredX := target center x - (extent x / 2).
+	centeredY := target center y - (extent y / 2).
+	^ {
+		(target right + margin @ centeredY extent: extent).
+		(target left - extent x - margin @ centeredY extent: extent).
+		(centeredX @ (target bottom + margin) extent: extent).
+		(centeredX @ (target top - extent y - margin) extent: extent).
+		(target right + margin @ (target bottom + margin) extent: extent).
+		(target right + margin @ (target top - extent y - margin) extent: extent).
+		(target left - extent x - margin @ (target bottom + margin) extent: extent).
+		(target left - extent x - margin @ (target top - extent y - margin) extent: extent) }
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> layoutAnnotations [
+
+	| placedBounds |
+	placedBounds := OrderedCollection new.
+	self annotationsWithLabels do: [ :annotation |
+		| bestBounds |
+		annotation ensureLabelInWorld.
+		annotation label isInWorld ifTrue: [
+			bestBounds := self bestLabelBoundsFor: annotation avoiding: placedBounds.
+			annotation placeLabelAt: bestBounds origin.
+			annotation step.
+			placedBounds add: annotation label bounds ] ]
 ]
 
 { #category : 'managing UI' }
@@ -425,6 +527,19 @@ ReplayUIManager >> resolve: aReference thenDo: foundBlock onMissing: missingBloc
 ReplayUIManager >> resolver [
 
 	^ backend resolver
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> scoreLabelBounds: candidateBounds rawBounds: rawBounds target: targetBounds avoiding: placedBounds preference: preferenceIndex [
+
+	| score |
+	score := preferenceIndex * 10.
+	score := score + ((self distanceFrom: rawBounds origin to: candidateBounds origin) * 100).
+	(candidateBounds intersects: targetBounds) ifTrue: [ score := score + 100000 ].
+	placedBounds do: [ :each |
+		(candidateBounds intersects: each) ifTrue: [ score := score + 50000 ] ].
+	score := score + (self distanceFrom: candidateBounds center to: targetBounds center).
+	^ score
 ]
 
 { #category : 'accessing' }
