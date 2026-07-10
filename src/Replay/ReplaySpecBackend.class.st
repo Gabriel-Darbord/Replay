@@ -35,9 +35,14 @@ ReplaySpecBackend >> canPerformNativeClickOn: aPresenter [
 { #category : 'testing' }
 ReplaySpecBackend >> canRun: anAction nativelyOn: nativeElement [
 
-	(anAction isKindOf: ReplayClick) ifFalse: [ ^ false ].
-	^ anAction flags = MouseEvent redButton
-		and: [ self canPerformNativeClickOn: nativeElement ]
+	(anAction isKindOf: ReplayClick) ifTrue: [
+		^ anAction flags = MouseEvent redButton
+			and: [ self canPerformNativeClickOn: nativeElement ] ].
+	(anAction isKindOf: ReplayFocus) ifTrue: [
+		^ nativeElement isKindOf: SpAbstractPresenter ].
+	(anAction isKindOf: ReplaySelectText) ifTrue: [
+		^ anAction canSelectTextIn: nativeElement ].
+	^ false
 ]
 
 { #category : 'accessing' }

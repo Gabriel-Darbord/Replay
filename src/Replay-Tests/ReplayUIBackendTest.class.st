@@ -706,6 +706,49 @@ ReplayUIBackendTest >> testSpecResolverResolvesNativeButtonClickBeforeMorphExist
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testSpecResolverResolvesNativeFocusBeforeMorphExists [
+
+	| presenter backend action resolved |
+	presenter := ReplaySemanticPresenter new.
+	backend := ReplaySpecBackend presenter: presenter morph: nil.
+	action := ReplayFocus new.
+
+	backend
+		resolve: (ReplayUIReference named: 'Field')
+		forAction: action
+		thenDo: [ :element | resolved := element ]
+		onMissing: [ :error | error signal ].
+
+	self assert: resolved notNil.
+	self assert: resolved nativeElement equals: presenter field.
+	self deny: resolved hasMorph
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecResolverResolvesNativeSelectTextBeforeMorphExists [
+
+	| presenter backend action resolved |
+	presenter := ReplaySemanticPresenter new.
+	backend := ReplaySpecBackend presenter: presenter morph: nil.
+	action := ReplaySelectText new
+		startIndex: 1;
+		stopIndex: 4;
+		yourself.
+
+	backend
+		resolve: (ReplayUIReference named: 'Field')
+		forAction: action
+		thenDo: [ :element | resolved := element ]
+		onMissing: [ :error | error signal ].
+
+	self assert: resolved notNil.
+	self assert: resolved nativeElement equals: presenter field.
+	self deny: resolved hasMorph.
+	action runOn: ReplayRunner new resolvedUI: resolved.
+	self assert: presenter field selectionInterval equals: (1 to: 4)
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testTypeActionDelegatesToResolvedUIBackend [
 
 	| backend action resolved |
