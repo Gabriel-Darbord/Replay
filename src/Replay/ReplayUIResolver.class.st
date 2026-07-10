@@ -56,7 +56,7 @@ ReplayUIResolver >> maxAttempts [
 { #category : 'accessing' }
 ReplayUIResolver >> maxAttempts: anInteger [
 
-	maxAttempts := anInteger
+	maxAttempts := 1 max: anInteger asInteger
 ]
 
 { #category : 'error handling' }

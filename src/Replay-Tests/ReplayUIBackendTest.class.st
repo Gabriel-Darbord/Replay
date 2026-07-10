@@ -797,3 +797,16 @@ ReplayUIBackendTest >> testUIHandlerTargetPresenterBuildsForSemanticTarget [
 
 	self assert: presenter notNil
 ]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testUIResolverMaxAttemptsIsAtLeastOne [
+
+	| resolver |
+	resolver := ReplaySpecResolver on: (ReplaySpecBackend presenter: ReplayEditor new morph: Morph new).
+	resolver maxAttempts: 0.
+	self assert: resolver maxAttempts equals: 1.
+	resolver maxAttempts: -5.
+	self assert: resolver maxAttempts equals: 1.
+	resolver maxAttempts: 3.
+	self assert: resolver maxAttempts equals: 3
+]
