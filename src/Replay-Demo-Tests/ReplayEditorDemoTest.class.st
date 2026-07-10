@@ -29,6 +29,18 @@ ReplayEditorDemoTest >> testReplayEditorExposesDemoSemanticTargets [
 ]
 
 { #category : 'tests' }
+ReplayEditorDemoTest >> testScenarioEditsCurrentActionScriptField [
+
+	| actions selectAction typeAction |
+	actions := ReplayEditorDemo scenario steps fourth actions.
+	selectAction := actions detect: [ :action | action isKindOf: ReplaySelectText ].
+	typeAction := actions detect: [ :action | action isKindOf: ReplayType ].
+	self assert: selectAction targetName equals: 'Action script'.
+	self assert: typeAction targetName equals: 'Action script'.
+	self assert: typeAction text equals: ReplayEditorDemo new replacementScript
+]
+
+{ #category : 'tests' }
 ReplayEditorDemoTest >> testScenarioStructure [
 
 	| scenario |
@@ -40,6 +52,10 @@ ReplayEditorDemoTest >> testScenarioStructure [
 		step actions anySatisfy: [ :action | action isKindOf: ReplayScript ] ]).
 	self assert: (scenario steps anySatisfy: [ :step |
 		step actions anySatisfy: [ :action | action isKindOf: ReplayAnnotate ] ]).
+	self assert: (scenario steps anySatisfy: [ :step |
+		step actions anySatisfy: [ :action | action isKindOf: ReplaySelectText ] ]).
+	self assert: (scenario steps anySatisfy: [ :step |
+		step actions anySatisfy: [ :action | action isKindOf: ReplayType ] ]).
 	self assert: (scenario steps allSatisfy: [ :step | step navigation skip ])
 ]
 

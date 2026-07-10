@@ -40,7 +40,7 @@ ReplayEditorDemo >> addScriptActionInEditor [
 
 	^ self script: '| action |
 action := ReplayScript new.
-action script: ''self manager clearOverlay''.
+action script: ', self placeholderScript storeString, '.
 self focus addActionLast: action.
 self focus actions selectIndex: self focus actions items size'
 ]
@@ -129,9 +129,19 @@ ReplayEditorDemo >> keyboardStep [
 		self addScriptActionInEditor.
 		self delay: 0.5.
 		self clearAnnotationsAction.
-		self annotate: 'Action list' text: 'The Script action is a normal editable action, not a one-off demo hook.'.
-		self annotate: 'Action editor' text: 'Script code runs with the Replay runner as self, so it can coordinate UI and scenario state.'.
+		self annotate: 'Action script' text: 'The current action exposes this script field as a semantic target.'.
+		self delay: 0.5 } , self replaceScriptSourceActions , {
+		self delay: 0.5.
+		self clearAnnotationsAction.
+		self annotate: 'Action list' text: 'The Script action was edited through Select text and Type actions.'.
+		self annotate: 'Action editor' text: 'Macros can target fields inside the current action editor without Morph paths.'.
 		self delay: 1 }
+]
+
+{ #category : 'actions' }
+ReplayEditorDemo >> placeholderScript [
+
+	^ 'self inform: ''replace me'''
 ]
 
 { #category : 'actions' }
@@ -142,6 +152,20 @@ ReplayEditorDemo >> pressDownInActionChooser [
 		keySelector: #down;
 		repeatCount: 2;
 		yourself
+]
+
+{ #category : 'actions' }
+ReplayEditorDemo >> replaceScriptSourceActions [
+
+	^ {
+		self selectTextIn: 'Action script' from: 1 to: self placeholderScript size.
+		self type: self replacementScript into: 'Action script' }
+]
+
+{ #category : 'actions' }
+ReplayEditorDemo >> replacementScript [
+
+	^ 'self manager clearOverlay'
 ]
 
 { #category : 'building' }
@@ -165,6 +189,16 @@ ReplayEditorDemo >> script: aString [
 
 	^ ReplayScript new
 		script: aString;
+		yourself
+]
+
+{ #category : 'actions' }
+ReplayEditorDemo >> selectTextIn: targetName from: startIndex to: stopIndex [
+
+	^ ReplaySelectText new
+		targetNamed: targetName;
+		startIndex: startIndex;
+		stopIndex: stopIndex;
 		yourself
 ]
 
@@ -201,4 +235,13 @@ ReplayEditorDemo >> stepNamed: aString with: actions [
 		text: aString;
 		skip: true.
 	^ step
+]
+
+{ #category : 'actions' }
+ReplayEditorDemo >> type: aString into: targetName [
+
+	^ ReplayType new
+		targetNamed: targetName;
+		text: aString;
+		yourself
 ]
