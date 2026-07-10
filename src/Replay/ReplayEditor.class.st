@@ -9,7 +9,8 @@ Class {
 		'actionDropList',
 		'actionEditor',
 		'stepList',
-		'actionList'
+		'actionList',
+		'replayPresenters'
 	],
 	#category : 'Replay',
 	#package : 'Replay'
@@ -95,6 +96,12 @@ ReplayEditor >> addActionLast: action [
 	actionList selectIndex: actionList items size
 ]
 
+{ #category : 'replay' }
+ReplayEditor >> clearReplayPresenterTargets [
+
+	replayPresenters := Dictionary new
+]
+
 { #category : 'initialization' }
 ReplayEditor >> connectPresenters [
 
@@ -154,12 +161,14 @@ ReplayEditor >> editScenarioButton [
 { #category : 'tools' }
 ReplayEditor >> editScenarioData [
 
+	self clearReplayPresenterTargets.
 	self actionEditor: (self model scenario editionPresenterOn: self)
 ]
 
 { #category : 'layout' }
 ReplayEditor >> editStepNavigation [
 
+	self clearReplayPresenterTargets.
 	self actionEditor:
 		(model currentStep navigation editionPresenterOn: self)
 ]
@@ -229,12 +238,21 @@ ReplayEditor >> model [
 	^ model ifNil: [ model := ReplayEditorModel new ]
 ]
 
+{ #category : 'replay' }
+ReplayEditor >> registerReplayPresenter: aPresenter named: aString [
+
+	self replayPresenters at: aString put: aPresenter.
+	^ aPresenter
+]
+
 { #category : 'event handling' }
 ReplayEditor >> removeAction: action [
 	"When removing an action with the editable list"
 
 	self removeItem: action from: actionList.
-	actionList items ifEmpty: [ self actionEditor: self homePresenter ]
+	actionList items ifEmpty: [
+		self clearReplayPresenterTargets.
+		self actionEditor: self homePresenter ]
 ]
 
 { #category : 'event handling' }
@@ -278,7 +296,15 @@ ReplayEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 	aPresenterName = 'Action list' ifTrue: [ ^ actionList ].
 	aPresenterName = 'Action chooser' ifTrue: [ ^ actionDropList ].
 	aPresenterName = 'Action editor' ifTrue: [ ^ self actionEditor ].
-	^ super replayPresenterAt: aPresenterName ifAbsent: absentBlock
+	^ self replayPresenters
+		at: aPresenterName
+		ifAbsent: [ super replayPresenterAt: aPresenterName ifAbsent: absentBlock ]
+]
+
+{ #category : 'replay' }
+ReplayEditor >> replayPresenters [
+
+	^ replayPresenters ifNil: [ replayPresenters := Dictionary new ]
 ]
 
 { #category : 'tools' }
@@ -317,6 +343,7 @@ ReplayEditor >> selectAction: action [
 	"When an action has been selected in the action list"
 
 	self model currentAction: action.
+	self clearReplayPresenterTargets.
 	self actionEditor: (action editionPresenterOn: self)
 ]
 
@@ -327,7 +354,9 @@ ReplayEditor >> selectStep: step [
 	model currentStep: step.
 	actionList items: step actions.
 	step actions
-		ifEmpty: [ self actionEditor: self homePresenter ]
+		ifEmpty: [
+			self clearReplayPresenterTargets.
+			self actionEditor: self homePresenter ]
 		ifNotEmpty: [ actionList selectIndex: 1 ]
 ]
 

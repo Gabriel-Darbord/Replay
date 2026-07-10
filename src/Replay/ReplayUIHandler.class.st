@@ -187,6 +187,8 @@ ReplayUIHandler >> semanticTargetPresenterOn: editor [
 		whenTextChangedDo: [ :aString |
 			self targetName: aString.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: targetNamePresenter named: 'Action target name'.
+	editor registerReplayPresenter: targetNamePresenter named: self class displayName , ' target name'.
 
 	^ SpBoxLayout newTopToBottom
 		spacing: 4;

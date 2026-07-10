@@ -28,7 +28,7 @@ ReplaySelectText >> canSelectTextIn: anObject [
 { #category : 'editing' }
 ReplaySelectText >> indexPresenterOn: editor labeled: label value: value update: updateBlock [
 
-	| input |
+	| input targetName |
 	(input := editor newNumberInput)
 		minimum: 1;
 		numberType: Integer;
@@ -36,6 +36,9 @@ ReplaySelectText >> indexPresenterOn: editor labeled: label value: value update:
 		whenNumberChangedDo: [ :number |
 				updateBlock value: number.
 				editor actions rebuildLayout ].
+	targetName := label allButLast asLowercase.
+	editor registerReplayPresenter: input named: 'Action ' , targetName.
+	editor registerReplayPresenter: input named: self class displayName , ' ' , targetName.
 	^ SpBoxLayout newTopToBottom
 		add: label expand: false;
 		add: input expand: false;

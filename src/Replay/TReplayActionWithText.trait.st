@@ -39,9 +39,11 @@ TReplayActionWithText >> textPresenterOn: editor labeled: label [
 		whenTextChangedDo: [ :aString |
 			self text: aString.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: textPresenter named: 'Action text'.
+	editor registerReplayPresenter: textPresenter named: self class displayName , ' text'.
 
 	^ SpBoxLayout newTopToBottom
-		  add: label expand: false;
-		  add: textPresenter;
-		  yourself
+		 add: label expand: false;
+		 add: textPresenter;
+		 yourself
 ]

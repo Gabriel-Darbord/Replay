@@ -80,9 +80,11 @@ ReplayDelay >> secondsPresenterOn: editor labeled: label [
 		whenNumberChangedDo: [ :aNumber |
 				self seconds: aNumber.
 				editor actions rebuildLayout ].
+	editor registerReplayPresenter: textPresenter named: 'Action seconds'.
+	editor registerReplayPresenter: textPresenter named: 'Delay seconds'.
 
 	^ SpBoxLayout newTopToBottom
-		  add: label expand: false;
-		  add: textPresenter expand: false;
-		  yourself
+		 add: label expand: false;
+		 add: textPresenter expand: false;
+		 yourself
 ]

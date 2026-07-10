@@ -47,9 +47,18 @@ TReplayActionWithScript >> scriptPresenterOn: editor labeled: label [
 		whenTextChangedDo: [ :aString |
 			self script: aString.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: codePresenter named: 'Action script'.
+	editor registerReplayPresenter: codePresenter named: self scriptTargetName.
 
 	^ SpBoxLayout newTopToBottom
-		  add: label expand: false;
-		  add: codePresenter;
-		  yourself
+		 add: label expand: false;
+		 add: codePresenter;
+		 yourself
+]
+
+{ #category : 'editing' }
+TReplayActionWithScript >> scriptTargetName [
+
+	self class displayName = 'Script' ifTrue: [ ^ 'Script source' ].
+	^ self class displayName , ' script'
 ]

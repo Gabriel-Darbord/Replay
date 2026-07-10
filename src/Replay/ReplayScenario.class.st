@@ -56,10 +56,12 @@ ReplayScenario >> editionPresenterOn: editor [
 	(titlePresenter := editor newText)
 		text: self title;
 		whenTextChangedDo: [ :aString | self title: aString ].
+	editor registerReplayPresenter: titlePresenter named: 'Scenario title'.
 
 	(descriptionPresenter := editor newText)
 		text: self description;
 		whenTextChangedDo: [ :aString | self description: aString ].
+	editor registerReplayPresenter: descriptionPresenter named: 'Scenario description'.
 
 	^ editor newPresenter
 		  layout: (SpBoxLayout newTopToBottom

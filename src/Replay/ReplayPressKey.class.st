@@ -84,6 +84,8 @@ ReplayPressKey >> keyPresenterOn: editor [
 	dropList selectItem: (choices
 		detect: [ :association | association key = self keySelector ]
 		ifNone: [ choices first ]).
+	editor registerReplayPresenter: dropList named: 'Action key'.
+	editor registerReplayPresenter: dropList named: 'Press key selector'.
 
 	^ SpBoxLayout newTopToBottom
 		add: 'Key:' expand: false;
@@ -170,6 +172,8 @@ ReplayPressKey >> repeatCountPresenterOn: editor [
 		whenNumberChangedDo: [ :aNumber |
 			self repeatCount: aNumber.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: countPresenter named: 'Action repeat count'.
+	editor registerReplayPresenter: countPresenter named: 'Press key repeat count'.
 
 	^ SpBoxLayout newTopToBottom
 		add: 'Repeat count:' expand: false;
