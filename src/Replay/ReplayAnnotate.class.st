@@ -22,12 +22,6 @@ ReplayAnnotate >> allowsWorldTarget [
 	^ false
 ]
 
-{ #category : 'editing' }
-ReplayAnnotate >> pathUnsetPresenterOn: editor [
-
-	^ self pathRequiredPresenterOn: editor
-]
-
 { #category : 'printing' }
 ReplayAnnotate >> printOn: stream [
 
@@ -60,13 +54,13 @@ ReplayAnnotate >> runOn: runner resolvedUI: resolvedUI [
 ReplayAnnotate >> settingsPresenterOn: editor [
 
 	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (self pathPresenterOn: editor) expand: false;
-				   add: (self
-						    textPresenterOn: editor
-						    labeled:
-							    'Write the rich text to display next to the annotated UI element:');
-				   yourself);
-		  yourself
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self targetPresenterOn: editor) expand: false;
+				add: (self
+						textPresenterOn: editor
+						labeled:
+							'Write rich text display next annotated UI element:');
+				yourself);
+		yourself
 ]

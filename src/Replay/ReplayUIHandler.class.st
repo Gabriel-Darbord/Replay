@@ -95,6 +95,18 @@ ReplayUIHandler >> isUIHandler [
 	^ true
 ]
 
+{ #category : 'editing' }
+ReplayUIHandler >> missingTargetPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newLeftToRight
+				spacing: 10;
+				add: (self iconNamed: #error) expand: false;
+				add: 'Missing target. Use UI edition view to select one.' expand: false;
+				yourself);
+		yourself
+]
+
 { #category : 'accessing' }
 ReplayUIHandler >> path [
 
@@ -107,83 +119,6 @@ ReplayUIHandler >> path: aCollection [
 
 	path := aCollection.
 	reference := nil
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathOkPresenterOn: editor [
-	"When the path is set"
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   spacing: 10;
-				   add: (self iconNamed: #smallOk) expand: false;
-				   add: 'Target set.' expand: false;
-				   yourself);
-		  yourself
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathOrWorldPresenterOn: editor [
-	"Compatibility hook for older editor code."
-
-	^ self targetPresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathPresenterOn: editor [
-	"Hook to let actions decide which presenter to use for representing and editing the UI target."
-
-	^ self targetPresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathRequiredPresenterOn: editor [
-	"When the path is not set, indicate it is necessary and explain how to set it."
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   spacing: 10;
-				   add: (self iconNamed: #error) expand: false;
-				   add: 'Missing target. Use the UI edition view to select one.'
-				   expand: false;
-				   yourself);
-		  yourself
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathSetPresenterOn: editor [
-	"Hook to let actions decide which presenter to use when the path is set."
-
-	^ self pathOkPresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathStatePresenterOn: editor [
-	"Use a different presenter depending on the selected UI target."
-
-	^ self targetStatePresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathUnsetPresenterOn: editor [
-	"Hook to let actions decide which presenter to use when the path is *NOT* set."
-
-	^ self pathWorldPresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathWorldPresenterOn: editor [
-	"When the path is not set, inform that the World is targeted."
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   spacing: 10;
-				   add: (self iconNamed: #smallInfo) expand: false;
-				   add:
-					   'Targeting current World. Use the UI edition view to change target.'
-				   expand: false;
-				   yourself);
-		  yourself
 ]
 
 { #category : 'accessing' }
@@ -317,6 +252,18 @@ ReplayUIHandler >> targetNamedPresenterOn: editor [
 ]
 
 { #category : 'editing' }
+ReplayUIHandler >> targetPathPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newLeftToRight
+				spacing: 10;
+				add: (self iconNamed: #smallOk) expand: false;
+				add: 'Target set.' expand: false;
+				yourself);
+		yourself
+]
+
+{ #category : 'editing' }
 ReplayUIHandler >> targetPresenterOn: editor [
 
 	^ editor newPresenter
@@ -334,10 +281,10 @@ ReplayUIHandler >> targetStatePresenterOn: editor [
 	(reference notNil and: [ reference isNamed ])
 		ifTrue: [ ^ self targetNamedPresenterOn: editor ].
 	(path notNil or: [ reference notNil and: [ reference isMorphicPath ] ])
-		ifTrue: [ ^ self pathSetPresenterOn: editor ].
+		ifTrue: [ ^ self targetPathPresenterOn: editor ].
 	^ self allowsWorldTarget
-		ifTrue: [ self pathWorldPresenterOn: editor ]
-		ifFalse: [ self pathUnsetPresenterOn: editor ]
+		ifTrue: [ self worldTargetPresenterOn: editor ]
+		ifFalse: [ self missingTargetPresenterOn: editor ]
 ]
 
 { #category : 'accessing' }
@@ -395,4 +342,16 @@ ReplayUIHandler >> uiReference [
 	^ path
 		ifNil: [ ReplayUIReference world ]
 		ifNotNil: [ ReplayUIReference morphicPath: path ]
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> worldTargetPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newLeftToRight
+				spacing: 10;
+				add: (self iconNamed: #smallInfo) expand: false;
+				add: 'Targeting current World. Use UI edition view to change target.' expand: false;
+				yourself);
+		yourself
 ]

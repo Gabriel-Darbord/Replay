@@ -350,7 +350,7 @@ ReplayUIBackendTest >> testUIHandlerTargetPresenterBuildsForSemanticTarget [
 	| action presenter |
 	action := ReplayFocus new.
 	action targetNamed: 'Field'.
-	presenter := action pathPresenterOn: ReplayEditor new.
+	presenter := action targetPresenterOn: ReplayEditor new.
 
 	self assert: presenter notNil
 ]

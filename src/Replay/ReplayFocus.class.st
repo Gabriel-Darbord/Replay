@@ -32,7 +32,7 @@ ReplayFocus >> runOn: runner resolvedUI: resolvedUI [
 
 { #category : 'editing' }
 ReplayFocus >> settingsPresenterOn: editor [
-	"There's only the path to edit. Can target the World."
+	"There's only the UI target to edit. Can target the World."
 
-	^ self pathPresenterOn: editor
+	^ self targetPresenterOn: editor
 ]

@@ -31,15 +31,12 @@ ReplayType >> runOn: runner resolvedUI: resolvedUI [
 ReplayType >> settingsPresenterOn: editor [
 
 	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (self pathPresenterOn: editor) expand: false;
-				   add:
-					   (self
-						    textPresenterOn: editor
-						    labeled: 'Write the text to type:');
-				   yourself);
-		  yourself
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self targetPresenterOn: editor) expand: false;
+				add: (self textPresenterOn: editor labeled: 'Write text to type:');
+				yourself);
+		yourself
 ]
 
 { #category : 'running' }

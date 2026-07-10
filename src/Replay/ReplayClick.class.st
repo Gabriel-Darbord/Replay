@@ -126,7 +126,7 @@ ReplayClick >> settingsPresenterOn: editor [
 	^ editor newPresenter
 		layout: (SpBoxLayout newTopToBottom
 				spacing: 10;
-				add: (self pathPresenterOn: editor) expand: false;
+				add: (self targetPresenterOn: editor) expand: false;
 				add: (self buttonsPresenterOn: editor) expand: false;
 				in: [ :layout |
 					self hasSpecificTarget ifTrue: [

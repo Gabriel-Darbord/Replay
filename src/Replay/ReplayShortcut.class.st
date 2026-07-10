@@ -55,18 +55,14 @@ ReplayShortcut >> runOn: runner resolvedUI: resolvedUI [
 ReplayShortcut >> settingsPresenterOn: editor [
 
 	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (self pathPresenterOn: editor) expand: false;
-				   add: (self modifierPresenterOn: editor) expand: false;
-				   add: (self
-						    textPresenterOn: editor
-						    labeled:
-							    'Insert the characters to use as part of the shortcut:')
-				   expand: false;
-				   add: (self shortcutDescriptionPresenterOn: editor);
-				   yourself);
-		  yourself
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self targetPresenterOn: editor) expand: false;
+				add: (self modifierPresenterOn: editor) expand: false;
+				add: (self textPresenterOn: editor labeled: 'Insert characters to use part shortcut:') expand: false;
+				add: (self shortcutDescriptionPresenterOn: editor);
+				yourself);
+		yourself
 ]
 
 { #category : 'editing' }
