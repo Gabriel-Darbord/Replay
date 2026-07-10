@@ -9,6 +9,114 @@ Class {
 }
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testAttachToMorphWithoutOwnerFails [
+
+	| target |
+	target := Morph new extent: 100 @ 50.
+
+	self
+		should: [ ReplayUIManager new attachTo: target ]
+		raise: ReplayError
+		withExceptionDo: [ :error |
+			self assert: (error messageText includesSubstring: 'without an owner').
+			self assert: error tag equals: target ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAttachToUnrenderedSpecPresenterFails [
+
+	| presenter |
+	presenter := ReplaySemanticPresenter new.
+
+	self
+		should: [ ReplayUIManager new attachToPresenter: presenter ]
+		raise: ReplayError
+		withExceptionDo: [ :error |
+			self assert: (error messageText includesSubstring: 'without an adapter').
+			self assert: error tag equals: presenter ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAttachUIActionAttachesToScriptMorph [
+
+	| root target runner action |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (10 @ 10 corner: 80 @ 40).
+	root addMorph: target.
+	runner := ReplayRunner new focus: target.
+	action := ReplayAttachUI new.
+	action script: 'self focus'.
+
+	action runOn: runner.
+
+	self assert: runner manager notNil.
+	self deny: runner manager ownsUI.
+	self assert: runner manager managedUI equals: target.
+	self assert: runner manager overlay owner equals: root
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAttachUIActionRejectsUnexpectedScriptResult [
+
+	| runner action |
+	runner := ReplayRunner new.
+	action := ReplayAttachUI new.
+	action script: '42'.
+
+	self
+		should: [ action runOn: runner ]
+		raise: ReplayScriptError
+		withExceptionDo: [ :error |
+			self assert: (error messageText includesSubstring: 'existing Morph or Spec presenter').
+			self assert: error tag equals: 42 ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAttachedMorphManagerDoesNotInstallBlockingOverlayHandlers [
+
+	| root target manager |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (10 @ 10 corner: 80 @ 40).
+	root addMorph: target.
+	manager := ReplayUIManager new attachTo: target.
+
+	self assert: manager overlay eventHandler isNil
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAttachedMorphManagerDoesNotOwnUI [
+
+	| root target manager |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (10 @ 10 corner: 80 @ 40).
+	root addMorph: target.
+	manager := ReplayUIManager new attachTo: target.
+
+	self deny: manager ownsUI.
+	self assert: manager managedUI equals: target.
+	self assert: manager overlay owner equals: root.
+	self assert: manager overlay bounds equals: target bounds
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAttachedMorphManagerResolvesRelativeToManagedMorph [
+
+	| root target child manager resolved |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (10 @ 10 corner: 80 @ 40).
+	child := Morph new bounds: (1 @ 1 corner: 20 @ 20).
+	target addMorph: child.
+	root addMorph: target.
+	manager := ReplayUIManager new attachTo: target.
+
+	manager
+		resolve: (ReplayUIReference morphicPath: #( 1 ))
+		thenDo: [ :element | resolved := element ].
+
+	self assert: resolved morph equals: child
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testClearAnnotationsActionEditionPresenterBuilds [
 
 	| presenter |
@@ -48,6 +156,22 @@ ReplayUIBackendTest >> testClickActionDelegatesToResolvedUIBackend [
 	self assert: backend lastInteraction equals: #click.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testCloseAttachedMorphManagerRemovesOnlyReplayOverlay [
+
+	| root target manager overlay |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (10 @ 10 corner: 80 @ 40).
+	root addMorph: target.
+	manager := ReplayUIManager new attachTo: target.
+	overlay := manager overlay.
+
+	manager close.
+
+	self assert: overlay owner isNil.
+	self assert: target owner equals: root
 ]
 
 { #category : 'tests' }
@@ -202,6 +326,16 @@ ReplayUIBackendTest >> testOpenLabeledPreservesManagedContentExtent [
 		self assert: manager ui window extent x >= targetExtent x.
 		self assert: manager ui window extent y >= targetExtent y ]
 		ensure: [ manager close ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testOwnedMorphManagerInstallsBlockingOverlayHandlers [
+
+	| manager |
+	manager := ReplayUIManager new manage: (Morph new extent: 100 @ 50).
+
+	self assert: manager ownsUI.
+	self assert: manager overlay eventHandler notNil
 ]
 
 { #category : 'tests' }

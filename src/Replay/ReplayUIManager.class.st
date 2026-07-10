@@ -12,7 +12,8 @@ Class {
 		'managedPresenter',
 		'backend',
 		'editor',
-		'clickBlock'
+		'clickBlock',
+		'ownsUI'
 	],
 	#category : 'Replay',
 	#package : 'Replay'
@@ -63,7 +64,53 @@ ReplayUIManager class >> buildMorphFromSpec: aSpecPresenter [
 { #category : 'managing UI' }
 ReplayUIManager >> addOverlay: ui [
 
-	overlay addMorph: ui
+	overlay ifNotNil: [ overlay addMorph: ui ]
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> attachTo: aMorph [
+	"Attach Replay to an existing Morph without taking ownership of its window."
+
+	^ self attachTo: aMorph usingBackend: (ReplayMorphicBackend on: aMorph)
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> attachTo: aMorph usingBackend: aReplayUIBackend [
+	"Attach Replay to a Morph that already belongs to another UI."
+
+	| owner |
+	owner := aMorph owner ifNil: [
+		ReplayError new
+			messageText: 'Cannot attach Replay to a Morph without an owner.';
+			tag: aMorph;
+			signal ].
+	ownsUI := false.
+	backend := aReplayUIBackend.
+	managed := aMorph.
+	root := owner.
+	overlay := self newOverlay.
+	overlay bounds: managed bounds.
+	root addMorphFront: overlay.
+	self syncManagedLayout.
+	^ self
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> attachToPresenter: aSpecPresenter [
+	"Attach Replay to an already rendered Spec presenter."
+
+	| adapter morph |
+	adapter := aSpecPresenter adapter ifNil: [
+		ReplayError new
+			messageText: 'Cannot attach Replay to a Spec presenter without an adapter.';
+			tag: aSpecPresenter;
+			signal ].
+	morph := adapter widget ifNil: [
+		ReplayError new
+			messageText: 'Cannot attach Replay to a Spec presenter without a rendered widget.';
+			tag: aSpecPresenter;
+			signal ].
+	^ self attachTo: morph usingBackend: (ReplaySpecBackend presenter: aSpecPresenter morph: morph)
 ]
 
 { #category : 'accessing' }
@@ -81,7 +128,7 @@ ReplayUIManager >> backend: aReplayUIBackend [
 { #category : 'managing UI' }
 ReplayUIManager >> clearOverlay [
 
-	overlay removeAllMorphs
+	overlay ifNotNil: [ overlay removeAllMorphs ]
 ]
 
 { #category : 'accessing' }
@@ -95,9 +142,15 @@ ReplayUIManager >> clickBlock: aBlock [
 { #category : 'managing UI' }
 ReplayUIManager >> close [
 
-	root window
-		ifNotNil: [ :window | window close ]
-		ifNil: [ root delete ]
+	self ownsUI
+		ifTrue: [
+			root ifNil: [ ^ self ].
+			root window
+				ifNotNil: [ :window | window close ]
+				ifNil: [ root delete ] ]
+		ifFalse: [
+			overlay ifNotNil: [ overlay delete ].
+			overlay := nil ]
 ]
 
 { #category : 'accessing' }
@@ -147,6 +200,13 @@ ReplayUIManager >> hideOverlay [
 ]
 
 { #category : 'managing UI' }
+ReplayUIManager >> installBlockingHandlersOn: aMorph [
+
+	#( mouseDown mouseMove mouseStillDown mouseUp mouseEnter mouseLeave mouseEnterDragging mouseLeaveDragging doubleClick ) do: [ :event |
+		aMorph on: event send: #yourself to: aMorph ]
+]
+
+{ #category : 'managing UI' }
 ReplayUIManager >> manage: aMorph [
 	"Set a Morphic UI to be managed."
 
@@ -157,8 +217,9 @@ ReplayUIManager >> manage: aMorph [
 
 { #category : 'managing UI' }
 ReplayUIManager >> manage: aMorph usingBackend: aReplayUIBackend [
-	"Set the UI backend and manage the morph in a full-window layout."
+	"Set UI backend and manage morph in full-window layout."
 
+	ownsUI := true.
 	backend := aReplayUIBackend.
 	root := ReplayRootMorph new
 		manager: self;
@@ -168,16 +229,10 @@ ReplayUIManager >> manage: aMorph usingBackend: aReplayUIBackend [
 		vResizing: #spaceFill;
 		yourself.
 	managed := aMorph.
-	overlay := Morph new
-		beTransparent;
-		hResizing: #spaceFill;
-		vResizing: #spaceFill;
-		yourself.
+	overlay := self newOverlay.
 	root addMorph: managed fullFrame: LayoutFrame identity.
 	root addMorph: overlay fullFrame: LayoutFrame identity.
-	"Prevent direct interaction with the managed UI by catching all events."
-	#( mouseDown mouseMove mouseStillDown mouseUp mouseEnter mouseLeave mouseEnterDragging mouseLeaveDragging doubleClick ) do: [ :event |
-		overlay on: event send: #yourself to: overlay ].
+	self installBlockingHandlersOn: overlay.
 	^ self
 ]
 
@@ -227,6 +282,16 @@ ReplayUIManager >> maxWrapDepth [
 	"How deep to wrap morphs on a single pass"
 
 	^ 6 "6 plays nicely with Calypso?"
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> newOverlay [
+
+	^ Morph new
+		beTransparent;
+		hResizing: #spaceFill;
+		vResizing: #spaceFill;
+		yourself
 ]
 
 { #category : 'event handling' }
@@ -311,6 +376,12 @@ ReplayUIManager >> overlay [
 	^ overlay
 ]
 
+{ #category : 'accessing' }
+ReplayUIManager >> ownsUI [
+
+	^ ownsUI ifNil: [ true ]
+]
+
 { #category : 'resolving' }
 ReplayUIManager >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
 
@@ -355,10 +426,13 @@ ReplayUIManager >> surfaceMorph [
 
 { #category : 'managing UI' }
 ReplayUIManager >> syncManagedLayout [
-	"Keep managed content and overlay aligned with the root extent."
+	"Keep managed content and overlay aligned."
 
 	| targetExtent |
-	(root isNil or: [ managed isNil or: [ overlay isNil ] ]) ifTrue: [
+	(root isNil or: [ managed isNil or: [ overlay isNil ] ]) ifTrue: [ ^ self ].
+	self ownsUI ifFalse: [
+		overlay bounds: managed bounds.
+		overlay layoutChanged.
 		^ self ].
 	targetExtent := root extent.
 	targetExtent isZero ifTrue: [ ^ self ].
@@ -370,8 +444,7 @@ ReplayUIManager >> syncManagedLayout [
 	managed doLayoutIn: managed bounds.
 	managed fullBounds.
 	overlay layoutChanged.
-	overlay doLayoutIn: overlay bounds.
-	^ self
+	overlay doLayoutIn: overlay bounds
 ]
 
 { #category : 'accessing' }
