@@ -271,6 +271,16 @@ ReplayEditor >> removeStep: step [
 			actionList items: selectedStep actions ]
 ]
 
+{ #category : 'replay' }
+ReplayEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
+
+	aPresenterName = 'Step list' ifTrue: [ ^ stepList ].
+	aPresenterName = 'Action list' ifTrue: [ ^ actionList ].
+	aPresenterName = 'Action chooser' ifTrue: [ ^ actionDropList ].
+	aPresenterName = 'Action editor' ifTrue: [ ^ self actionEditor ].
+	^ super replayPresenterAt: aPresenterName ifAbsent: absentBlock
+]
+
 { #category : 'tools' }
 ReplayEditor >> runScenario [
 

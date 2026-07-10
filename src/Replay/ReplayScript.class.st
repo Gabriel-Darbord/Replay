@@ -21,18 +21,18 @@ ReplayScript class >> displayName [
 ReplayScript >> editionPresenterOn: editor [
 
 	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (self
-						    scriptPresenterOn: editor
-						    labeled: 'Write the script that will be executed:');
-				   add: (self
-						    debugButtonPresenterOn: editor
-						    labeled: 'Debug the script'
-						    action: [ self debugScript ])
-				   expand: false;
-				   yourself);
-		  yourself
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self
+						scriptPresenterOn: editor
+						labeled: 'Script evaluated with the Replay runner as self:');
+				add: (self
+						debugButtonPresenterOn: editor
+						labeled: 'Debug script'
+						action: [ self debugScript ])
+				expand: false;
+				yourself);
+		yourself
 ]
 
 { #category : 'printing' }
