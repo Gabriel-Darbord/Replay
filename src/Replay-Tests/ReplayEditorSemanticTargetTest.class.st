@@ -114,21 +114,21 @@ ReplayEditorSemanticTargetTest >> testScenarioFieldsAreRegistered [
 { #category : 'tests' }
 ReplayEditorSemanticTargetTest >> testSelectingActionReplacesDynamicTargets [
 
-	| editor scenario step typeAction delayAction |
+	| editor scenario step typeAction scriptAction |
 	scenario := ReplayScenario new.
 	step := ReplayStep new.
 	typeAction := ReplayType new.
-	delayAction := ReplayDelay seconds: 1.
+	scriptAction := ReplayScript new.
 	step addAction: typeAction.
-	step addAction: delayAction.
+	step addAction: scriptAction.
 	scenario addStep: step.
 	editor := ReplayEditor on: scenario.
 
 	editor selectAction: typeAction.
 	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) notNil.
-	editor selectAction: delayAction.
+	editor selectAction: scriptAction.
 	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ #missing ]) equals: #missing.
-	self assert: (editor replayPresenterAt: 'Action seconds' ifAbsent: [ nil ]) notNil
+	self assert: (editor replayPresenterAt: 'Action script' ifAbsent: [ nil ]) notNil
 ]
 
 { #category : 'tests' }
@@ -169,15 +169,9 @@ ReplayEditorSemanticTargetTest >> testSpecificActionFieldTargetsAreRegistered [
 
 	| editor |
 	editor := self newEditor.
-	(ReplayDelay seconds: 1) secondsPresenterOn: editor labeled: 'Delay in seconds:'.
-	self assert: (editor replayPresenterAt: 'Action seconds' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Delay seconds' ifAbsent: [ nil ]) notNil.
-
-	editor clearReplayPresenterTargets.
 	ReplayPressKey new keyPresenterOn: editor.
 	self assert: (editor replayPresenterAt: 'Action key' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Press key selector' ifAbsent: [ nil ]) notNil.
-
 	editor clearReplayPresenterTargets.
 	ReplayPressKey new repeatCountPresenterOn: editor.
 	self assert: (editor replayPresenterAt: 'Action repeat count' ifAbsent: [ nil ]) notNil.

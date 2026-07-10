@@ -14,7 +14,7 @@ ReplayEditorDemoTest >> testDemoScenarioRoundTripsThroughSton [
 	| copy |
 	copy := STON fromString: (STON toString: ReplayEditorDemo scenario).
 	self assert: copy title equals: 'Replay Editor Feature Tour'.
-	self assert: copy steps size equals: 5
+	self assert: copy steps size equals: 7
 ]
 
 { #category : 'tests' }
@@ -32,7 +32,7 @@ ReplayEditorDemoTest >> testReplayEditorExposesDemoSemanticTargets [
 ReplayEditorDemoTest >> testScenarioEditsCurrentActionScriptField [
 
 	| actions selectAction typeAction |
-	actions := ReplayEditorDemo scenario steps fourth actions.
+	actions := ReplayEditorDemo scenario steps flatCollect: [ :step | step actions ].
 	selectAction := actions detect: [ :action | action isKindOf: ReplaySelectText ].
 	typeAction := actions detect: [ :action | action isKindOf: ReplayType ].
 	self assert: selectAction targetName equals: 'Action script'.
@@ -46,7 +46,7 @@ ReplayEditorDemoTest >> testScenarioStructure [
 	| scenario |
 	scenario := ReplayEditorDemo scenario.
 	self assert: scenario title equals: 'Replay Editor Feature Tour'.
-	self assert: scenario steps size equals: 5.
+	self assert: scenario steps size equals: 7.
 	self assert: (scenario steps first actions anySatisfy: [ :action | action isKindOf: ReplayAttachUI ]).
 	self assert: (scenario steps anySatisfy: [ :step |
 		step actions anySatisfy: [ :action | action isKindOf: ReplayScript ] ]).
@@ -56,7 +56,9 @@ ReplayEditorDemoTest >> testScenarioStructure [
 		step actions anySatisfy: [ :action | action isKindOf: ReplaySelectText ] ]).
 	self assert: (scenario steps anySatisfy: [ :step |
 		step actions anySatisfy: [ :action | action isKindOf: ReplayType ] ]).
-	self assert: (scenario steps allSatisfy: [ :step | step navigation skip ])
+	self assert: (scenario steps noneSatisfy: [ :step |
+		step actions anySatisfy: [ :action | action isKindOf: ReplayDelay ] ]).
+	self assert: (scenario steps noneSatisfy: [ :step | step navigation skip ])
 ]
 
 { #category : 'tests' }

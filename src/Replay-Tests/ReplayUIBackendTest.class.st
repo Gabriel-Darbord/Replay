@@ -294,7 +294,7 @@ ReplayUIBackendTest >> testOpenLabeledAppliesRequestedContentExtent [
 			openLabeled: 'Replay requested extent test'
 			extent: requestedExtent
 			bounds: nil.
-		20 timesRepeat: [ World doOneCycle. (Delay forMilliseconds: 10) wait ].
+		20 timesRepeat: [ World doOneCycle ].
 		self assert: manager ui extent equals: requestedExtent.
 		self assert: manager managedUI extent equals: requestedExtent.
 		self assert: manager overlay extent equals: requestedExtent ]
@@ -314,7 +314,7 @@ ReplayUIBackendTest >> testOpenLabeledAppliesRequestedWindowBounds [
 			openLabeled: 'Replay requested bounds test'
 			extent: nil
 			bounds: requestedBounds.
-		20 timesRepeat: [ World doOneCycle. (Delay forMilliseconds: 10) wait ].
+		20 timesRepeat: [ World doOneCycle ].
 		window := manager ui window.
 		self assert: window bounds origin equals: requestedBounds origin.
 		self assert: window bounds extent equals: requestedBounds extent.
@@ -332,7 +332,7 @@ ReplayUIBackendTest >> testOpenLabeledPreservesManagedContentExtent [
 
 	[
 		manager openLabeled: 'Replay preserved extent test'.
-		20 timesRepeat: [ World doOneCycle. (Delay forMilliseconds: 10) wait ].
+		20 timesRepeat: [ World doOneCycle ].
 		self assert: manager ui extent equals: targetExtent.
 		self assert: manager managedUI extent equals: targetExtent.
 		self assert: manager overlay extent equals: targetExtent.

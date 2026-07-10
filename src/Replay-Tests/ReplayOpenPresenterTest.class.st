@@ -39,7 +39,7 @@ ReplayOpenPresenterTest >> testOpenPresenterRunUsesExplicitExtent [
 
 	[
 		self shouldnt: [ action runOn: runner ] raise: Error.
-		20 timesRepeat: [ World doOneCycle. (Delay forMilliseconds: 10) wait ].
+		20 timesRepeat: [ World doOneCycle ].
 		self assert: runner manager ui extent equals: requestedExtent ]
 		ensure: [ runner manager ifNotNil: [ :manager | manager close ] ]
 ]

@@ -9,14 +9,16 @@ Class {
 }
 
 { #category : 'opening' }
-ReplayEditorDemo class >> openScenario [
+ReplayEditorDemo class >> editScenario [
 
+	<script>
 	^ self scenario edit
 ]
 
 { #category : 'running' }
 ReplayEditorDemo class >> run [
 
+	<script>
 	^ self scenario run
 ]
 
@@ -24,15 +26,6 @@ ReplayEditorDemo class >> run [
 ReplayEditorDemo class >> scenario [
 
 	^ self new scenario
-]
-
-{ #category : 'actions' }
-ReplayEditorDemo >> addDelayActionInEditor [
-
-	^ self script: '| action |
-action := ReplayDelay seconds: 0.75.
-self focus addActionLast: action.
-self focus actions selectIndex: self focus actions items size'
 ]
 
 { #category : 'actions' }
@@ -57,13 +50,12 @@ ReplayEditorDemo >> annotate: targetName text: aString [
 { #category : 'steps' }
 ReplayEditorDemo >> annotationStep [
 
-	^ self stepNamed: 'Tour the Replay editor widgets' with: {
+	^ self stepNamed: 'Tour Replay editor widgets' with: {
 		self clearAnnotationsAction.
-		self annotate: 'Step list' text: 'Steps group actions and decide how the scenario advances.'.
-		self annotate: 'Action chooser' text: 'The action chooser lists the Replay actions available to insert.'.
+		self annotate: 'Step list' text: 'Steps group actions control scenario navigation.'.
+		self annotate: 'Action chooser' text: 'The action chooser lists Replay actions available to insert.'.
 		self annotate: 'Action list' text: 'Actions run in order inside the selected step.'.
-		self annotate: 'Action editor' text: 'Selecting an action shows its editable controls here.'.
-		self delay: 1 }
+		self annotate: 'Action editor' text: 'Selecting an action shows its editable controls here.' }
 ]
 
 { #category : 'actions' }
@@ -79,9 +71,7 @@ ReplayEditorDemo >> cleanupStep [
 
 	^ self stepNamed: 'Finish cleanly' with: {
 		self clearAnnotationsAction.
-		self annotate: 'Step list' text: 'Replay can attach to an already-open UI, drive it, annotate it, and clean up its overlay.'.
-		self delay: 0.75.
-		self clearAnnotationsAction.
+		self closeReplayUIAction.
 		self closeEditorAction }
 ]
 
@@ -98,9 +88,9 @@ ReplayEditorDemo >> closeEditorAction [
 ]
 
 { #category : 'actions' }
-ReplayEditorDemo >> delay: seconds [
+ReplayEditorDemo >> closeReplayUIAction [
 
-	^ ReplayDelay seconds: seconds
+	^ ReplayCloseUI new
 ]
 
 { #category : 'steps' }
@@ -108,34 +98,18 @@ ReplayEditorDemo >> editingStep [
 
 	^ self stepNamed: 'Insert and edit actions' with: {
 		self clearAnnotationsAction.
-		self annotate: 'Action chooser' text: 'Scenarios are edited by choosing an action class, then configuring the inserted action.'.
-		self delay: 0.5.
-		self addDelayActionInEditor.
-		self delay: 0.5.
-		self clearAnnotationsAction.
-		self annotate: 'Action list' text: 'A Delay action was inserted into the current step.'.
-		self annotate: 'Action editor' text: 'The selected Delay action exposes a numeric seconds editor.'.
-		self delay: 1 }
+		self addScriptActionInEditor.
+		self annotate: 'Action list' text: 'A Script action was inserted into the current step.'.
+		self annotate: 'Action editor' text: 'The selected Script action exposes an editable source field.' }
 ]
 
 { #category : 'steps' }
 ReplayEditorDemo >> keyboardStep [
 
-	^ self stepNamed: 'Drive the editor with actions' with: {
+	^ self stepNamed: 'Drive chooser keyboard actions' with: {
 		self clearAnnotationsAction.
-		self annotate: 'Action chooser' text: 'Keyboard actions can drive focused widgets, such as moving through a chooser.'.
-		self pressDownInActionChooser.
-		self delay: 0.5.
-		self addScriptActionInEditor.
-		self delay: 0.5.
-		self clearAnnotationsAction.
-		self annotate: 'Action script' text: 'The current action exposes this script field as a semantic target.'.
-		self delay: 0.5 } , self replaceScriptSourceActions , {
-		self delay: 0.5.
-		self clearAnnotationsAction.
-		self annotate: 'Action list' text: 'The Script action was edited through Select text and Type actions.'.
-		self annotate: 'Action editor' text: 'Macros can target fields inside the current action editor without Morph paths.'.
-		self delay: 1 }
+		self annotate: 'Action chooser' text: 'Keyboard actions can drive focused widgets, such as moving through this chooser.'.
+		self pressDownInActionChooser }
 ]
 
 { #category : 'actions' }
@@ -162,6 +136,15 @@ ReplayEditorDemo >> replaceScriptSourceActions [
 		self type: self replacementScript into: 'Action script' }
 ]
 
+{ #category : 'steps' }
+ReplayEditorDemo >> replaceScriptStep [
+
+	^ self stepNamed: 'Replace field value' with: self replaceScriptSourceActions , {
+		self clearAnnotationsAction.
+		self annotate: 'Action script' text: 'Select text and Type replaced the Script action source.'.
+		self annotate: 'Action list' text: 'The edited action remains selected in the action list.' }
+]
+
 { #category : 'actions' }
 ReplayEditorDemo >> replacementScript [
 
@@ -180,6 +163,8 @@ ReplayEditorDemo >> scenario [
 	scenario addStep: self annotationStep.
 	scenario addStep: self editingStep.
 	scenario addStep: self keyboardStep.
+	scenario addStep: self scriptFieldStep.
+	scenario addStep: self replaceScriptStep.
 	scenario addStep: self cleanupStep.
 	^ scenario
 ]
@@ -190,6 +175,15 @@ ReplayEditorDemo >> script: aString [
 	^ ReplayScript new
 		script: aString;
 		yourself
+]
+
+{ #category : 'steps' }
+ReplayEditorDemo >> scriptFieldStep [
+
+	^ self stepNamed: 'Expose action editor fields' with: {
+		self clearAnnotationsAction.
+		self annotate: 'Action script' text: 'The selected Script action exposes the source field as a semantic target.'.
+		self annotate: 'Action editor' text: 'Macros can target fields inside the current action editor without Morph paths.' }
 ]
 
 { #category : 'actions' }
@@ -221,8 +215,7 @@ ReplayEditorDemo >> setupStep [
 
 	^ self stepNamed: 'Open and attach to the Replay editor' with: {
 		self setupEditorAction.
-		self attachEditorAction.
-		(self delay: 0.25) }
+		self attachEditorAction }
 ]
 
 { #category : 'building' }
@@ -233,7 +226,7 @@ ReplayEditorDemo >> stepNamed: aString with: actions [
 	actions do: [ :action | step addAction: action ].
 	step navigation
 		text: aString;
-		skip: true.
+		skip: false.
 	^ step
 ]
 
