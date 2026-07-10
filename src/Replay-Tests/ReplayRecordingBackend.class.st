@@ -49,6 +49,12 @@ ReplayRecordingBackend >> runFocus: aReplayFocus on: aResolvedUI [
 ]
 
 { #category : 'running' }
+ReplayRecordingBackend >> runPressKey: aReplayPressKey on: aResolvedUI [
+
+	self record: #pressKey action: aReplayPressKey resolvedUI: aResolvedUI
+]
+
+{ #category : 'running' }
 ReplayRecordingBackend >> runShortcut: aReplayShortcut on: aResolvedUI [
 
 	self record: #shortcut action: aReplayShortcut resolvedUI: aResolvedUI

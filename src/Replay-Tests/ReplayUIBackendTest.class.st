@@ -205,6 +205,66 @@ ReplayUIBackendTest >> testOpenLabeledPreservesManagedContentExtent [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testPressKeyActionDelegatesToResolvedUIBackend [
+
+	| backend action resolved |
+	backend := ReplayRecordingBackend new.
+	action := ReplayPressKey new.
+	action keySelector: #right.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: Object new
+		morph: Morph new.
+
+	action runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: backend lastInteraction equals: #pressKey.
+	self assert: backend lastAction equals: action.
+	self assert: backend lastResolvedUI equals: resolved
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testPressKeyBuildsKeyboardKeyEvents [
+
+	| action down up |
+	action := ReplayPressKey new.
+	action
+		keySelector: #left;
+		flags: 8.
+	down := action keyDownKey: action keyboardKey buttons: action flags.
+	up := action keyUpKey: action keyboardKey buttons: action flags.
+
+	self assert: down isKeyDown.
+	self assert: up isKeyUp.
+	self assert: down keyValue equals: KeyboardKey left value.
+	self assert: up keyValue equals: KeyboardKey left value.
+	self assert: down buttons equals: 8.
+	self assert: up buttons equals: 8
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testPressKeyChoicesResolveToKeyboardKeys [
+
+	ReplayPressKey keyChoices do: [ :association |
+		self assert: ((KeyboardKey perform: association key) isKindOf: KeyboardKey) ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testPressKeySettingsPresenterBuilds [
+
+	| action presenter |
+	action := ReplayPressKey new.
+	action
+		keySelector: #left;
+		repeatCount: 3;
+		flags: 8.
+	presenter := action settingsPresenterOn: ReplayEditor new.
+
+	self assert: presenter notNil
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testResolvedUIElementClickTargetRequiresMorph [
 
 	| resolved |

@@ -74,6 +74,12 @@ ReplayUIBackend >> runFocus: aReplayFocus on: aResolvedUI [
 ]
 
 { #category : 'running' }
+ReplayUIBackend >> runPressKey: aReplayPressKey on: aResolvedUI [
+
+	aReplayPressKey pressKeyOn: aResolvedUI keyboardTarget
+]
+
+{ #category : 'running' }
 ReplayUIBackend >> runShortcut: aReplayShortcut on: aResolvedUI [
 
 	aReplayShortcut shortcutOn: aResolvedUI keyboardTarget
