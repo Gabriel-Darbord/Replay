@@ -26,6 +26,16 @@ ReplayMacroContext class >> availableContexts [
 	^ contexts
 ]
 
+{ #category : 'detecting' }
+ReplayMacroContext class >> categoryNamesForMorph: aMorph [
+
+	| categories |
+	aMorph ifNil: [ ^ #() ].
+	(aMorph isKindOf: Morph) ifFalse: [ ^ #() ].
+	categories := aMorph kmDispatcher targets collect: [ :binding | binding category name ].
+	^ (categories asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
+]
+
 { #category : 'defaults' }
 ReplayMacroContext class >> defaultContexts [
 
@@ -55,6 +65,17 @@ ReplayMacroContext class >> forCategory: aKMCategory [
 		identifier: aKMCategory name
 		displayName: (ReplayShortcutConflict displayNameForCategoryName: aKMCategory name)
 		categoryNames: { aKMCategory name }
+]
+
+{ #category : 'detecting' }
+ReplayMacroContext class >> forMorph: aMorph [
+
+	| categoryNames displayName |
+	categoryNames := self categoryNamesForMorph: aMorph.
+	displayName := categoryNames isEmpty
+		ifTrue: [ 'Active UI' ]
+		ifFalse: [ 'Active UI: ' , (', ' join: (categoryNames collect: [ :categoryName | ReplayShortcutConflict displayNameForCategoryName: categoryName ])) ].
+	^ self identifier: #activeUI displayName: displayName categoryNames: categoryNames
 ]
 
 { #category : 'instance creation' }

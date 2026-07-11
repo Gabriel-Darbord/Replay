@@ -39,6 +39,18 @@ ReplayMacroLibrary >> install [
 	^ self macros flatCollect: [ :macro | macro install ]
 ]
 
+{ #category : 'keymapping' }
+ReplayMacroLibrary >> installedMacroCount [
+
+	^ self installedMacros size
+]
+
+{ #category : 'keymapping' }
+ReplayMacroLibrary >> installedMacros [
+
+	^ self macros select: [ :macro | macro installedCategories notEmpty ]
+]
+
 { #category : 'conflicts' }
 ReplayMacroLibrary >> internalConflicts [
 

@@ -126,6 +126,18 @@ ReplayMacroTest >> testMacroContextDefaultContextsExposeUserFacingChoices [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroContextDetectsCategoriesAttachedToMorph [
+
+	| morph categoryNames |
+	morph := Morph new.
+	morph kmDispatcher reset.
+	morph attachKeymapCategory: #RubTextEditor.
+	categoryNames := ReplayMacroContext categoryNamesForMorph: morph.
+
+	self assert: (categoryNames includes: #RubTextEditor)
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroContextTextEditorsMapsToRubTextEditor [
 
 	| context |
@@ -162,6 +174,27 @@ ReplayMacroTest >> testMacroDetectsConflictingKeymapInCategory [
 	self assert: conflict keymap equals: conflictingKeymap.
 	self assert: conflict category equals: category.
 	self assert: conflict shortcutString equals: conflictingKeymap shortcut asString
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorActiveContextStatusNamesFocusedConflict [
+
+	| morph macro editor status |
+	morph := Morph new.
+	morph kmDispatcher reset.
+	morph attachKeymapCategory: #RubTextEditor.
+	macro := ReplayMacro
+		named: 'Find macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 64;
+			yourself)
+		scenario: ReplayScenario new.
+	editor := ReplayMacroEditor on: macro.
+	status := editor activeContextStatusTextForMorph: morph.
+
+	self assert: (status includesSubstring: 'Text editor').
+	self assert: (status includesSubstring: 'conflict')
 ]
 
 { #category : 'tests' }
@@ -638,6 +671,37 @@ ReplayMacroTest >> testMacroLibraryEditorClearsInstalledReplayKeymaps [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorInstallationSummaryUpdatesWhenSelectedMacroInstalls [
+
+	| snapshot library macro editor |
+	snapshot := ReplayMacro installedKeymapEntries copy.
+	ReplayMacro uninstallAllInstalledKeymaps.
+	library := ReplayMacroLibrary new.
+	macro := ReplayMacro
+		named: 'Summary macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'library-summary-install-test';
+		contextNames: { #RubTextEditor }.
+	library addMacro: macro.
+	editor := ReplayMacroLibraryEditor on: library.
+	editor macroList selectIndex: 1.
+
+	[
+		self assert: (editor installationSummaryPresenter label includesSubstring: '0 / 1').
+		editor macroEditorPresenter installMacro.
+		self assert: (editor installationSummaryPresenter label includesSubstring: '1 / 1') ]
+
+		ensure: [
+			ReplayMacro uninstallAllInstalledKeymaps.
+			snapshot do: [ :association | association key addKeymapEntry: association value ] ]
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroLibraryEditorListAddCreatesOneMacro [
 
 	| library editor |
@@ -742,6 +806,34 @@ ReplayMacroTest >> testMacroLibraryNamesNewMacros [
 
 	self assert: first name equals: 'Macro 1'.
 	self assert: second name equals: 'Macro 2'
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryReportsInstalledMacros [
+
+	| library installed uninstalled |
+	library := ReplayMacroLibrary new.
+	installed := ReplayMacro
+		named: 'Installed'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	installed
+		identifier: 'library-installed-test';
+		contextNames: { #RubTextEditor }.
+	uninstalled := ReplayMacro named: 'Uninstalled' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	library
+		addMacro: installed;
+		addMacro: uninstalled.
+
+	[
+		installed install.
+		self assert: library installedMacros asArray equals: { installed }.
+		self assert: library installedMacroCount equals: 1 ]
+
+		ensure: [ installed uninstall ]
 ]
 
 { #category : 'tests' }
@@ -997,6 +1089,31 @@ ReplayMacroTest >> testMacroUpdateInstalledKeymapAfterShortcutChange [
 		macro updateInstalledKeymaps.
 		keymap := category allEntries keymaps detect: [ :each | macro isOwnKeymap: each ].
 		self assert: keymap shortcut asString equals: 'Cmd + D' ]
+		ensure: [ macro uninstall ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testReplayMacroReportsInstalledKeymapEntries [
+
+	| macro entries |
+	macro := ReplayMacro
+		named: 'Installed entry macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'installed-entry-test';
+		contextNames: { #RubTextEditor }.
+
+	[
+		macro install.
+		entries := ReplayMacro installedKeymapEntries.
+		self assert: (entries anySatisfy: [ :association |
+			association key name = #RubTextEditor and: [ macro isOwnKeymap: association value ] ]).
+		self assert: (ReplayMacro installedKeymaps anySatisfy: [ :keymap | macro isOwnKeymap: keymap ]) ]
+
 		ensure: [ macro uninstall ]
 ]
 

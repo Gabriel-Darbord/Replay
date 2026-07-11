@@ -82,6 +82,45 @@ ReplayUIBackendTest >> testAnnotationAutomaticPlacementPrefersRightWhenItFits [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testAnnotationExplicitPlacementFallsBackWhenPreferredSideDoesNotFit [
+
+	| worldBounds root manager annotation targetBounds |
+	worldBounds := World visibleClearArea.
+	root := Morph new
+		bounds: ((worldBounds right - 180) @ (worldBounds top + 40) extent: 160 @ 120);
+		yourself.
+	root openInWorld.
+	manager := ReplayUIManager new attachTo: root.
+	targetBounds := 100 @ 20 extent: 50 @ 40.
+	annotation := ReplayAnnotation
+		annotate: targetBounds
+		label: 'Preferred right fallback should move away from the target when the right side is crowded by the screen edge.'.
+	annotation placement: #right.
+
+	[
+		manager addOverlay: annotation.
+		self assert: annotation label bounds right <= worldBounds right.
+		self deny: (annotation label bounds intersects: annotation targetBoundsInWorld) ]
+
+		ensure: [
+			manager close.
+			root delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAnnotationExplicitPlacementProvidesFallbackCandidates [
+
+	| manager annotation candidates |
+	manager := ReplayUIManager new manage: (Morph new extent: 300 @ 200).
+	annotation := ReplayAnnotation annotate: (20 @ 20 extent: 50 @ 30) label: 'Preferred placement'.
+	annotation placement: #right.
+	manager addOverlay: annotation.
+	candidates := manager labelCandidatesFor: annotation.
+
+	self assert: candidates size > 1
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testAnnotationHonorsExplicitAbovePlacement [
 
 	| root manager annotation targetBounds |

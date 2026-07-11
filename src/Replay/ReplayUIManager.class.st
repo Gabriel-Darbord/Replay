@@ -356,9 +356,13 @@ ReplayUIManager >> labelBoundsFor: anAnnotation placement: placementSymbol [
 { #category : 'annotation layout' }
 ReplayUIManager >> labelCandidatesFor: anAnnotation [
 
+	| preferred fallbackCandidates |
 	anAnnotation placement = #automatic ifTrue: [
 		^ self automaticLabelCandidatesFor: anAnnotation ].
-	^ { self labelBoundsFor: anAnnotation placement: anAnnotation placement }
+	preferred := self labelBoundsFor: anAnnotation placement: anAnnotation placement.
+	fallbackCandidates := self automaticLabelCandidatesFor: anAnnotation.
+	^ { preferred } , (fallbackCandidates reject: [ :candidate |
+		candidate origin = preferred origin and: [ candidate extent = preferred extent ] ])
 ]
 
 { #category : 'annotation layout' }
@@ -601,7 +605,7 @@ ReplayUIManager >> resolver [
 ReplayUIManager >> scoreLabelBounds: candidateBounds rawBounds: rawBounds target: targetBounds avoiding: placedBounds preference: preferenceIndex [
 
 	| score |
-	score := preferenceIndex * 10.
+	score := preferenceIndex * 1000.
 	score := score + ((self distanceFrom: rawBounds origin to: candidateBounds origin) * 100).
 	(candidateBounds intersects: targetBounds) ifTrue: [ score := score + 100000 ].
 	placedBounds do: [ :each |

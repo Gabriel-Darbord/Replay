@@ -6,7 +6,8 @@ Class {
 		'library',
 		'macroList',
 		'macroEditorPane',
-		'macroEditorPresenter'
+		'macroEditorPresenter',
+		'installationSummaryPresenter'
 	],
 	#category : 'Replay',
 	#package : 'Replay'
@@ -65,7 +66,8 @@ ReplayMacroLibraryEditor >> addMacro [
 ReplayMacroLibraryEditor >> clearInstalledReplayMacros [
 
 	ReplayMacro uninstallAllInstalledKeymaps.
-	self refreshMacroEditorStatus
+	self refreshMacroEditorStatus.
+	self updateInstallationSummary
 ]
 
 { #category : 'initialization' }
@@ -90,6 +92,7 @@ ReplayMacroLibraryEditor >> defaultLayout [
 	^ SpBoxLayout newTopToBottom
 		spacing: 8;
 		add: self toolbar expand: false;
+		add: installationSummaryPresenter expand: false;
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
 			add: (SpBoxLayout newTopToBottom
@@ -138,8 +141,10 @@ ReplayMacroLibraryEditor >> initializePresenters [
 
 	macroList := SpEditableListPresenter new.
 	macroList items: self library macros.
+	installationSummaryPresenter := self newLabel.
 	macroEditorPane := SpBoxLayout newLeftToRight.
-	macroEditorPane add: self emptyMacroPresenter
+	macroEditorPane add: self emptyMacroPresenter.
+	self updateInstallationSummary
 ]
 
 { #category : 'initialization' }
@@ -153,7 +158,26 @@ ReplayMacroLibraryEditor >> initializeWindow: aWindow [
 ReplayMacroLibraryEditor >> installAllMacros [
 
 	self library install.
-	self refreshMacroEditorStatus
+	self refreshMacroEditorStatus.
+	self updateInstallationSummary
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibraryEditor >> installationSummaryPresenter [
+
+	^ installationSummaryPresenter
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> installationSummaryText [
+
+	^ 'Installed macros: '
+		, self library installedMacroCount asString
+		, ' / '
+		, self library macros size asString
+		, '. Replay keymaps in image: '
+		, ReplayMacro installedKeymapCount asString
+		, '.'
 ]
 
 { #category : 'accessing' }
@@ -198,6 +222,7 @@ ReplayMacroLibraryEditor >> macroList [
 ReplayMacroLibraryEditor >> refreshFromLibrary [
 
 	macroList ifNotNil: [ macroList items: self library macros ].
+	self updateInstallationSummary.
 	self selectFirstMacroIfNeeded
 ]
 
@@ -281,8 +306,14 @@ ReplayMacroLibraryEditor >> selectMacro: aReplayMacro [
 
 	macroEditorPresenter := aReplayMacro
 		ifNil: [ self emptyMacroPresenter ]
-		ifNotNil: [ ReplayMacroEditor on: aReplayMacro inLibrary: self library ].
-	macroEditorPane replaceAtIndex: 1 with: macroEditorPresenter
+		ifNotNil: [
+			(ReplayMacroEditor on: aReplayMacro inLibrary: self library)
+				whenMacroChangedDo: [
+					self refreshMacroEditorStatus.
+					self updateInstallationSummary ];
+				yourself ].
+	macroEditorPane replaceAtIndex: 1 with: macroEditorPresenter.
+	self updateInstallationSummary
 ]
 
 { #category : 'accessing' }
@@ -338,5 +369,13 @@ ReplayMacroLibraryEditor >> toolbar [
 ReplayMacroLibraryEditor >> uninstallAllMacros [
 
 	self library uninstall.
-	self refreshMacroEditorStatus
+	self refreshMacroEditorStatus.
+	self updateInstallationSummary
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> updateInstallationSummary [
+
+	installationSummaryPresenter ifNotNil: [
+		installationSummaryPresenter label: self installationSummaryText ]
 ]

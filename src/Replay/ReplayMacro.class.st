@@ -13,6 +13,29 @@ Class {
 }
 
 { #category : 'keymapping' }
+ReplayMacro class >> installedKeymapCount [
+
+	^ self installedKeymapEntries size
+]
+
+{ #category : 'keymapping' }
+ReplayMacro class >> installedKeymapEntries [
+
+	| entries |
+	entries := OrderedCollection new.
+	KMRepository default categories values do: [ :category |
+		category allEntries keymaps do: [ :keymap |
+			(self isReplayKeymap: keymap) ifTrue: [ entries add: category -> keymap ] ] ].
+	^ entries
+]
+
+{ #category : 'keymapping' }
+ReplayMacro class >> installedKeymaps [
+
+	^ self installedKeymapEntries collect: [ :association | association value ]
+]
+
+{ #category : 'keymapping' }
 ReplayMacro class >> isLegacyReplayKeymap: aKMKeymap [
 
 	^ (self isReplayKeymap: aKMKeymap)

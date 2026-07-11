@@ -19,6 +19,8 @@ ReplayMacroEditorDemoTest >> testMacroEditorSemanticTargets [
 	self assert: (editor replayPresenterAt: 'Macro editor' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Shortcut keys' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Install macro button' ifAbsent: [ nil ]) notNil.
+	self assert: (macroEditor replayPresenterAt: 'Active UI context status' ifAbsent: [ nil ]) notNil.
+	self assert: (macroEditor replayPresenterAt: 'Refresh active UI button' ifAbsent: [ nil ]) notNil.
 	self assert: (macroEditor replayPresenterAt: 'Uninstall macro button' ifAbsent: [ nil ]) notNil
 ]
 
