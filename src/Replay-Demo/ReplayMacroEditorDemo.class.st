@@ -86,8 +86,9 @@ ReplayMacroEditorDemo >> configureShortcutStep [
 		self clearAnnotationsAction.
 		self configureFindMacroAction.
 		self annotate: 'Shortcut keys' text: 'Shortcut keys are ordinary characters such as f or g.'.
-		self annotate: 'Control modifier' text: 'Modifiers compose with the keys to form shortcuts such as Control+F.'.
-		self annotate: 'Macro context' text: 'The context is user-facing. Text editors maps to the keymap category used by Rubric text editors.' }
+		self annotate: 'Control modifier' text: 'Modifiers compose with keys to form shortcuts such as Control+F.'.
+		self annotate: 'Macro context' text: 'The context is user-facing. Text editors maps to the keymap category used by Rubric text editors.'.
+		self annotate: 'Install active UI button' text: 'Install active UI can choose the context from the currently focused widget.' }
 ]
 
 { #category : 'steps' }
@@ -148,6 +149,15 @@ ReplayMacroEditorDemo >> openEditorStep [
 		self annotate: 'Macro editor' text: 'Selecting a macro opens its editable details here.' }
 ]
 
+{ #category : 'steps' }
+ReplayMacroEditorDemo >> runtimePolicyStep [
+
+	^ self stepNamed: 'Review runtime policy' with: {
+		self clearAnnotationsAction.
+		self annotate: 'Installation summary' text: 'The runtime summary reports library macros installed and total Replay keymaps in the image.'.
+		self annotate: 'Startup policy' text: 'Startup install is opt-in. Use the shown script from a Pharo startup file to install saved macros at image startup.' }
+]
+
 { #category : 'instance creation' }
 ReplayMacroEditorDemo >> scenario [
 
@@ -158,6 +168,7 @@ ReplayMacroEditorDemo >> scenario [
 		yourself.
 	scenario
 		addStep: self openEditorStep;
+		addStep: self runtimePolicyStep;
 		addStep: self createMacroStep;
 		addStep: self configureShortcutStep;
 		addStep: self conflictsStep;

@@ -17,10 +17,15 @@ ReplayMacroEditorDemoTest >> testMacroEditorSemanticTargets [
 
 	self assert: (editor replayPresenterAt: 'Macro list' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Macro editor' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Installation summary' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Startup policy' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Enable startup button' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Disable startup button' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Shortcut keys' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Install macro button' ifAbsent: [ nil ]) notNil.
 	self assert: (macroEditor replayPresenterAt: 'Active UI context status' ifAbsent: [ nil ]) notNil.
 	self assert: (macroEditor replayPresenterAt: 'Refresh active UI button' ifAbsent: [ nil ]) notNil.
+	self assert: (macroEditor replayPresenterAt: 'Install active UI button' ifAbsent: [ nil ]) notNil.
 	self assert: (macroEditor replayPresenterAt: 'Uninstall macro button' ifAbsent: [ nil ]) notNil
 ]
 
@@ -30,7 +35,7 @@ ReplayMacroEditorDemoTest >> testScenarioStructure [
 	| scenario |
 	scenario := ReplayMacroEditorDemo scenario.
 	self assert: scenario title equals: 'Replay Macro Editor Feature Tour'.
-	self assert: scenario steps size equals: 8.
+	self assert: scenario steps size equals: 9.
 	self assert: (scenario steps anySatisfy: [ :step |
 		step actions anySatisfy: [ :action | action isKindOf: ReplayAnnotate ] ]).
 	self assert: (scenario steps noneSatisfy: [ :step |

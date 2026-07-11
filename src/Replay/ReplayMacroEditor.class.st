@@ -20,7 +20,8 @@ Class {
 		'uninstallMacroButton',
 		'changeBlock',
 		'activeContextStatusPresenter',
-		'refreshActiveContextButton'
+		'refreshActiveContextButton',
+		'installActiveContextButton'
 	],
 	#category : 'Replay',
 	#package : 'Replay'
@@ -57,6 +58,7 @@ ReplayMacroEditor class >> defaultLayout [
 			spacing: 8;
 			add: #activeContextStatusPresenter;
 			add: #refreshActiveContextButton expand: false;
+			add: #installActiveContextButton expand: false;
 			yourself) expand: false;
 		add: 'Conflicting shortcuts in known contexts:' expand: false;
 		add: #conflictList;
@@ -265,6 +267,10 @@ ReplayMacroEditor >> initializePresenters [
 		label: 'Refresh active UI';
 		action: [ self refreshActiveContextStatus ];
 		yourself.
+	installActiveContextButton := self newButton
+		label: 'Install active UI';
+		action: [ self installInActiveContext ];
+		yourself.
 
 	conflictList := self newTable.
 	conflictList
@@ -298,6 +304,32 @@ ReplayMacroEditor >> initializeWindow: aWindowPresenter [
 	aWindowPresenter
 		title: 'Macro Editor';
 		initialExtent: 760 @ 520
+]
+
+{ #category : 'accessing' }
+ReplayMacroEditor >> installActiveContextButton [
+
+	^ installActiveContextButton
+]
+
+{ #category : 'active context' }
+ReplayMacroEditor >> installInActiveContext [
+
+	^ self installInActiveContextForMorph: self activeKeyboardFocusMorph
+]
+
+{ #category : 'active context' }
+ReplayMacroEditor >> installInActiveContextForMorph: aMorph [
+
+	| context |
+	context := ReplayMacroContext forMorph: aMorph.
+	context categoryNames isEmpty ifTrue: [
+		self refreshActiveContextStatus.
+		^ self ].
+	self macro contextNames: context categoryNames.
+	self refreshSelectedContext.
+	self installMacro.
+	self refreshActiveContextStatus
 ]
 
 { #category : 'actions' }
@@ -449,6 +481,7 @@ ReplayMacroEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 	aPresenterName = 'Conflict status' ifTrue: [ ^ conflictStatusPresenter ].
 	aPresenterName = 'Active UI context status' ifTrue: [ ^ activeContextStatusPresenter ].
 	aPresenterName = 'Refresh active UI button' ifTrue: [ ^ refreshActiveContextButton ].
+	aPresenterName = 'Install active UI button' ifTrue: [ ^ installActiveContextButton ].
 	aPresenterName = 'Conflict list' ifTrue: [ ^ conflictList ].
 	aPresenterName = 'Edit scenario button' ifTrue: [ ^ editScenarioButton ].
 	aPresenterName = 'Run macro button' ifTrue: [ ^ runMacroButton ].

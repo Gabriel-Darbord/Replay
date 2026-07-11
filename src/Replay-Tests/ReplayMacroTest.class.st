@@ -263,6 +263,32 @@ ReplayMacroTest >> testMacroEditorConflictStatusNamesConflictingContexts [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroEditorInstallsSelectedMacroInActiveMorphContext [
+
+	| morph macro editor |
+	morph := Morph new.
+	morph kmDispatcher reset.
+	morph attachKeymapCategory: #RubTextEditor.
+	macro := ReplayMacro
+		named: 'Active context macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro identifier: 'active-context-install-test'.
+	editor := ReplayMacroEditor on: macro.
+
+	[
+		editor installInActiveContextForMorph: morph.
+		self assert: macro contextNames asArray equals: { #RubTextEditor }.
+		self assert: (macro installedInContextNamed: #RubTextEditor).
+		self assert: (editor installationStatusPresenter label includesSubstring: 'Text editor') ]
+
+		ensure: [ macro uninstall ]
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroEditorMovesInstalledMacroWhenContextChanges [
 
 	| macro editor codeContext |
@@ -455,6 +481,52 @@ ReplayMacroTest >> testMacroEditorUsesMacroContexts [
 
 	self assert: textContext displayName equals: 'Text editors'.
 	self assert: textContext categoryNames asArray equals: { #RubTextEditor }
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroIdentitySurvivesSaveLoadEditInstallReloadWithoutDuplicateKeymaps [
+
+	| file firstRegistry firstMacro secondRegistry loadedMacro thirdRegistry reloadedMacro category ownKeymaps |
+	file := FileLocator temp / 'replay-macro-identity-reload-test.ston'.
+	file ensureDelete.
+	category := KMRepository default categoryForName: #RubTextEditor.
+	firstRegistry := ReplayMacroRegistry new.
+	firstMacro := firstRegistry library addNewMacro.
+	firstMacro
+		identifier: 'stable-identity-reload-test';
+		name: 'Original macro';
+		contextNames: { #RubTextEditor };
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself).
+
+	[
+		firstRegistry saveToFile: file.
+		secondRegistry := ReplayMacroRegistry new.
+		secondRegistry loadAndInstallFromFile: file.
+		loadedMacro := secondRegistry library macros first.
+		loadedMacro
+			name: 'Edited macro';
+			shortcut: (ReplayShortcut new
+				text: 'g';
+				addFlags: 16;
+				yourself).
+		loadedMacro updateInstalledKeymaps.
+		secondRegistry saveToFile: file.
+
+		thirdRegistry := ReplayMacroRegistry new.
+		thirdRegistry loadAndInstallFromFile: file.
+		reloadedMacro := thirdRegistry library macros first.
+		ownKeymaps := category allEntries keymaps select: [ :keymap | reloadedMacro isOwnKeymap: keymap ].
+		self assert: reloadedMacro identifier equals: 'stable-identity-reload-test'.
+		self assert: reloadedMacro name equals: 'Edited macro'.
+		self assert: reloadedMacro shortcut text equals: 'g'.
+		self assert: ownKeymaps size equals: 1 ]
+
+		ensure: [
+			ReplayMacro uninstallAllInstalledKeymaps.
+			file ensureDelete ]
 ]
 
 { #category : 'tests' }
@@ -750,6 +822,25 @@ ReplayMacroTest >> testMacroLibraryEditorRemovesUnselectedMacro [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorTogglesStartupInstallPolicy [
+
+	| editor |
+	ReplayMacroRegistry disableStartupInstallation.
+	editor := ReplayMacroLibraryEditor new.
+
+	[
+		self assert: (editor startupPolicyPresenter label includesSubstring: 'disabled').
+		editor enableStartupInstallation.
+		self assert: ReplayMacroRegistry startupInstallationEnabled.
+		self assert: (editor startupPolicyPresenter label includesSubstring: 'enabled').
+		editor disableStartupInstallation.
+		self deny: ReplayMacroRegistry startupInstallationEnabled.
+		self assert: (editor startupPolicyPresenter label includesSubstring: 'disabled') ]
+
+		ensure: [ ReplayMacroRegistry disableStartupInstallation ]
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroLibraryIgnoresInternalConflictsInDifferentContexts [
 
 	| library first second |
@@ -975,6 +1066,43 @@ ReplayMacroTest >> testMacroRegistrySavesAndLoadsLibrary [
 		self assert: loaded library macros first name equals: 'Saved macro'.
 		self assert: loaded library macros first contextNames asArray equals: { #RubTextEditor } ]
 		ensure: [ file ensureDelete ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroRegistryStartupPolicyInstallsOnlyWhenEnabled [
+
+	| file registry macro loadedMacro |
+	file := FileLocator temp / 'replay-macro-startup-policy-test.ston'.
+	file ensureDelete.
+	registry := ReplayMacroRegistry new.
+	macro := registry library addNewMacro.
+	macro
+		identifier: 'startup-policy-test';
+		name: 'Startup macro';
+		contextNames: { #RubTextEditor };
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself).
+
+	[
+		registry saveToFile: file.
+		ReplayMacroRegistry disableStartupInstallation.
+		registry := ReplayMacroRegistry new.
+		registry installSavedMacrosOnStartupFromFile: file.
+		loadedMacro := registry library macros first.
+		self deny: (loadedMacro installedInContextNamed: #RubTextEditor).
+
+		ReplayMacroRegistry enableStartupInstallation.
+		registry := ReplayMacroRegistry new.
+		registry installSavedMacrosOnStartupFromFile: file.
+		loadedMacro := registry library macros first.
+		self assert: (loadedMacro installedInContextNamed: #RubTextEditor) ]
+
+		ensure: [
+			ReplayMacroRegistry disableStartupInstallation.
+			ReplayMacro uninstallAllInstalledKeymaps.
+			file ensureDelete ]
 ]
 
 { #category : 'tests' }

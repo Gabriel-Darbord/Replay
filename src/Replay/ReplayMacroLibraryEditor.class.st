@@ -7,7 +7,10 @@ Class {
 		'macroList',
 		'macroEditorPane',
 		'macroEditorPresenter',
-		'installationSummaryPresenter'
+		'installationSummaryPresenter',
+		'startupPolicyPresenter',
+		'enableStartupButton',
+		'disableStartupButton'
 	],
 	#category : 'Replay',
 	#package : 'Replay'
@@ -95,6 +98,12 @@ ReplayMacroLibraryEditor >> defaultLayout [
 		add: installationSummaryPresenter expand: false;
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
+			add: startupPolicyPresenter;
+			add: enableStartupButton expand: false;
+			add: disableStartupButton expand: false;
+			yourself) expand: false;
+		add: (SpBoxLayout newLeftToRight
+			spacing: 8;
 			add: (SpBoxLayout newTopToBottom
 				spacing: 8;
 				add: 'Macros' expand: false;
@@ -107,6 +116,19 @@ ReplayMacroLibraryEditor >> defaultLayout [
 				yourself);
 			yourself);
 		yourself
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibraryEditor >> disableStartupButton [
+
+	^ disableStartupButton
+]
+
+{ #category : 'actions' }
+ReplayMacroLibraryEditor >> disableStartupInstallation [
+
+	ReplayMacroRegistry disableStartupInstallation.
+	self updateStartupPolicyStatus
 ]
 
 { #category : 'layout' }
@@ -126,6 +148,19 @@ ReplayMacroLibraryEditor >> emptyMacroPresenter [
 		yourself
 ]
 
+{ #category : 'accessing' }
+ReplayMacroLibraryEditor >> enableStartupButton [
+
+	^ enableStartupButton
+]
+
+{ #category : 'actions' }
+ReplayMacroLibraryEditor >> enableStartupInstallation [
+
+	ReplayMacroRegistry enableStartupInstallation.
+	self updateStartupPolicyStatus
+]
+
 { #category : 'tools' }
 ReplayMacroLibraryEditor >> importLibrary [
 
@@ -142,9 +177,19 @@ ReplayMacroLibraryEditor >> initializePresenters [
 	macroList := SpEditableListPresenter new.
 	macroList items: self library macros.
 	installationSummaryPresenter := self newLabel.
+	startupPolicyPresenter := self newLabel.
+	enableStartupButton := self newButton
+		label: 'Enable startup';
+		action: [ self enableStartupInstallation ];
+		yourself.
+	disableStartupButton := self newButton
+		label: 'Disable startup';
+		action: [ self disableStartupInstallation ];
+		yourself.
 	macroEditorPane := SpBoxLayout newLeftToRight.
 	macroEditorPane add: self emptyMacroPresenter.
-	self updateInstallationSummary
+	self updateInstallationSummary.
+	self updateStartupPolicyStatus
 ]
 
 { #category : 'initialization' }
@@ -273,10 +318,12 @@ ReplayMacroLibraryEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBl
 
 	aPresenterName = 'Macro list' ifTrue: [ ^ macroList ].
 	aPresenterName = 'Macro editor' ifTrue: [ ^ macroEditorPresenter ifNil: [ macroEditorPane ] ].
+	aPresenterName = 'Installation summary' ifTrue: [ ^ installationSummaryPresenter ].
+	aPresenterName = 'Startup policy' ifTrue: [ ^ startupPolicyPresenter ].
+	aPresenterName = 'Enable startup button' ifTrue: [ ^ enableStartupButton ].
+	aPresenterName = 'Disable startup button' ifTrue: [ ^ disableStartupButton ].
 	macroEditorPresenter ifNotNil: [
-		^ macroEditorPresenter
-			replayPresenterAt: aPresenterName
-			ifAbsent: absentBlock ].
+		^ macroEditorPresenter replayPresenterAt: aPresenterName ifAbsent: absentBlock ].
 	^ absentBlock value
 ]
 
@@ -320,6 +367,24 @@ ReplayMacroLibraryEditor >> selectMacro: aReplayMacro [
 ReplayMacroLibraryEditor >> selectedMacro [
 
 	^ macroList selectedItem
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibraryEditor >> startupPolicyPresenter [
+
+	^ startupPolicyPresenter
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> startupPolicyText [
+
+	^ 'Startup install: '
+		, (ReplayMacroRegistry startupInstallationEnabled
+			ifTrue: [ 'enabled' ]
+			ifFalse: [ 'disabled' ])
+		, '. Script: '
+		, ReplayMacroRegistry startupInstallationScriptText
+		, '.'
 ]
 
 { #category : 'layout' }
@@ -378,4 +443,11 @@ ReplayMacroLibraryEditor >> updateInstallationSummary [
 
 	installationSummaryPresenter ifNotNil: [
 		installationSummaryPresenter label: self installationSummaryText ]
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> updateStartupPolicyStatus [
+
+	startupPolicyPresenter ifNotNil: [
+		startupPolicyPresenter label: self startupPolicyText ]
 ]

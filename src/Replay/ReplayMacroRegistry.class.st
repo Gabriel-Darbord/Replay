@@ -5,7 +5,8 @@ Class {
 		'library'
 	],
 	#classInstVars : [
-		'Default'
+		'Default',
+		'InstallSavedMacrosOnStartup'
 	],
 	#category : 'Replay',
 	#package : 'Replay'
@@ -21,6 +22,27 @@ ReplayMacroRegistry class >> default [
 ReplayMacroRegistry class >> defaultFile [
 
 	^ FileLocator preferences / 'replay-macros.ston'
+]
+
+{ #category : 'startup' }
+ReplayMacroRegistry class >> disableStartupInstallation [
+
+	<script>
+	self startupInstallationEnabled: false
+]
+
+{ #category : 'startup' }
+ReplayMacroRegistry class >> enableStartupInstallation [
+
+	<script>
+	self startupInstallationEnabled: true
+]
+
+{ #category : 'startup' }
+ReplayMacroRegistry class >> installSavedMacrosOnStartup [
+
+	<script>
+	self default installSavedMacrosOnStartup
 ]
 
 { #category : 'persistence' }
@@ -54,10 +76,44 @@ ReplayMacroRegistry class >> save [
 	self default save
 ]
 
+{ #category : 'startup' }
+ReplayMacroRegistry class >> startupInstallationEnabled [
+
+	^ InstallSavedMacrosOnStartup = true
+]
+
+{ #category : 'startup' }
+ReplayMacroRegistry class >> startupInstallationEnabled: aBoolean [
+
+	InstallSavedMacrosOnStartup := aBoolean = true
+]
+
+{ #category : 'startup' }
+ReplayMacroRegistry class >> startupInstallationScriptText [
+
+	^ 'ReplayMacroRegistry installSavedMacrosOnStartup'
+]
+
 { #category : 'keymapping' }
 ReplayMacroRegistry >> install [
 
 	^ self library install
+]
+
+{ #category : 'startup' }
+ReplayMacroRegistry >> installSavedMacrosOnStartup [
+
+	self class startupInstallationEnabled ifFalse: [ ^ self ].
+	self loadAndInstall
+]
+
+{ #category : 'startup' }
+ReplayMacroRegistry >> installSavedMacrosOnStartupFromFile: aFileReference [
+
+	self class startupInstallationEnabled ifFalse: [
+		self loadFromFile: aFileReference.
+		^ self ].
+	self loadAndInstallFromFile: aFileReference
 ]
 
 { #category : 'accessing' }
