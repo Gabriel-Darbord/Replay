@@ -144,6 +144,31 @@ ReplayUIPathResolverTest >> testMorphicResolverWaitsOnlyUntilNextCycleForLateChi
 ]
 
 { #category : 'tests' }
+ReplayUIPathResolverTest >> testPathResolverSchedulesRetryThroughInjectedScheduler [
+
+	| root child resolver scheduled resolved |
+	root := Morph new.
+	child := Morph new.
+	scheduled := false.
+	resolver := ReplayUIPathResolver new
+		root: root;
+		path: #( 1 );
+		scheduleWith: [ :block | scheduled := block ];
+		whenFound: [ :morph | resolved := morph ];
+		whenMissing: [ :error | self fail: error messageText ];
+		yourself.
+
+	resolver resolve.
+
+	self assert: scheduled isBlock.
+	self assert: resolved isNil.
+	root addMorph: child.
+	scheduled value.
+	self assert: resolver attemptCount equals: 2.
+	self assert: resolved equals: child
+]
+
+{ #category : 'tests' }
 ReplayUIPathResolverTest >> testResolveEmptyPathFindsRootWithoutAttemptingRetry [
 
 	| root resolved resolver |

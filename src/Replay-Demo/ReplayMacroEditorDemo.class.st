@@ -1,0 +1,211 @@
+Class {
+	#name : 'ReplayMacroEditorDemo',
+	#superclass : 'Object',
+	#category : 'Replay-Demo',
+	#package : 'Replay-Demo'
+}
+
+{ #category : 'opening' }
+ReplayMacroEditorDemo class >> editScenario [
+
+	<script>
+	^ self scenario edit
+]
+
+{ #category : 'running' }
+ReplayMacroEditorDemo class >> run [
+	<script>
+
+	^ self scenario run
+]
+
+{ #category : 'instance creation' }
+ReplayMacroEditorDemo class >> scenario [
+
+	^ self new scenario
+]
+
+{ #category : 'actions' }
+ReplayMacroEditorDemo >> addMacroAction [
+
+	^ self script: 'self focus macroList addButton click'
+]
+
+{ #category : 'actions' }
+ReplayMacroEditorDemo >> annotate: targetName text: aString [
+
+	^ ReplayAnnotate new
+		targetNamed: targetName;
+		text: aString;
+		yourself
+]
+
+{ #category : 'actions' }
+ReplayMacroEditorDemo >> clearAnnotationsAction [
+
+	^ ReplayClearAnnotations new
+]
+
+{ #category : 'actions' }
+ReplayMacroEditorDemo >> configureFindMacroAction [
+
+	^ self script: '| editor context |
+editor := self focus macroEditorPresenter.
+editor namePresenter text: ''Find helper''.
+editor shortcutTextPresenter text: ''f''.
+editor controlCheckBox state ifFalse: [ editor controlCheckBox toggleState ].
+context := editor contextDropList items detect: [ :each | each identifier = #textEditors ].
+editor contextDropList selectItem: context'
+]
+
+{ #category : 'steps' }
+ReplayMacroEditorDemo >> configureShortcutStep [
+
+	^ self stepNamed: 'Choose shortcut and context' with: {
+		self clearAnnotationsAction.
+		self configureFindMacroAction.
+		self annotate: 'Shortcut keys' text: 'Shortcut keys are ordinary characters such as f or g.'.
+		self annotate: 'Control modifier' text: 'Modifiers compose with the keys to form shortcuts such as Control+F.'.
+		self annotate: 'Macro context' text: 'The context is user-facing. Text editors maps to the keymap category used by Rubric text editors.' }
+]
+
+{ #category : 'steps' }
+ReplayMacroEditorDemo >> conflictsStep [
+
+	^ self stepNamed: 'Review conflicts' with: {
+		self clearAnnotationsAction.
+		self annotate: 'Conflict status' text: 'Replay checks known contexts and reports how many conflicts would occur.'.
+		self annotate: 'Conflict list' text: 'Conflicts show readable contexts, shortcuts, action names, and descriptions.' }
+]
+
+{ #category : 'steps' }
+ReplayMacroEditorDemo >> createMacroStep [
+
+	^ self stepNamed: 'Create a macro' with: {
+		self clearAnnotationsAction.
+		self addMacroAction.
+		self annotate: 'Macro list' text: 'A new macro appears in the library and is selected for editing.'.
+		self annotate: 'Macro name' text: 'Macro names are user-facing labels. Installed keymaps keep a stable internal identity.' }
+]
+
+{ #category : 'constants' }
+ReplayMacroEditorDemo >> editorPosition [
+
+	^ 20 @ 20
+]
+
+{ #category : 'actions' }
+ReplayMacroEditorDemo >> installMacroAction [
+
+	^ self script: 'self focus macroEditorPresenter installMacro'
+]
+
+{ #category : 'steps' }
+ReplayMacroEditorDemo >> installStep [
+
+	^ self stepNamed: 'Install the macro' with: {
+		self clearAnnotationsAction.
+		self installMacroAction.
+		self annotate: 'Install macro button' text: 'Install/update writes the macro keymap into its selected context.'.
+		self annotate: 'Installation status' text: 'The status line shows where this macro is currently installed.' }
+]
+
+{ #category : 'constants' }
+ReplayMacroEditorDemo >> navigationPosition [
+
+	^ 520 @ 420
+]
+
+{ #category : 'steps' }
+ReplayMacroEditorDemo >> openEditorStep [
+
+	^ self stepNamed: 'Open the macro library editor' with: {
+		self setupMacroEditorAction.
+		self clearAnnotationsAction.
+		self annotate: 'Macro list' text: 'The library holds user macros. Use the built-in plus and trash buttons to add or remove macros.'.
+		self annotate: 'Macro editor' text: 'Selecting a macro opens its editable details here.' }
+]
+
+{ #category : 'instance creation' }
+ReplayMacroEditorDemo >> scenario [
+
+	| scenario |
+	scenario := ReplayScenario new
+		title: 'Replay Macro Editor Feature Tour';
+		description: 'Create, check, install, update, and uninstall Replay macros.';
+		yourself.
+	scenario
+		addStep: self openEditorStep;
+		addStep: self createMacroStep;
+		addStep: self configureShortcutStep;
+		addStep: self conflictsStep;
+		addStep: self installStep;
+		addStep: self updateInstalledStep;
+		addStep: self uninstallStep.
+	^ scenario
+]
+
+{ #category : 'actions' }
+ReplayMacroEditorDemo >> script: aString [
+
+	^ ReplayScript new
+		script: aString;
+		yourself
+]
+
+{ #category : 'actions' }
+ReplayMacroEditorDemo >> setupMacroEditorAction [
+
+	^ self script: '| registry editor window |
+registry := ReplayMacroRegistry new.
+editor := ReplayMacroLibraryEditor onRegistry: registry.
+self focus: editor.
+window := editor asWindow.
+window initialPosition: ', self editorPosition storeString, '.
+window open'
+]
+
+{ #category : 'building' }
+ReplayMacroEditorDemo >> stepNamed: aString with: actions [
+
+	| step |
+	step := ReplayStep new.
+	actions do: [ :action | step addAction: action ].
+	step navigation
+		text: aString;
+		position: self navigationPosition;
+		skip: false.
+	^ step
+]
+
+{ #category : 'actions' }
+ReplayMacroEditorDemo >> uninstallMacroAction [
+
+	^ self script: 'self focus macroEditorPresenter uninstallMacro'
+]
+
+{ #category : 'steps' }
+ReplayMacroEditorDemo >> uninstallStep [
+
+	^ self stepNamed: 'Uninstall the macro' with: {
+		self clearAnnotationsAction.
+		self uninstallMacroAction.
+		self annotate: 'Uninstall macro button' text: 'Uninstall removes this macro from every context where it is installed.'.
+		self annotate: 'Installation status' text: 'After uninstalling, the status returns to Not installed.' }
+]
+
+{ #category : 'actions' }
+ReplayMacroEditorDemo >> updateInstalledShortcutAction [
+
+	^ self script: 'self focus macroEditorPresenter shortcutTextPresenter text: ''g'''
+]
+
+{ #category : 'steps' }
+ReplayMacroEditorDemo >> updateInstalledStep [
+
+	^ self stepNamed: 'Update an installed macro' with: {
+		self clearAnnotationsAction.
+		self updateInstalledShortcutAction.
+		self annotate: 'Shortcut keys' text: 'Editing an installed macro refreshes its installed keymap immediately.'.
+		self annotate: 'Installation status' text: 'The macro remains installed while its shortcut or name changes.' }
+]

@@ -22,7 +22,8 @@ Class {
 	#superclass : 'Morph',
 	#instVars : [
 		'label',
-		'line'
+		'line',
+		'placement'
 	],
 	#category : 'Replay-Morphs',
 	#package : 'Replay',
@@ -42,6 +43,15 @@ ReplayAnnotation class >> annotate: bounds label: label [
 	annotation := self new.
 	annotation annotate: bounds.
 	label isEmptyOrNil ifFalse: [ annotation label: label ].
+	^ annotation
+]
+
+{ #category : 'instance creation' }
+ReplayAnnotation class >> annotate: bounds label: label placement: placementSymbol [
+
+	| annotation |
+	annotation := self annotate: bounds label: label.
+	annotation placement: placementSymbol.
 	^ annotation
 ]
 
@@ -258,6 +268,18 @@ ReplayAnnotation >> placeLabelAt: aPoint [
 	label position: aPoint.
 	self ensureLabelInWorld.
 	line ifNotNil: [ self step ]
+]
+
+{ #category : 'accessing' }
+ReplayAnnotation >> placement [
+
+	^ placement ifNil: [ #automatic ]
+]
+
+{ #category : 'accessing' }
+ReplayAnnotation >> placement: aSymbol [
+
+	placement := aSymbol ifNil: [ #automatic ] ifNotNil: [ aSymbol asSymbol ]
 ]
 
 { #category : 'stepping and presenter' }

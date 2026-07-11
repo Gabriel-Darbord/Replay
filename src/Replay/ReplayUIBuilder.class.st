@@ -16,13 +16,10 @@ Class {
 
 { #category : 'managing UI' }
 ReplayUIBuilder >> buildUI [
-	"Asynchronously rebuild the UI, executing the callback when done"
+	"Asynchronously rebuild UI, executing the callback when done."
 
-	self manager:
-		((self currentStep actions at: actionIndex) uiManagerOn: self).
-
-	self currentWorld defer: [ self nextAction ].
-
+	self manager: ((self currentStep actions at: actionIndex) uiManagerOn: self).
+	self defer: [ self nextAction ].
 	^ self manager ui
 ]
 

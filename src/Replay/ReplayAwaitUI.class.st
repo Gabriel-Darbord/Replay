@@ -17,7 +17,6 @@ ReplayAwaitUI class >> displayName [
 
 { #category : 'running' }
 ReplayAwaitUI >> runOn: runner [
-	"Let pending UI layout and deferred callbacks settle before the next action."
 
-	self currentWorld doOneCycle
+	runner settleUI
 ]

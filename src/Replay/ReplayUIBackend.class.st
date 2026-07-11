@@ -15,6 +15,12 @@ ReplayUIBackend >> canRun: anAction nativelyOn: nativeElement [
 	^ false
 ]
 
+{ #category : 'running' }
+ReplayUIBackend >> defer: aBlock [
+
+	self currentWorld defer: aBlock
+]
+
 { #category : 'accessing' }
 ReplayUIBackend >> managedPresenter [
 
@@ -106,6 +112,12 @@ ReplayUIBackend >> runType: aReplayType on: aResolvedUI [
 ReplayUIBackend >> semanticScriptReceiver [
 
 	^ nil
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> settleUI [
+
+	self currentWorld doOneCycle
 ]
 
 { #category : 'accessing' }

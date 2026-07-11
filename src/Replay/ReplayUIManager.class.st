@@ -13,7 +13,8 @@ Class {
 		'backend',
 		'editor',
 		'clickBlock',
-		'ownsUI'
+		'ownsUI',
+		'interactionPolicy'
 	],
 	#category : 'Replay',
 	#package : 'Replay'
@@ -69,6 +70,12 @@ ReplayUIManager >> addOverlay: ui [
 		self layoutAnnotations ]
 ]
 
+{ #category : 'interaction policy' }
+ReplayUIManager >> allowUserInteraction [
+
+	self interactionPolicy: #passThrough
+]
+
 { #category : 'annotation layout' }
 ReplayUIManager >> annotationLabelMargin [
 
@@ -107,10 +114,11 @@ ReplayUIManager >> attachTo: aMorph usingBackend: aReplayUIBackend [
 	| owner |
 	owner := aMorph owner ifNil: [
 		ReplayError new
-			messageText: 'Cannot attach Replay to a Morph without an owner.';
+			messageText: 'Cannot attach Replay Morph without an owner.';
 			tag: aMorph;
 			signal ].
 	ownsUI := false.
+	self allowUserInteraction.
 	backend := aReplayUIBackend.
 	managed := aMorph.
 	root := owner.
@@ -137,6 +145,26 @@ ReplayUIManager >> attachToPresenter: aSpecPresenter [
 			tag: aSpecPresenter;
 			signal ].
 	^ self attachTo: morph usingBackend: (ReplaySpecBackend presenter: aSpecPresenter morph: morph)
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> automaticLabelCandidatesFor: anAnnotation [
+
+	| target extent margin centeredX centeredY |
+	target := anAnnotation targetBoundsInWorld.
+	extent := anAnnotation label extent.
+	margin := self annotationLabelMargin.
+	centeredX := target center x - (extent x / 2).
+	centeredY := target center y - (extent y / 2).
+	^ {
+		(target right + margin @ centeredY extent: extent).
+		(target left - extent x - margin @ centeredY extent: extent).
+		(centeredX @ (target bottom + margin) extent: extent).
+		(centeredX @ (target top - extent y - margin) extent: extent).
+		(target right + margin @ (target bottom + margin) extent: extent).
+		(target right + margin @ (target top - extent y - margin) extent: extent).
+		(target left - extent x - margin @ (target bottom + margin) extent: extent).
+		(target left - extent x - margin @ (target top - extent y - margin) extent: extent) }
 ]
 
 { #category : 'accessing' }
@@ -171,6 +199,18 @@ ReplayUIManager >> bestLabelBoundsFor: anAnnotation avoiding: placedBounds [
 			bestScore := score.
 			bestBounds := candidateBounds ] ].
 	^ bestBounds
+]
+
+{ #category : 'interaction policy' }
+ReplayUIManager >> blockUserInteraction [
+
+	self interactionPolicy: #blocked
+]
+
+{ #category : 'testing' }
+ReplayUIManager >> blocksUserInteraction [
+
+	^ self interactionPolicy = #blocked
 ]
 
 { #category : 'annotation layout' }
@@ -212,6 +252,14 @@ ReplayUIManager >> close [
 		ifFalse: [
 			overlay ifNotNil: [ overlay delete ].
 			overlay := nil ]
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> defer: aBlock [
+
+	backend
+		ifNil: [ ReplayUIBackend new defer: aBlock ]
+		ifNotNil: [ backend defer: aBlock ]
 ]
 
 { #category : 'annotation layout' }
@@ -273,8 +321,20 @@ ReplayUIManager >> installBlockingHandlersOn: aMorph [
 		aMorph on: event send: #yourself to: aMorph ]
 ]
 
+{ #category : 'accessing' }
+ReplayUIManager >> interactionPolicy [
+
+	^ interactionPolicy ifNil: [ self ownsUI ifTrue: [ #blocked ] ifFalse: [ #passThrough ] ]
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> interactionPolicy: aSymbol [
+
+	interactionPolicy := aSymbol asSymbol
+]
+
 { #category : 'annotation layout' }
-ReplayUIManager >> labelCandidatesFor: anAnnotation [
+ReplayUIManager >> labelBoundsFor: anAnnotation placement: placementSymbol [
 
 	| target extent margin centeredX centeredY |
 	target := anAnnotation targetBoundsInWorld.
@@ -282,15 +342,23 @@ ReplayUIManager >> labelCandidatesFor: anAnnotation [
 	margin := self annotationLabelMargin.
 	centeredX := target center x - (extent x / 2).
 	centeredY := target center y - (extent y / 2).
-	^ {
-		(target right + margin @ centeredY extent: extent).
-		(target left - extent x - margin @ centeredY extent: extent).
-		(centeredX @ (target bottom + margin) extent: extent).
-		(centeredX @ (target top - extent y - margin) extent: extent).
-		(target right + margin @ (target bottom + margin) extent: extent).
-		(target right + margin @ (target top - extent y - margin) extent: extent).
-		(target left - extent x - margin @ (target bottom + margin) extent: extent).
-		(target left - extent x - margin @ (target top - extent y - margin) extent: extent) }
+	placementSymbol = #right ifTrue: [ ^ target right + margin @ centeredY extent: extent ].
+	placementSymbol = #left ifTrue: [ ^ target left - extent x - margin @ centeredY extent: extent ].
+	placementSymbol = #below ifTrue: [ ^ centeredX @ (target bottom + margin) extent: extent ].
+	placementSymbol = #above ifTrue: [ ^ centeredX @ (target top - extent y - margin) extent: extent ].
+	placementSymbol = #belowRight ifTrue: [ ^ target right + margin @ (target bottom + margin) extent: extent ].
+	placementSymbol = #aboveRight ifTrue: [ ^ target right + margin @ (target top - extent y - margin) extent: extent ].
+	placementSymbol = #belowLeft ifTrue: [ ^ target left - extent x - margin @ (target bottom + margin) extent: extent ].
+	placementSymbol = #aboveLeft ifTrue: [ ^ target left - extent x - margin @ (target top - extent y - margin) extent: extent ].
+	^ (self automaticLabelCandidatesFor: anAnnotation) first
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> labelCandidatesFor: anAnnotation [
+
+	anAnnotation placement = #automatic ifTrue: [
+		^ self automaticLabelCandidatesFor: anAnnotation ].
+	^ { self labelBoundsFor: anAnnotation placement: anAnnotation placement }
 ]
 
 { #category : 'annotation layout' }
@@ -319,9 +387,10 @@ ReplayUIManager >> manage: aMorph [
 
 { #category : 'managing UI' }
 ReplayUIManager >> manage: aMorph usingBackend: aReplayUIBackend [
-	"Set UI backend and manage morph in full-window layout."
+	"Set UI backend to manage morph in full-window layout."
 
 	ownsUI := true.
+	self blockUserInteraction.
 	backend := aReplayUIBackend.
 	root := ReplayRootMorph new
 		manager: self;
@@ -334,7 +403,7 @@ ReplayUIManager >> manage: aMorph usingBackend: aReplayUIBackend [
 	overlay := self newOverlay.
 	root addMorph: managed fullFrame: LayoutFrame identity.
 	root addMorph: overlay fullFrame: LayoutFrame identity.
-	self installBlockingHandlersOn: overlay.
+	self blocksUserInteraction ifTrue: [ self installBlockingHandlersOn: overlay ].
 	^ self
 ]
 
@@ -456,7 +525,7 @@ ReplayUIManager >> openLabeled: title [
 
 { #category : 'instance creation' }
 ReplayUIManager >> openLabeled: title extent: requestedExtent bounds: requestedBounds [
-	"Open managed UI and optionally control content extent and exact window bounds."
+	"Open managed UI optionally controlling content extent or exact window bounds."
 
 	| targetExtent window frameDelta contentExtent |
 	targetExtent := requestedExtent ifNil: [
@@ -477,8 +546,7 @@ ReplayUIManager >> openLabeled: title extent: requestedExtent bounds: requestedB
 			ifNil: [
 				window extent: targetExtent + frameDelta.
 				root extent: targetExtent ] ].
-
-	self currentWorld defer: [ self syncManagedLayout ]
+	self defer: [ self syncManagedLayout ]
 ]
 
 { #category : 'accessing' }
@@ -542,6 +610,16 @@ ReplayUIManager >> scoreLabelBounds: candidateBounds rawBounds: rawBounds target
 	^ score
 ]
 
+{ #category : 'managing UI' }
+ReplayUIManager >> settleUI [
+
+	backend
+		ifNil: [ ReplayUIBackend new settleUI ]
+		ifNotNil: [ backend settleUI ].
+	self syncManagedLayout.
+	self layoutAnnotations
+]
+
 { #category : 'accessing' }
 ReplayUIManager >> surfaceMorph [
 
@@ -582,12 +660,9 @@ ReplayUIManager >> ui [
 
 { #category : 'managing UI' }
 ReplayUIManager >> wrapForEdition [
-	"Called after the managed UI has been initialized.
-	Wraps all child elements to make them interactive for edition.
-	Wait for the next UI cycle to ensure the elements are in the World."
+	"Called after managed UI initialized. Wrap all child elements to make them interactive in edition. Wait next UI cycle to ensure elements are in World."
 
-	self currentWorld defer: [
-		overlay addMorph: (self wrapMorph: managed atDepth: 1) ]
+	self defer: [ overlay addMorph: (self wrapMorph: managed atDepth: 1) ]
 ]
 
 { #category : 'managing UI' }

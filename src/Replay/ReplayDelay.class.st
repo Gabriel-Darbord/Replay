@@ -51,10 +51,10 @@ ReplayDelay >> printOn: stream [
 
 { #category : 'running' }
 ReplayDelay >> runOn: runner [
-	"Pause the scenario and then continue on the UI process."
+	"Pause scenario and continue on UI process."
 
 	[ (Delay forSeconds: self seconds) wait.
-	self currentWorld defer: [ runner nextAction ] ] fork
+	runner defer: [ runner nextAction ] ] fork
 ]
 
 { #category : 'accessing' }

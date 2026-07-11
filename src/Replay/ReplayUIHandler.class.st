@@ -150,7 +150,6 @@ ReplayUIHandler >> runOn: runner [
 	| uiReference manager |
 	uiReference := self uiReference.
 	uiReference isWorld ifTrue: [ ^ self runWithoutPathOn: runner ].
-
 	manager := runner manager.
 	manager ifNil: [ ^ self missingManagerFor: runner ].
 	manager
@@ -160,10 +159,8 @@ ReplayUIHandler >> runOn: runner [
 			runner isStopped ifFalse: [
 				self runOn: runner resolvedUI: resolved.
 				"Let UI process action effects before continuing."
-				self currentWorld defer: [
-					runner isStopped ifFalse: [ runner nextAction ] ] ] ]
-		onMissing: [ :error |
-			runner isStopped ifFalse: [ error signal ] ]
+				runner defer: [ runner isStopped ifFalse: [ runner nextAction ] ] ] ]
+		onMissing: [ :error | runner isStopped ifFalse: [ error signal ] ]
 ]
 
 { #category : 'running' }
@@ -180,13 +177,10 @@ ReplayUIHandler >> runOn: runner resolvedUI: resolvedUI [
 
 { #category : 'running' }
 ReplayUIHandler >> runWithoutPathOn: runner [
-	"When path is nil, the default behavior is to target the current World.
-	Has control of runner continuation."
+	"When path nil, default behavior targets current World. Has control runner continuation."
 
 	self runOn: runner onUI: self currentWorld.
-
-	"Await UI process before continuing"
-	self currentWorld defer: [ runner nextAction ]
+	runner defer: [ runner nextAction ]
 ]
 
 { #category : 'editing' }

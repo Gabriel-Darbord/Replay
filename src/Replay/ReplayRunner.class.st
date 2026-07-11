@@ -33,6 +33,14 @@ ReplayRunner >> currentStep [
 	^ scenario steps at: stepIndex
 ]
 
+{ #category : 'running' }
+ReplayRunner >> defer: aBlock [
+
+	uiManager
+		ifNil: [ ReplayUIBackend new defer: aBlock ]
+		ifNotNil: [ uiManager defer: aBlock ]
+]
+
 { #category : 'accessing' }
 ReplayRunner >> focus [
 
@@ -133,6 +141,14 @@ ReplayRunner >> scenario [
 ReplayRunner >> scenario: aScenario [
 
 	scenario := aScenario
+]
+
+{ #category : 'running' }
+ReplayRunner >> settleUI [
+
+	uiManager
+		ifNil: [ ReplayUIBackend new settleUI ]
+		ifNotNil: [ uiManager settleUI ]
 ]
 
 { #category : 'running' }

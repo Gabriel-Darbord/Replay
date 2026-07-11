@@ -13,7 +13,8 @@ Class {
 		'whenMissing',
 		'maxAttempts',
 		'attemptCount',
-		'lastFailure'
+		'lastFailure',
+		'scheduleBlock'
 	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
@@ -226,7 +227,15 @@ ReplayUIPathResolver >> root: aMorph [
 { #category : 'resolving' }
 ReplayUIPathResolver >> scheduleAttempt [
 
-	self currentWorld defer: [ self attemptResolve ]
+	scheduleBlock
+		ifNil: [ ReplayUIBackend new defer: [ self attemptResolve ] ]
+		ifNotNil: [ scheduleBlock value: [ self attemptResolve ] ]
+]
+
+{ #category : 'accessing' }
+ReplayUIPathResolver >> scheduleWith: aBlock [
+
+	scheduleBlock := aBlock
 ]
 
 { #category : 'testing' }

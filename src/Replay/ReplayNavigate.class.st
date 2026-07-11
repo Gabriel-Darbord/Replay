@@ -381,18 +381,18 @@ ReplayNavigate >> printOn: stream [
 
 { #category : 'running' }
 ReplayNavigate >> runOn: runner [
-	"Has control runner continuation"
+	"Has control runner continuation."
 
 	| dialog window |
 	skip ifTrue: [ ^ runner nextStep ].
-
 	dialog := SpConfirmDialog new
 		title: runner scenario title;
 		icon: (self iconNamed: #info);
 		label: (Microdown asRichText: self text);
 		acceptLabel: self acceptLabel;
-		onAccept: [ "Defer so windows appear in same spot between steps"
-			self currentWorld defer: [ runner nextStep ] ];
+		onAccept: [
+			"Defer so windows appear in same spot between steps."
+			runner defer: [ runner nextStep ] ];
 		cancelLabel: self cancelLabel;
 		onCancel: [ runner stop ];
 		yourself.

@@ -24,6 +24,65 @@ ReplayUIBackendTest >> testAddingLabeledAnnotationToNonWorldOverlayDoesNotFail [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testAnnotateDefersOverlayThroughManagerBackend [
+
+	| backend manager runner action resolved target |
+	backend := ReplayRecordingBackend new.
+	manager := ReplayUIManager new
+		manage: (Morph new extent: 200 @ 100)
+		usingBackend: backend.
+	runner := ReplayRunner on: ReplayScenario new.
+	runner manager: manager.
+	target := Morph new bounds: (10 @ 10 extent: 80 @ 30).
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Target')
+		nativeElement: target
+		morph: target.
+	action := ReplayAnnotate new text: 'Deferred annotation'; yourself.
+
+	action runOn: runner resolvedUI: resolved.
+
+	self assert: backend deferredBlockCount equals: 1.
+	self assert: manager overlay submorphs isEmpty.
+	backend runDeferredBlocks.
+	self assert: manager overlay submorphs size equals: 1
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAnnotatePlacementSettingsPresenterBuilds [
+
+	| action presenter |
+	action := ReplayAnnotate new placement: #below; text: 'Placed'; yourself.
+	presenter := action settingsPresenterOn: ReplayEditor new.
+
+	self assert: presenter notNil
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAnnotationHonorsExplicitLeftPlacement [
+
+	| root manager annotation targetBounds |
+	root := Morph new bounds: (200 @ 100 extent: 500 @ 260); yourself.
+	root openInWorld.
+	manager := ReplayUIManager new attachTo: root.
+	targetBounds := 220 @ 80 extent: 80 @ 40.
+	annotation := ReplayAnnotation
+		annotate: targetBounds
+		label: 'Explicit left placement'.
+	annotation placement: #left.
+
+	[
+		manager addOverlay: annotation.
+		self assert: annotation label bounds right <= annotation targetBoundsInWorld left.
+		self deny: (annotation label bounds intersects: annotation targetBoundsInWorld) ]
+
+		ensure: [
+			manager close.
+			root delete ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testAnnotationLabelStaysInsideVisibleWorldNearRightEdge [
 
 	| worldBounds root manager annotation targetBounds |
@@ -141,6 +200,19 @@ ReplayUIBackendTest >> testAttachUIActionRejectsUnexpectedScriptResult [
 		withExceptionDo: [ :error |
 			self assert: (error messageText includesSubstring: 'existing Morph or Spec presenter').
 			self assert: error tag equals: 42 ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAttachedMorphManagerAllowsUserInteraction [
+
+	| root target manager |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (10 @ 10 corner: 80 @ 40).
+	root addMorph: target.
+	manager := ReplayUIManager new attachTo: target.
+
+	self assert: manager interactionPolicy equals: #passThrough.
+	self deny: manager blocksUserInteraction
 ]
 
 { #category : 'tests' }
@@ -323,6 +395,16 @@ ReplayUIBackendTest >> testManagedMorphAndOverlayResizeWithRootWindow [
 		self assert: manager managedUI extent x > 250.
 		self assert: manager managedUI extent y > 120 ]
 		ensure: [ manager close ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testManagedMorphManagerBlocksUserInteraction [
+
+	| manager |
+	manager := ReplayUIManager new manage: (Morph new extent: 100 @ 50).
+
+	self assert: manager interactionPolicy equals: #blocked.
+	self assert: manager blocksUserInteraction
 ]
 
 { #category : 'tests' }
@@ -975,4 +1057,20 @@ ReplayUIBackendTest >> testUIResolverMaxAttemptsIsAtLeastOne [
 	self assert: resolver maxAttempts equals: 1.
 	resolver maxAttempts: 3.
 	self assert: resolver maxAttempts equals: 3
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testUIResolverSchedulesRetryThroughBackend [
+
+	| backend resolver ran |
+	backend := ReplayRecordingBackend new.
+	resolver := ReplayUIResolver on: backend.
+	ran := false.
+
+	resolver schedule: [ ran := true ].
+
+	self deny: ran.
+	self assert: backend deferredBlockCount equals: 1.
+	backend runDeferredBlocks.
+	self assert: ran
 ]

@@ -17,15 +17,17 @@ ReplayMorphicResolver >> resolve: aReference thenDo: foundBlock onMissing: missi
 			missingReference: aReference
 			reason: 'Morphic backend can only resolve Morphic path references.'
 			onMissing: missingBlock ].
-	^ ReplayUIPathResolver
-		findPath: aReference value
-		in: backend surfaceMorph
-		thenDo: [ :morph |
+	^ ReplayUIPathResolver new
+		root: backend surfaceMorph;
+		path: aReference value;
+		scheduleWith: [ :block | backend defer: block ];
+		whenFound: [ :morph |
 			foundBlock value: (self
 				resolvedElementFor: aReference
 				nativeElement: morph
-				morph: morph) ]
-		onMissing: missingBlock
+				morph: morph) ];
+		whenMissing: missingBlock;
+		resolve
 ]
 
 { #category : 'testing' }

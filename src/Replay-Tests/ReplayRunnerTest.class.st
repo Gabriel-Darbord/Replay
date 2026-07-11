@@ -9,6 +9,22 @@ Class {
 }
 
 { #category : 'tests' }
+ReplayRunnerTest >> testAwaitUIActionDelegatesToManagerBackend [
+
+	| backend manager runner |
+	backend := ReplayRecordingBackend new.
+	manager := ReplayUIManager new
+		manage: (Morph new extent: 100 @ 50)
+		usingBackend: backend.
+	runner := ReplayRunner on: ReplayScenario new.
+	runner manager: manager.
+
+	ReplayAwaitUI new runOn: runner.
+
+	self assert: backend lastInteraction equals: #settleUI
+]
+
+{ #category : 'tests' }
 ReplayRunnerTest >> testAwaitUIActionEditionPresenterBuilds [
 
 	| presenter |
@@ -146,6 +162,26 @@ ReplayRunnerTest >> testRunExecutesActionsInStepOrderWithoutOpeningNavigation [
 	scenario addStep: step.
 	scenario run.
 	self assert: log asArray equals: #( first second )
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testRunnerDeferDelegatesToManagerBackend [
+
+	| backend manager runner ran |
+	backend := ReplayRecordingBackend new.
+	manager := ReplayUIManager new
+		manage: (Morph new extent: 100 @ 50)
+		usingBackend: backend.
+	runner := ReplayRunner on: ReplayScenario new.
+	runner manager: manager.
+	ran := false.
+
+	runner defer: [ ran := true ].
+
+	self deny: ran.
+	self assert: backend deferredBlockCount equals: 1.
+	backend runDeferredBlocks.
+	self assert: ran
 ]
 
 { #category : 'tests' }

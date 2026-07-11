@@ -17,6 +17,35 @@ ReplayShortcut class >> displayName [
 	^ 'Shortcut'
 ]
 
+{ #category : 'instance creation' }
+ReplayShortcut class >> fromKeymap: aKMKeymap [
+
+	^ self new
+		beForKeymap: aKMKeymap;
+		yourself
+]
+
+{ #category : 'instance creation' }
+ReplayShortcut class >> fromShortcut: aShortcut [
+
+	^ self new
+		beForShortcut: aShortcut;
+		yourself
+]
+
+{ #category : 'converting' }
+ReplayShortcut >> asKMShortcut [
+
+	| combinations |
+	self text isEmpty ifTrue: [ ^ KMNoShortcut new ].
+	combinations := OrderedCollection new.
+	self text do: [ :character |
+		combinations add: (self keyCombinationForCharacter: character) ].
+	^ combinations allButFirst
+		inject: combinations first
+		into: [ :shortcut :next | shortcut , next ]
+]
+
 { #category : 'editing' }
 ReplayShortcut >> beForKeymap: aKMKeymap [
 	"Adopt the characters and modifiers of the keymap to replay it."
@@ -24,6 +53,33 @@ ReplayShortcut >> beForKeymap: aKMKeymap [
 	self text: ''.
 	self flags: 0.
 	aKMKeymap shortcut configureReplayShortcut: self
+]
+
+{ #category : 'editing' }
+ReplayShortcut >> beForShortcut: aShortcut [
+	"Adopt the characters and modifiers from a Keymapping shortcut object."
+
+	self text: ''.
+	self flags: 0.
+	aShortcut configureReplayShortcut: self
+]
+
+{ #category : 'converting' }
+ReplayShortcut >> keyCombinationForCharacter: aCharacter [
+
+	| combination |
+	combination := aCharacter asLowercase.
+	(self flags bitAnd: 64) ~= 0 ifTrue: [ combination := combination command ].
+	(self flags bitAnd: 16) ~= 0 ifTrue: [ combination := combination control ].
+	(self flags bitAnd: 32) ~= 0 ifTrue: [ combination := combination alt ].
+	(self flags bitAnd: 8) ~= 0 ifTrue: [ combination := combination shift ].
+	^ combination
+]
+
+{ #category : 'testing' }
+ReplayShortcut >> matchesKeymap: aKMKeymap [
+
+	^ self sameShortcutAs: (self class fromKeymap: aKMKeymap)
 ]
 
 { #category : 'editing' }
@@ -39,6 +95,12 @@ ReplayShortcut >> modifierPresenterOn: editor [
 		  yourself
 ]
 
+{ #category : 'testing' }
+ReplayShortcut >> normalizedText [
+
+	^ self text asLowercase
+]
+
 { #category : 'running' }
 ReplayShortcut >> runOn: runner onUI: ui [
 
@@ -49,6 +111,13 @@ ReplayShortcut >> runOn: runner onUI: ui [
 ReplayShortcut >> runOn: runner resolvedUI: resolvedUI [
 
 	resolvedUI runShortcut: self
+]
+
+{ #category : 'testing' }
+ReplayShortcut >> sameShortcutAs: aReplayShortcut [
+
+	^ self flags = aReplayShortcut flags
+		and: [ self normalizedText = aReplayShortcut normalizedText ]
 ]
 
 { #category : 'editing' }

@@ -4,11 +4,30 @@ Class {
 	#instVars : [
 		'lastInteraction',
 		'lastAction',
-		'lastResolvedUI'
+		'lastResolvedUI',
+		'deferredBlocks'
 	],
 	#category : 'Replay-Tests',
 	#package : 'Replay-Tests'
 }
+
+{ #category : 'running' }
+ReplayRecordingBackend >> defer: aBlock [
+
+	self deferredBlocks add: aBlock
+]
+
+{ #category : 'accessing' }
+ReplayRecordingBackend >> deferredBlockCount [
+
+	^ self deferredBlocks size
+]
+
+{ #category : 'accessing' }
+ReplayRecordingBackend >> deferredBlocks [
+
+	^ deferredBlocks ifNil: [ deferredBlocks := OrderedCollection new ]
+]
 
 { #category : 'accessing' }
 ReplayRecordingBackend >> lastAction [
@@ -43,6 +62,15 @@ ReplayRecordingBackend >> runClick: aReplayClick on: aResolvedUI [
 ]
 
 { #category : 'running' }
+ReplayRecordingBackend >> runDeferredBlocks [
+
+	| blocks |
+	blocks := self deferredBlocks copy.
+	deferredBlocks removeAll.
+	blocks do: [ :block | block value ]
+]
+
+{ #category : 'running' }
 ReplayRecordingBackend >> runFocus: aReplayFocus on: aResolvedUI [
 
 	self record: #focus action: aReplayFocus resolvedUI: aResolvedUI
@@ -70,4 +98,10 @@ ReplayRecordingBackend >> runShortcut: aReplayShortcut on: aResolvedUI [
 ReplayRecordingBackend >> runType: aReplayType on: aResolvedUI [
 
 	self record: #type action: aReplayType resolvedUI: aResolvedUI
+]
+
+{ #category : 'running' }
+ReplayRecordingBackend >> settleUI [
+
+	lastInteraction := #settleUI
 ]

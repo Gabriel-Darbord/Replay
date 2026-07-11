@@ -21,6 +21,18 @@ ReplayScenarioSerializationTest >> roundTripAction: anAction [
 ]
 
 { #category : 'tests' }
+ReplayScenarioSerializationTest >> testAnnotatePlacementRoundTripsThroughSton [
+
+	| copy |
+	copy := self roundTripAction: (ReplayAnnotate new
+		placement: #aboveLeft;
+		text: 'Placed label';
+		yourself).
+	self assert: copy placement equals: #aboveLeft.
+	self assert: copy text equals: 'Placed label'
+]
+
+{ #category : 'tests' }
 ReplayScenarioSerializationTest >> testAwaitUIActionRoundTripsThroughSton [
 
 	| copy |
