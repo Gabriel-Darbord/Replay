@@ -21,6 +21,14 @@ ReplayScenarioSerializationTest >> roundTripAction: anAction [
 ]
 
 { #category : 'tests' }
+ReplayScenarioSerializationTest >> testAwaitUIActionRoundTripsThroughSton [
+
+	| copy |
+	copy := self roundTripAction: ReplayAwaitUI new.
+	self assert: copy class equals: ReplayAwaitUI
+]
+
+{ #category : 'tests' }
 ReplayScenarioSerializationTest >> testNavigatePlacementRoundTripsThroughSton [
 
 	| scenario positionedStep boundedStep copy positionedNavigation boundedNavigation |

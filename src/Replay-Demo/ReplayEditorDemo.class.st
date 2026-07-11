@@ -66,6 +66,12 @@ ReplayEditorDemo >> attachEditorAction [
 		yourself
 ]
 
+{ #category : 'actions' }
+ReplayEditorDemo >> awaitUIAction [
+
+	^ ReplayAwaitUI new
+]
+
 { #category : 'steps' }
 ReplayEditorDemo >> cleanupStep [
 
@@ -99,6 +105,7 @@ ReplayEditorDemo >> editingStep [
 	^ self stepNamed: 'Insert and edit actions' with: {
 		self clearAnnotationsAction.
 		self addScriptActionInEditor.
+		self awaitUIAction.
 		self annotate: 'Action list' text: 'A Script action was inserted into the current step.'.
 		self annotate: 'Action script' text: 'The selected Script action exposes an editable source field.' }
 ]

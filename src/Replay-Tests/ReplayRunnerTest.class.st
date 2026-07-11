@@ -9,6 +9,25 @@ Class {
 }
 
 { #category : 'tests' }
+ReplayRunnerTest >> testAwaitUIActionEditionPresenterBuilds [
+
+	| presenter |
+	presenter := ReplayAwaitUI new editionPresenterOn: ReplayEditor new.
+
+	self assert: presenter notNil
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testAwaitUIActionRunsWithoutControllingContinuation [
+
+	| action runner |
+	action := ReplayAwaitUI new.
+	runner := ReplayRunner on: ReplayScenario new.
+	self deny: action controlsRunnerContinuation.
+	self shouldnt: [ action runOn: runner ] raise: Error
+]
+
+{ #category : 'tests' }
 ReplayRunnerTest >> testDelayActionDefaults [
 
 	| action |

@@ -9,6 +9,32 @@ Class {
 }
 
 { #category : 'tests' }
+ReplayEditorDemoTest >> testAwaitUISettlesScriptSourceBounds [
+
+	| demo runner editor resolved bounds |
+	demo := ReplayEditorDemo new.
+	runner := ReplayRunner on: demo scenario.
+	demo setupEditorAction runOn: runner.
+	editor := runner focus.
+	demo attachEditorAction runOn: runner.
+	demo addScriptActionInEditor runOn: runner.
+	demo awaitUIAction runOn: runner.
+
+	[
+		runner manager
+			resolve: (ReplayUIReference named: 'Action script')
+			forAction: ReplayAnnotate new
+			thenDo: [ :element | resolved := element ]
+			onMissing: [ :error | error signal ].
+		bounds := resolved boundsInSurface.
+		self assert: bounds width > 500.
+		self assert: bounds height > 200 ]
+		ensure: [
+			runner manager ifNotNil: [ :manager | manager close ].
+			editor ifNotNil: [ editor window ifNotNil: [ :window | window close ] ] ]
+]
+
+{ #category : 'tests' }
 ReplayEditorDemoTest >> testDemoScenarioRoundTripsThroughSton [
 
 	| copy |
@@ -18,13 +44,17 @@ ReplayEditorDemoTest >> testDemoScenarioRoundTripsThroughSton [
 ]
 
 { #category : 'tests' }
-ReplayEditorDemoTest >> testEditingStepAnnotatesScriptSourceField [
+ReplayEditorDemoTest >> testEditingStepAwaitsUIBeforeAnnotatingScriptSourceField [
 
-	| annotation |
-	annotation := ReplayEditorDemo new editingStep actions
-		detect: [ :action |
-			(action isKindOf: ReplayAnnotate) and: [
-				action text = 'The selected Script action exposes an editable source field.' ] ].
+	| actions awaitIndex annotationIndex annotation |
+	actions := ReplayEditorDemo new editingStep actions.
+	awaitIndex := actions findFirst: [ :action | action isKindOf: ReplayAwaitUI ].
+	annotationIndex := actions findFirst: [ :action |
+		(action isKindOf: ReplayAnnotate) and: [
+			action text = 'The selected Script action exposes an editable source field.' ] ].
+	annotation := actions at: annotationIndex.
+	self assert: awaitIndex > 0.
+	self assert: annotationIndex > awaitIndex.
 	self assert: annotation targetName equals: 'Action script'
 ]
 
