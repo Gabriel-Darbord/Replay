@@ -60,6 +60,51 @@ ReplayUIBackendTest >> testAnnotatePlacementSettingsPresenterBuilds [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testAnnotationAutomaticPlacementPrefersRightWhenItFits [
+
+	| root manager annotation targetBounds |
+	root := Morph new
+		bounds: (100 @ 100 extent: 600 @ 300);
+		yourself.
+	root openInWorld.
+	manager := ReplayUIManager new attachTo: root.
+	targetBounds := 40 @ 80 extent: 80 @ 40.
+	annotation := ReplayAnnotation annotate: targetBounds label: 'Automatic right placement'.
+
+	[
+		manager addOverlay: annotation.
+		self assert: annotation label bounds left >= annotation targetBoundsInWorld right.
+		self deny: (annotation label bounds intersects: annotation targetBoundsInWorld) ]
+
+		ensure: [
+			manager close.
+			root delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAnnotationHonorsExplicitAbovePlacement [
+
+	| root manager annotation targetBounds |
+	root := Morph new
+		bounds: (200 @ 200 extent: 500 @ 320);
+		yourself.
+	root openInWorld.
+	manager := ReplayUIManager new attachTo: root.
+	targetBounds := 160 @ 160 extent: 80 @ 40.
+	annotation := ReplayAnnotation annotate: targetBounds label: 'Explicit above placement'.
+	annotation placement: #above.
+
+	[
+		manager addOverlay: annotation.
+		self assert: annotation label bounds bottom <= annotation targetBoundsInWorld top.
+		self deny: (annotation label bounds intersects: annotation targetBoundsInWorld) ]
+
+		ensure: [
+			manager close.
+			root delete ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testAnnotationHonorsExplicitLeftPlacement [
 
 	| root manager annotation targetBounds |

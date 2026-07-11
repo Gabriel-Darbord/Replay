@@ -127,13 +127,14 @@ ReplayMacroEditor >> conflictStatusPresenter [
 { #category : 'updating' }
 ReplayMacroEditor >> conflictStatusTextFor: conflicts [
 
-	| contextCount |
+	| contextNames |
 	self macro shortcut text isEmpty ifTrue: [
 		^ 'Enter shortcut keys to check known contexts.' ].
 	conflicts isEmpty ifTrue: [ ^ 'No conflicts in known contexts.' ].
-	contextCount := (conflicts collect: [ :conflict | conflict categoryName ]) asSet size.
-	conflicts size = 1 ifTrue: [ ^ '1 conflict in 1 context.' ].
-	^ conflicts size asString , ' conflicts in ' , contextCount asString , ' contexts.'
+	contextNames := ((conflicts collect: [ :conflict | conflict contextDisplayName ]) asSet asArray sorted: [ :first :second | first <= second ]).
+	conflicts size = 1 ifTrue: [
+		^ '1 conflict in context: ' , contextNames first , '.' ].
+	^ conflicts size asString , ' conflicts in contexts: ' , (', ' join: contextNames) , '.'
 ]
 
 { #category : 'conflicts' }
@@ -190,7 +191,7 @@ ReplayMacroEditor >> initializePresenters [
 	shortcutTextPresenter := self newText.
 	shortcutTextPresenter
 		text: self macro shortcut text;
-		help: 'Type the shortcut key characters; use the modifier checkboxes below.';
+		help: 'Type shortcut key characters; use modifier checkboxes below.';
 		whenTextChangedDo: [ :aString |
 			self macro shortcut text: aString.
 			self macroChanged ].
@@ -207,8 +208,7 @@ ReplayMacroEditor >> initializePresenters [
 		whenSelectedItemChangedDo: [ :context |
 			context ifNotNil: [
 				self macro contextNames: context categoryNames.
-				self updateInstallationStatus.
-				self updateConflicts ] ].
+				self macroChanged ] ].
 
 	installationStatusPresenter := self newLabel.
 	conflictStatusPresenter := self newLabel.

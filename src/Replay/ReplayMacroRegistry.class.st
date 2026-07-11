@@ -81,7 +81,13 @@ ReplayMacroRegistry >> load [
 { #category : 'persistence' }
 ReplayMacroRegistry >> loadAndInstall [
 
-	self load.
+	self loadAndInstallFromFile: self class defaultFile
+]
+
+{ #category : 'persistence' }
+ReplayMacroRegistry >> loadAndInstallFromFile: aFileReference [
+
+	self loadFromFile: aFileReference.
 	self install
 ]
 
@@ -96,7 +102,7 @@ ReplayMacroRegistry >> loadFromFile: aFileReference [
 { #category : 'editing' }
 ReplayMacroRegistry >> openEditor [
 
-	^ (ReplayMacroLibraryEditor on: self library) open
+	^ (ReplayMacroLibraryEditor onRegistry: self) open
 ]
 
 { #category : 'persistence' }

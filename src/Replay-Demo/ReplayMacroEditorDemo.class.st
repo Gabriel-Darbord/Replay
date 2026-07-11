@@ -55,15 +55,28 @@ ReplayMacroEditorDemo >> clearAnnotationsAction [
 ]
 
 { #category : 'actions' }
+ReplayMacroEditorDemo >> clearTriggeredFlagAction [
+
+	^ self script: 'Smalltalk globals removeKey: #ReplayMacroEditorDemoTriggered ifAbsent: [ ]'
+]
+
+{ #category : 'actions' }
 ReplayMacroEditorDemo >> configureFindMacroAction [
 
-	^ self script: '| editor context |
+	^ self script: '| editor context macro payload step |
 editor := self focus macroEditorPresenter.
 editor namePresenter text: ''Find helper''.
 editor shortcutTextPresenter text: ''f''.
 editor controlCheckBox state ifFalse: [ editor controlCheckBox toggleState ].
 context := editor contextDropList items detect: [ :each | each identifier = #textEditors ].
-editor contextDropList selectItem: context'
+editor contextDropList selectItem: context.
+macro := editor macro.
+payload := ReplayScenario new title: ''Find helper macro payload''; yourself.
+step := ReplayStep new.
+step navigation skip: true.
+step addAction: (ReplayScript new script: ''Smalltalk globals at: #ReplayMacroEditorDemoTriggered put: true'').
+payload addStep: step.
+macro scenario: payload'
 ]
 
 { #category : 'steps' }
@@ -141,7 +154,7 @@ ReplayMacroEditorDemo >> scenario [
 	| scenario |
 	scenario := ReplayScenario new
 		title: 'Replay Macro Editor Feature Tour';
-		description: 'Create, check, install, update, and uninstall Replay macros.';
+		description: 'Create, check, install, trigger, update, and uninstall Replay macros.';
 		yourself.
 	scenario
 		addStep: self openEditorStep;
@@ -149,6 +162,7 @@ ReplayMacroEditorDemo >> scenario [
 		addStep: self configureShortcutStep;
 		addStep: self conflictsStep;
 		addStep: self installStep;
+		addStep: self triggerShortcutStep;
 		addStep: self updateInstalledStep;
 		addStep: self uninstallStep.
 	^ scenario
@@ -188,6 +202,41 @@ ReplayMacroEditorDemo >> stepNamed: aString with: actions [
 ]
 
 { #category : 'actions' }
+ReplayMacroEditorDemo >> triggerInstalledShortcutAction [
+
+	^ self script: '| morph event |
+Smalltalk globals removeKey: #ReplayMacroEditorDemoTriggered ifAbsent: [ ].
+morph := Morph new.
+[
+	morph kmDispatcher reset.
+	morph attachKeymapCategory: #RubTextEditor.
+	event := KeyboardEvent new.
+	event
+		setType: #keystroke
+		buttons: 16
+		position: 0 @ 0
+		keyValue: $f asInteger
+		charCode: $f asInteger
+		hand: nil
+		stamp: Time now.
+	event key: (KeyboardKey fromCharacter: $f).
+	morph kmDispatcher dispatchKeystroke: event.
+	(Smalltalk globals at: #ReplayMacroEditorDemoTriggered ifAbsent: [ false ]) ifFalse: [
+		self error: ''Macro shortcut did not run'' ] ]
+	ensure: [ morph delete ]'
+]
+
+{ #category : 'steps' }
+ReplayMacroEditorDemo >> triggerShortcutStep [
+
+	^ self stepNamed: 'Trigger installed shortcut' with: {
+		self clearAnnotationsAction.
+		self triggerInstalledShortcutAction.
+		self annotate: 'Installation status' text: 'A Control+F event was dispatched through the text editor context, and the macro payload ran.'.
+		self annotate: 'Run macro button' text: 'Run macro executes the same scenario directly from the editor.' }
+]
+
+{ #category : 'actions' }
 ReplayMacroEditorDemo >> uninstallMacroAction [
 
 	^ self script: 'self focus macroEditorPresenter uninstallMacro'
@@ -199,6 +248,7 @@ ReplayMacroEditorDemo >> uninstallStep [
 	^ self stepNamed: 'Uninstall the macro' with: {
 		self clearAnnotationsAction.
 		self uninstallMacroAction.
+		self clearTriggeredFlagAction.
 		self annotate: 'Uninstall macro button' text: 'Uninstall removes this macro from every context where it is installed.'.
 		self annotate: 'Installation status' text: 'After uninstalling, the status returns to Not installed.' }
 ]

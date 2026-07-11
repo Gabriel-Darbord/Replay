@@ -305,6 +305,12 @@ ReplayMacro >> uninstallFromContextNamed: aSymbol [
 { #category : 'keymapping' }
 ReplayMacro >> updateInstalledKeymaps [
 
-	self installedCategories do: [ :category |
-		self installInCategory: category ]
+	| installedCategories targetCategories |
+	installedCategories := self installedCategories asOrderedCollection.
+	installedCategories ifNotEmpty: [
+		targetCategories := self contextNames
+			ifEmpty: [ installedCategories ]
+			ifNotEmpty: [ self contextCategories ].
+		installedCategories do: [ :category | self uninstallFromCategory: category ].
+		targetCategories do: [ :category | self installInCategory: category ] ]
 ]

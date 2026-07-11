@@ -6,6 +6,46 @@ Class {
 }
 
 { #category : 'tests' }
+ReplayMacroTest >> testInstalledMacroUsesReplacedScenarioWhenShortcutRuns [
+
+	| macro morph spy event |
+	spy := ReplayMacroRunSpy new.
+	macro := ReplayMacro
+		named: 'Scenario macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'scenario-replacement-test';
+		contextNames: { #RubTextEditor }.
+	morph := Morph new.
+
+	[
+		macro install.
+		macro scenario: spy.
+		morph kmDispatcher reset.
+		morph attachKeymapCategory: #RubTextEditor.
+		event := KeyboardEvent new.
+		event
+			setType: #keystroke
+			buttons: 16
+			position: 0 @ 0
+			keyValue: $f asInteger
+			charCode: $f asInteger
+			hand: nil
+			stamp: Time now.
+		event key: (KeyboardKey fromCharacter: $f).
+		morph kmDispatcher dispatchKeystroke: event.
+		self assert: spy hasRun ]
+
+		ensure: [
+			macro uninstall.
+			morph delete ]
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testInstalledTextEditorMacroIsVisibleToCategoryBinding [
 
 	| macro category binding keymap |
@@ -173,6 +213,50 @@ ReplayMacroTest >> testMacroEditorCanUninstallMacro [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroEditorConflictStatusNamesConflictingContexts [
+
+	| macro editor |
+	macro := ReplayMacro
+		named: 'Find macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 64;
+			yourself)
+		scenario: ReplayScenario new.
+	macro contextNames: { #MorphCtrlNavigation }.
+	editor := ReplayMacroEditor on: macro.
+
+	self assert: (editor conflictStatusPresenter label includesSubstring: 'Text editor')
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorMovesInstalledMacroWhenContextChanges [
+
+	| macro editor codeContext |
+	macro := ReplayMacro
+		named: 'Context macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'editor-context-move-test';
+		contextNames: { #RubTextEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	[
+		editor installMacro.
+		self assert: (macro installedInContextNamed: #RubTextEditor).
+		codeContext := editor contextDropList items detect: [ :context | context identifier = #smalltalkEditors ].
+		editor contextDropList selectItem: codeContext.
+		self deny: (macro installedInContextNamed: #RubTextEditor).
+		self assert: (macro installedInContextNamed: #RubSmalltalkEditor) ]
+
+		ensure: [ macro uninstall ]
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroEditorShowsConflictsInAllKnownContexts [
 
 	| macro editor conflict |
@@ -246,6 +330,32 @@ ReplayMacroTest >> testMacroEditorShowsStoredShortcut [
 	self deny: editor controlCheckBox state.
 	self deny: editor altCheckBox state.
 	self deny: editor shiftCheckBox state
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorUpdatesInstalledMacroWhenNameChanges [
+
+	| macro editor keymap |
+	macro := ReplayMacro
+		named: 'Before rename'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'editor-name-update-test';
+		contextNames: { #RubTextEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	[
+		editor installMacro.
+		editor namePresenter text: 'After rename'.
+		keymap := (KMRepository default categoryForName: #RubTextEditor) allEntries keymaps
+			detect: [ :each | macro isOwnKeymap: each ].
+		self assert: keymap description equals: 'Replay macro: After rename' ]
+
+		ensure: [ macro uninstall ]
 ]
 
 { #category : 'tests' }
@@ -689,6 +799,64 @@ ReplayMacroTest >> testMacroRegistryLoadAndInstall [
 		self assert: (loaded library macros first installedInContextNamed: #RubTextEditor) ]
 		ensure: [
 			loaded ifNotNil: [ loaded uninstall ].
+			file ensureDelete ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroRegistryLoadAndInstallFromFileInstallsLoadedMacros [
+
+	| file registry macro loaded loadedMacro |
+	file := FileLocator temp / 'replay-macro-load-install-test.ston'.
+	file ensureDelete.
+	registry := ReplayMacroRegistry new.
+	macro := registry library addNewMacro.
+	macro
+		identifier: 'registry-load-install-test';
+		name: 'Load install macro';
+		contextNames: { #RubTextEditor };
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself).
+
+	[
+		registry saveToFile: file.
+		loaded := ReplayMacroRegistry new.
+		loaded loadAndInstallFromFile: file.
+		loadedMacro := loaded library macros first.
+		self assert: (loadedMacro installedInContextNamed: #RubTextEditor) ]
+
+		ensure: [
+			ReplayMacro uninstallAllInstalledKeymaps.
+			file ensureDelete ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroRegistryLoadFromFileDoesNotInstallLoadedMacros [
+
+	| file registry macro loaded loadedMacro |
+	file := FileLocator temp / 'replay-macro-load-only-test.ston'.
+	file ensureDelete.
+	registry := ReplayMacroRegistry new.
+	macro := registry library addNewMacro.
+	macro
+		identifier: 'registry-load-only-test';
+		name: 'Load only macro';
+		contextNames: { #RubTextEditor };
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself).
+
+	[
+		registry saveToFile: file.
+		loaded := ReplayMacroRegistry new.
+		loaded loadFromFile: file.
+		loadedMacro := loaded library macros first.
+		self deny: (loadedMacro installedInContextNamed: #RubTextEditor) ]
+
+		ensure: [
+			ReplayMacro uninstallAllInstalledKeymaps.
 			file ensureDelete ]
 ]
 
