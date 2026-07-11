@@ -41,6 +41,14 @@ ReplayMacroEditorDemo >> annotate: targetName text: aString [
 ]
 
 { #category : 'actions' }
+ReplayMacroEditorDemo >> attachMacroEditorAction [
+
+	^ ReplayAttachUI new
+		script: 'self focus';
+		yourself
+]
+
+{ #category : 'actions' }
 ReplayMacroEditorDemo >> clearAnnotationsAction [
 
 	^ ReplayClearAnnotations new
@@ -119,10 +127,11 @@ ReplayMacroEditorDemo >> navigationPosition [
 { #category : 'steps' }
 ReplayMacroEditorDemo >> openEditorStep [
 
-	^ self stepNamed: 'Open the macro library editor' with: {
+	^ self stepNamed: 'Open macro library editor' with: {
 		self setupMacroEditorAction.
+		self attachMacroEditorAction.
 		self clearAnnotationsAction.
-		self annotate: 'Macro list' text: 'The library holds user macros. Use the built-in plus and trash buttons to add or remove macros.'.
+		self annotate: 'Macro list' text: 'The library holds user macros. Use built-in plus and trash buttons to add or remove macros.'.
 		self annotate: 'Macro editor' text: 'Selecting a macro opens its editable details here.' }
 ]
 

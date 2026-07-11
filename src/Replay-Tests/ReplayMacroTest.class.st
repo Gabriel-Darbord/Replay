@@ -28,6 +28,64 @@ ReplayMacroTest >> testInstalledTextEditorMacroIsVisibleToCategoryBinding [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testInstalledTextEditorMacroRunsThroughMorphDispatcher [
+
+	| macro morph spy event |
+	spy := ReplayMacroRunSpy new.
+	macro := ReplayMacro
+		named: 'Find macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: spy.
+	macro identifier: 'dispatcher-run-test'.
+	morph := Morph new.
+
+	[
+		macro contextNames: { #RubTextEditor }.
+		macro install.
+		morph kmDispatcher reset.
+		morph attachKeymapCategory: #RubTextEditor.
+		event := KeyboardEvent new.
+		event
+			setType: #keystroke
+			buttons: 16
+			position: 0 @ 0
+			keyValue: $f asInteger
+			charCode: $f asInteger
+			hand: nil
+			stamp: Time now.
+		event key: (KeyboardKey fromCharacter: $f).
+		morph kmDispatcher dispatchKeystroke: event.
+		self assert: spy hasRun ]
+
+		ensure: [
+			macro uninstall.
+			morph delete ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroContextDefaultContextsExposeUserFacingChoices [
+
+	| contexts textContext codeContext morphicContext windowContext |
+	contexts := ReplayMacroContext defaultContexts.
+	textContext := contexts detect: [ :context | context identifier = #textEditors ].
+	codeContext := contexts detect: [ :context | context identifier = #smalltalkEditors ].
+	morphicContext := contexts detect: [ :context | context identifier = #morphicNavigation ].
+	windowContext := contexts detect: [ :context | context identifier = #windows ].
+
+	self assert: textContext displayName equals: 'Text editors'.
+	self assert: textContext categoryNames asArray equals: { #RubTextEditor }.
+	self assert: codeContext displayName equals: 'Smalltalk code editors'.
+	self assert: codeContext categoryNames asArray equals: { #RubSmalltalkEditor }.
+	self assert: morphicContext displayName equals: 'Morphic navigation'.
+	self assert: morphicContext categoryNames asArray equals: { #MorphCtrlNavigation }.
+	self assert: windowContext displayName equals: 'Windows'.
+	self assert: windowContext categoryNames asArray equals: { #WindowShortcuts }
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroContextTextEditorsMapsToRubTextEditor [
 
 	| context |
@@ -246,6 +304,17 @@ ReplayMacroTest >> testMacroEditorUpdatesShortcutText [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroEditorUsesMacroContexts [
+
+	| editor textContext |
+	editor := ReplayMacroEditor new.
+	textContext := editor contextDropList items detect: [ :context | context identifier = #textEditors ].
+
+	self assert: textContext displayName equals: 'Text editors'.
+	self assert: textContext categoryNames asArray equals: { #RubTextEditor }
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroInstallDoesNotReportOwnKeymapAsConflict [
 
 	| category macro keymap conflicts |
@@ -419,6 +488,43 @@ ReplayMacroTest >> testMacroLibraryEditorBuilds [
 	self assert: editor macroEditorPane isNotNil.
 	self assert: editor toolbar isNotNil.
 	self assert: editor macroList items size equals: 1
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorClearsInstalledReplayKeymaps [
+
+	| snapshot library macro editor |
+	snapshot := OrderedCollection new.
+	KMRepository default categories valuesDo: [ :category |
+		category allEntries keymaps do: [ :keymap |
+			(ReplayMacro isReplayKeymap: keymap) ifTrue: [
+				snapshot add: category -> keymap ] ] ].
+
+	library := ReplayMacroLibrary new.
+	macro := ReplayMacro
+		named: 'Clear macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'library-clear-installed-test';
+		contextNames: { #RubTextEditor }.
+	library addMacro: macro.
+	editor := ReplayMacroLibraryEditor on: library.
+	editor selectMacro: macro.
+
+	[
+		editor installAllMacros.
+		self assert: (macro installedInContextNamed: #RubTextEditor).
+		editor clearInstalledReplayMacros.
+		self deny: (macro installedInContextNamed: #RubTextEditor).
+		self assert: editor macroEditorPresenter installationStatusPresenter label equals: 'Not installed.' ]
+
+		ensure: [
+			ReplayMacro uninstallAllInstalledKeymaps.
+			snapshot do: [ :association | association key addKeymapEntry: association value ] ]
 ]
 
 { #category : 'tests' }

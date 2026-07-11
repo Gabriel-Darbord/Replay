@@ -61,6 +61,13 @@ ReplayMacroLibraryEditor >> addMacro [
 	^ macro
 ]
 
+{ #category : 'actions' }
+ReplayMacroLibraryEditor >> clearInstalledReplayMacros [
+
+	ReplayMacro uninstallAllInstalledKeymaps.
+	self refreshMacroEditorStatus
+]
+
 { #category : 'initialization' }
 ReplayMacroLibraryEditor >> connectPresenters [
 
@@ -142,6 +149,13 @@ ReplayMacroLibraryEditor >> initializeWindow: aWindow [
 	aWindow initialExtent: 1000 @ 600
 ]
 
+{ #category : 'actions' }
+ReplayMacroLibraryEditor >> installAllMacros [
+
+	self library install.
+	self refreshMacroEditorStatus
+]
+
 { #category : 'accessing' }
 ReplayMacroLibraryEditor >> library [
 
@@ -185,6 +199,15 @@ ReplayMacroLibraryEditor >> refreshFromLibrary [
 
 	macroList ifNotNil: [ macroList items: self library macros ].
 	self selectFirstMacroIfNeeded
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> refreshMacroEditorStatus [
+
+	self selectedMacro ifNil: [ ^ self ].
+	macroEditorPresenter ifNil: [ ^ self ].
+	macroEditorPresenter updateInstallationStatus.
+	macroEditorPresenter updateConflicts
 ]
 
 { #category : 'accessing' }
@@ -297,11 +320,23 @@ ReplayMacroLibraryEditor >> toolbar [
 			label: 'Install all';
 			icon: (self iconNamed: #smallOk);
 			help: 'Install all macros in selected contexts.';
-			action: [ self library install ]);
+			action: [ self installAllMacros ]);
 		add: (self newToolbarButton
 			label: 'Uninstall all';
 			icon: (self iconNamed: #smallCancel);
 			help: 'Uninstall all macros from every context where they are installed.';
-			action: [ self library uninstall ]);
+			action: [ self uninstallAllMacros ]);
+		add: (self newToolbarButton
+			label: 'Clear installed';
+			icon: (self iconNamed: #smallCancel);
+			help: 'Remove every installed Replay macro keymap, including stale entries.';
+			action: [ self clearInstalledReplayMacros ]);
 		yourself
+]
+
+{ #category : 'actions' }
+ReplayMacroLibraryEditor >> uninstallAllMacros [
+
+	self library uninstall.
+	self refreshMacroEditorStatus
 ]

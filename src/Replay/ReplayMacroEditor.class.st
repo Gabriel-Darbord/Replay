@@ -101,7 +101,7 @@ ReplayMacroEditor >> altCheckBox [
 ]
 
 { #category : 'accessing' }
-ReplayMacroEditor >> availableContextCategories [
+ReplayMacroEditor >> availableMacroContexts [
 
 	^ ReplayMacroContext availableContexts
 ]
@@ -140,7 +140,7 @@ ReplayMacroEditor >> conflictStatusTextFor: conflicts [
 ReplayMacroEditor >> conflicts [
 
 	| categories conflicts |
-	categories := self availableContextCategories flatCollect: [ :context | context categories ].
+	categories := self availableMacroContexts flatCollect: [ :context | context categories ].
 	conflicts := (self macro conflictsInCategories: categories) asOrderedCollection.
 	self macroLibrary ifNotNil: [ :library |
 		conflicts addAll: (library internalConflictsForMacro: self macro) ].
@@ -186,43 +186,41 @@ ReplayMacroEditor >> initializePresenters [
 		whenTextChangedDo: [ :aString |
 			self macro name: aString.
 			self macroChanged ].
+
 	shortcutTextPresenter := self newText.
 	shortcutTextPresenter
 		text: self macro shortcut text;
-		help: 'Characters that complete the shortcut, for example s for Command+S.';
+		help: 'Type the shortcut key characters; use the modifier checkboxes below.';
 		whenTextChangedDo: [ :aString |
 			self macro shortcut text: aString.
 			self macroChanged ].
+
 	commandCheckBox := self modifierCheckBoxNamed: 'Command' flag: 64.
 	controlCheckBox := self modifierCheckBoxNamed: 'Control' flag: 16.
 	altCheckBox := self modifierCheckBoxNamed: 'Alt/Option' flag: 32.
 	shiftCheckBox := self modifierCheckBoxNamed: 'Shift' flag: 8.
+
 	contextDropList := self newDropList.
 	contextDropList
-		items: self availableContextCategories;
+		items: self availableMacroContexts;
 		display: [ :context | context displayName ];
 		whenSelectedItemChangedDo: [ :context |
 			context ifNotNil: [
 				self macro contextNames: context categoryNames.
 				self updateInstallationStatus.
 				self updateConflicts ] ].
+
 	installationStatusPresenter := self newLabel.
 	conflictStatusPresenter := self newLabel.
+
 	conflictList := self newTable.
 	conflictList
-		addColumn: ((SpStringTableColumn title: 'Context' evaluated: #contextDisplayName)
-			width: 220;
-			yourself);
-		addColumn: ((SpStringTableColumn title: 'Shortcut' evaluated: #shortcutString)
-			width: 120;
-			yourself);
-		addColumn: ((SpStringTableColumn title: 'Action' evaluated: #name)
-			width: 120;
-			yourself);
-		addColumn: ((SpStringTableColumn title: 'Description' evaluated: #description)
-			width: 220;
-			yourself);
+		addColumn: ((SpStringTableColumn title: 'Context' evaluated: #contextDisplayName) width: 220; yourself);
+		addColumn: ((SpStringTableColumn title: 'Shortcut' evaluated: #shortcutString) width: 120; yourself);
+		addColumn: ((SpStringTableColumn title: 'Action' evaluated: #name) width: 120; yourself);
+		addColumn: ((SpStringTableColumn title: 'Description' evaluated: #description) width: 220; yourself);
 		beResizable.
+
 	editScenarioButton := self newButton
 		label: 'Edit scenario';
 		action: [ self editScenario ];
