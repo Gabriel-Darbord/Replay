@@ -144,6 +144,7 @@ ReplayMacroRegistry >> loadAndInstall [
 ReplayMacroRegistry >> loadAndInstallFromFile: aFileReference [
 
 	self loadFromFile: aFileReference.
+	self uninstallAllReplayMacros.
 	self install
 ]
 

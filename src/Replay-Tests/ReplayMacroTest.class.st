@@ -1223,6 +1223,50 @@ ReplayMacroTest >> testMacroRegistryLoadAndInstall [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroRegistryLoadAndInstallClearsStaleInstalledMacros [
+
+	| file registry oldMacro loadedMacro loadedLibrary |
+	file := FileLocator temp / 'replay-macro-load-install-clears-stale-test.ston'.
+	file ensureDelete.
+	registry := ReplayMacroRegistry new.
+	oldMacro := ReplayMacro
+		named: 'Old macro'
+		shortcut: (ReplayShortcut new
+			text: 'o';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	oldMacro
+		identifier: 'old-load-install-clear-test';
+		contextNames: { #RubTextEditor }.
+	loadedMacro := ReplayMacro
+		named: 'Loaded macro'
+		shortcut: (ReplayShortcut new
+			text: 'l';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	loadedMacro
+		identifier: 'new-load-install-clear-test';
+		contextNames: { #RubTextEditor }.
+	loadedLibrary := ReplayMacroLibrary new
+		addMacro: loadedMacro;
+		yourself.
+
+	[
+		registry library addMacro: oldMacro.
+		oldMacro install.
+		file writeStreamDo: [ :stream | STON put: loadedLibrary onStreamPretty: stream ].
+		registry loadAndInstallFromFile: file.
+		self deny: (oldMacro installedInContextNamed: #RubTextEditor).
+		self assert: (registry library macros first installedInContextNamed: #RubTextEditor).
+		self assert: ReplayMacro installedKeymapCount equals: 1 ]
+		ensure: [
+			ReplayMacro uninstallAllInstalledKeymaps.
+			file ensureDelete ]
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroRegistryLoadAndInstallFromFileInstallsLoadedMacros [
 
 	| file registry macro loaded loadedMacro |
