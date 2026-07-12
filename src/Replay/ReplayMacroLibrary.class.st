@@ -52,6 +52,14 @@ ReplayMacroLibrary >> installedMacros [
 ]
 
 { #category : 'conflicts' }
+ReplayMacroLibrary >> internalConflictCategoryNamesBetween: aReplayMacro and: anotherReplayMacro [
+
+	^ ReplayMacroContext
+		internalConflictCategoryNamesBetween: aReplayMacro contextNames
+		and: anotherReplayMacro contextNames
+]
+
+{ #category : 'conflicts' }
 ReplayMacroLibrary >> internalConflicts [
 
 	| conflicts |
@@ -67,13 +75,10 @@ ReplayMacroLibrary >> internalConflicts [
 { #category : 'conflicts' }
 ReplayMacroLibrary >> internalConflictsBetween: aReplayMacro and: anotherReplayMacro [
 
-	(aReplayMacro shortcut text isEmpty or: [ anotherReplayMacro shortcut text isEmpty ])
-		ifTrue: [ ^ #() ].
-	(aReplayMacro shortcut sameShortcutAs: anotherReplayMacro shortcut)
-		ifFalse: [ ^ #() ].
-	^ aReplayMacro contextNames
-		select: [ :contextName | anotherReplayMacro contextNames includes: contextName ]
-		thenCollect: [ :contextName |
+	(aReplayMacro shortcut text isEmpty or: [ anotherReplayMacro shortcut text isEmpty ]) ifTrue: [ ^ #() ].
+	(aReplayMacro shortcut sameShortcutAs: anotherReplayMacro shortcut) ifFalse: [ ^ #() ].
+	^ (self internalConflictCategoryNamesBetween: aReplayMacro and: anotherReplayMacro)
+		collect: [ :contextName |
 			ReplayShortcutConflict
 				category: (KMRepository default categoryForName: contextName)
 				keymap: anotherReplayMacro keymap ]

@@ -814,6 +814,31 @@ ReplayMacroTest >> testMacroLibraryAggregatesConflicts [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryDetectsInternalConflictAcrossCompositeEditorContext [
+
+	| smalltalkMacro textMacro library conflicts |
+	smalltalkMacro := ReplayMacro
+		named: 'Smalltalk macro'
+		shortcut: self defaultFindShortcut
+		scenario: ReplayScenario new.
+	smalltalkMacro contextNames: { #RubSmalltalkEditor }.
+	textMacro := ReplayMacro
+		named: 'Text macro'
+		shortcut: self defaultFindShortcut
+		scenario: ReplayScenario new.
+	textMacro contextNames: { #RubTextEditor }.
+	library := ReplayMacroLibrary new
+		addMacro: smalltalkMacro;
+		addMacro: textMacro;
+		yourself.
+
+	conflicts := library internalConflicts.
+	self assert: (conflicts anySatisfy: [ :conflict |
+		conflict contextDisplayName = 'Smalltalk code editors'
+			and: [ conflict name = 'Text macro' ] ])
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroLibraryDetectsInternalConflicts [
 
 	| library first second conflicts |

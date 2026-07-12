@@ -28,6 +28,13 @@ ReplayMacroContext class >> availableContexts [
 ]
 
 { #category : 'detecting' }
+ReplayMacroContext class >> categoryNames: firstCategoryNames overlapCategoryNames: secondCategoryNames [
+
+	^ firstCategoryNames anySatisfy: [ :categoryName |
+		secondCategoryNames includes: categoryName ]
+]
+
+{ #category : 'detecting' }
 ReplayMacroContext class >> categoryNamesDirectlyAttachedToMorph: aMorph [
 
 	^ aMorph kmDispatcher targets collect: [ :binding | binding category name ]
@@ -45,6 +52,18 @@ ReplayMacroContext class >> categoryNamesForMorph: aMorph [
 	aMorph allMorphsDo: [ :morph |
 		categoryNames addAll: (self categoryNamesDirectlyAttachedToMorph: morph) ].
 	^ (categoryNames asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
+]
+
+{ #category : 'detecting' }
+ReplayMacroContext class >> compositeConflictCategoryNamesBetween: firstCategoryNames and: secondCategoryNames [
+
+	| names |
+	names := self defaultContexts
+		select: [ :context |
+			(self categoryNames: firstCategoryNames overlapCategoryNames: context conflictCategoryNames)
+				and: [ self categoryNames: secondCategoryNames overlapCategoryNames: context conflictCategoryNames ] ]
+		thenCollect: [ :context | context categoryNames first ].
+	^ (names asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
 ]
 
 { #category : 'detecting' }
@@ -129,6 +148,18 @@ ReplayMacroContext class >> identifier: aSymbol displayName: aString categoryNam
 		categoryNames: categoryCollection;
 		conflictCategoryNames: conflictCollection;
 		yourself
+]
+
+{ #category : 'detecting' }
+ReplayMacroContext class >> internalConflictCategoryNamesBetween: firstCategoryNames and: secondCategoryNames [
+
+	| exact |
+	exact := firstCategoryNames select: [ :categoryName |
+		secondCategoryNames includes: categoryName ].
+	exact ifNotEmpty: [ ^ exact asOrderedCollection ].
+	^ self
+		compositeConflictCategoryNamesBetween: firstCategoryNames
+		and: secondCategoryNames
 ]
 
 { #category : 'accessing' }
