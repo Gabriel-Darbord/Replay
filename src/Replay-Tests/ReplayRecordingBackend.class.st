@@ -71,6 +71,12 @@ ReplayRecordingBackend >> runDeferredBlocks [
 ]
 
 { #category : 'running' }
+ReplayRecordingBackend >> runDeleteText: aReplayDeleteText on: aResolvedUI [
+
+	self record: #deleteText action: aReplayDeleteText resolvedUI: aResolvedUI
+]
+
+{ #category : 'running' }
 ReplayRecordingBackend >> runFocus: aReplayFocus on: aResolvedUI [
 
 	self record: #focus action: aReplayFocus resolvedUI: aResolvedUI

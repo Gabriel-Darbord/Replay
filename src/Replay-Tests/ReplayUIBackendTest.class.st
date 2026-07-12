@@ -467,6 +467,152 @@ ReplayUIBackendTest >> testCloseUIActionClearsRunnerManager [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testDeleteTextActionDelegatesToResolvedUIBackend [
+
+	| backend action resolved |
+	backend := ReplayRecordingBackend new.
+	action := ReplayDeleteText new direction: #backward; count: 2; yourself.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Field')
+		nativeElement: RubEditingArea new
+		morph: Morph new.
+	action runOn: ReplayRunner new resolvedUI: resolved.
+	self assert: backend lastInteraction equals: #deleteText.
+	self assert: backend lastAction equals: action.
+	self assert: backend lastResolvedUI equals: resolved
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDeleteTextBackendFallsBackToMorph [
+
+	| action morph resolved |
+	action := ReplayDeleteText new direction: #forward; count: 1; yourself.
+	morph := RubEditingArea new.
+
+	[
+		morph setTextWith: 'abc'.
+		morph selectFrom: 2 to: 1.
+		resolved := ReplayResolvedUIElement
+			backend: ReplayUIBackend new
+			reference: (ReplayUIReference named: 'Field')
+			nativeElement: Object new
+			morph: morph.
+		action runOn: ReplayRunner new resolvedUI: resolved.
+		self assert: morph text asString equals: 'ac' ]
+
+		ensure: [ morph delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDeleteTextBackendPrefersNativeElement [
+
+	| action native morph resolved |
+	action := ReplayDeleteText new direction: #backward; count: 1; yourself.
+	native := RubEditingArea new.
+	morph := RubEditingArea new.
+
+	[
+		native setTextWith: 'abc'.
+		native selectFrom: 4 to: 3.
+		morph setTextWith: 'xyz'.
+		morph selectFrom: 4 to: 3.
+		resolved := ReplayResolvedUIElement
+			backend: ReplayUIBackend new
+			reference: (ReplayUIReference named: 'Field')
+			nativeElement: native
+			morph: morph.
+		action runOn: ReplayRunner new resolvedUI: resolved.
+		self assert: native text asString equals: 'ab'.
+		self assert: morph text asString equals: 'xyz' ]
+
+		ensure: [
+			native delete.
+			morph delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDeleteTextBackwardDeletesPreviousRubricCharacter [
+
+	| action area |
+	action := ReplayDeleteText new direction: #backward; count: 1; yourself.
+	area := RubEditingArea new.
+
+	[
+		area setTextWith: 'abcdef'.
+		area selectFrom: 4 to: 3.
+		action deleteTextIn: area.
+		self assert: area text asString equals: 'abdef' ]
+
+		ensure: [ area delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDeleteTextCountRepeatsBackwardDeletion [
+
+	| action area |
+	action := ReplayDeleteText new direction: #backward; count: 2; yourself.
+	area := RubEditingArea new.
+
+	[
+		area setTextWith: 'abcdef'.
+		area selectFrom: 5 to: 4.
+		action deleteTextIn: area.
+		self assert: area text asString equals: 'abef' ]
+
+		ensure: [ area delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDeleteTextDeletesSelectionBeforeCount [
+
+	| action area |
+	action := ReplayDeleteText new direction: #backward; count: 1; yourself.
+	area := RubEditingArea new.
+
+	[
+		area setTextWith: 'abcdef'.
+		area selectFrom: 2 to: 4.
+		action deleteTextIn: area.
+		self assert: area text asString equals: 'aef' ]
+
+		ensure: [ area delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDeleteTextForwardDeletesNextRubricCharacter [
+
+	| action area |
+	action := ReplayDeleteText new direction: #forward; count: 1; yourself.
+	area := RubEditingArea new.
+
+	[
+		area setTextWith: 'abcdef'.
+		area selectFrom: 4 to: 3.
+		action deleteTextIn: area.
+		self assert: area text asString equals: 'abcef' ]
+
+		ensure: [ area delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDeleteTextRejectsUnsupportedTarget [
+
+	| action |
+	action := ReplayDeleteText new.
+	self should: [ action deleteTextIn: Object new ] raise: ReplayError
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDeleteTextSettingsPresenterBuilds [
+
+	| action presenter |
+	action := ReplayDeleteText new direction: #forward; count: 2; yourself.
+	presenter := action settingsPresenterOn: ReplayEditor new.
+	self assert: presenter notNil
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testFocusActionDelegatesToResolvedUIBackend [
 
 	| backend action resolved |

@@ -71,6 +71,17 @@ ReplayUIBackend >> runClick: aReplayClick on: aResolvedUI [
 ]
 
 { #category : 'running' }
+ReplayUIBackend >> runDeleteText: aReplayDeleteText on: aResolvedUI [
+
+	| native |
+	native := aResolvedUI nativeElement.
+	(aReplayDeleteText canDeleteTextIn: native) ifTrue: [
+		^ aReplayDeleteText deleteTextIn: native ].
+	aReplayDeleteText deleteTextIn:
+		(aResolvedUI morphRequiredFor: aReplayDeleteText class displayName)
+]
+
+{ #category : 'running' }
 ReplayUIBackend >> runFocus: aReplayFocus on: aResolvedUI [
 
 	| target |

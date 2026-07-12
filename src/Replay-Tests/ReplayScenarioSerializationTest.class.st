@@ -41,6 +41,18 @@ ReplayScenarioSerializationTest >> testAwaitUIActionRoundTripsThroughSton [
 ]
 
 { #category : 'tests' }
+ReplayScenarioSerializationTest >> testDeleteTextActionRoundTripsThroughSton [
+
+	| action copy |
+	action := ReplayDeleteText new targetNamed: 'Action script'; direction: #forward; count: 3; yourself.
+	copy := self roundTripAction: action.
+	self assert: copy class equals: ReplayDeleteText.
+	self assert: copy targetName equals: 'Action script'.
+	self assert: copy direction equals: #forward.
+	self assert: copy count equals: 3
+]
+
+{ #category : 'tests' }
 ReplayScenarioSerializationTest >> testNavigatePlacementRoundTripsThroughSton [
 
 	| scenario positionedStep boundedStep copy positionedNavigation boundedNavigation |

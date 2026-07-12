@@ -135,6 +135,12 @@ ReplayResolvedUIElement >> runClick: aReplayClick [
 ]
 
 { #category : 'running' }
+ReplayResolvedUIElement >> runDeleteText: aReplayDeleteText [
+
+	^ backend runDeleteText: aReplayDeleteText on: self
+]
+
+{ #category : 'running' }
 ReplayResolvedUIElement >> runFocus: aReplayFocus [
 
 	^ backend runFocus: aReplayFocus on: self
