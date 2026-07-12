@@ -20,5 +20,8 @@ KeyboardKey >> asCharacter [
 { #category : '*Replay' }
 KeyboardKey >> configureReplayShortcut: aReplayShortcut [
 
-	aReplayShortcut appendText: self asCharacter
+	| character |
+	character := self asCharacter.
+	(aReplayShortcut hasFlags: 8) ifFalse: [ character := character asLowercase ].
+	aReplayShortcut appendText: character
 ]

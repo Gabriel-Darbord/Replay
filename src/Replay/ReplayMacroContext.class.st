@@ -27,13 +27,23 @@ ReplayMacroContext class >> availableContexts [
 ]
 
 { #category : 'detecting' }
+ReplayMacroContext class >> categoryNamesDirectlyAttachedToMorph: aMorph [
+
+	^ aMorph kmDispatcher targets collect: [ :binding | binding category name ]
+]
+
+{ #category : 'detecting' }
 ReplayMacroContext class >> categoryNamesForMorph: aMorph [
 
-	| categories |
+	| categoryNames |
 	aMorph ifNil: [ ^ #() ].
 	(aMorph isKindOf: Morph) ifFalse: [ ^ #() ].
-	categories := aMorph kmDispatcher targets collect: [ :binding | binding category name ].
-	^ (categories asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
+	categoryNames := OrderedCollection new.
+	aMorph allOwnersDo: [ :owner |
+		categoryNames addAll: (self categoryNamesDirectlyAttachedToMorph: owner) ].
+	aMorph allMorphsDo: [ :morph |
+		categoryNames addAll: (self categoryNamesDirectlyAttachedToMorph: morph) ].
+	^ (categoryNames asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
 ]
 
 { #category : 'defaults' }

@@ -5,6 +5,67 @@ Class {
 	#package : 'Replay-Tests'
 }
 
+{ #category : 'support' }
+ReplayMacroTest >> keyboardEventForCharacter: aCharacter buttons: flags [
+
+	| event |
+	event := KeyboardEvent new.
+	event
+		setType: #keystroke
+		buttons: flags
+		position: 0 @ 0
+		keyValue: aCharacter asInteger
+		charCode: aCharacter asInteger
+		hand: nil
+		stamp: Time now.
+	event key: (KeyboardKey fromCharacter: aCharacter).
+	^ event
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testCapturedShiftShortcutPreservesShiftedCharacter [
+
+	| catcher capturedShortcut event |
+	event := self keyboardEventForCharacter: $F buttons: 8.
+	catcher := KMCatcherMorph new.
+	[
+		catcher keyStroke: event.
+		capturedShortcut := ReplayShortcut fromShortcut: catcher shortcut.
+		self assert: capturedShortcut text equals: 'F'.
+		self assert: capturedShortcut flags equals: 8 ]
+		ensure: [ catcher delete ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testCapturedShortcutInstallsAndRunsThroughMorphDispatcher [
+
+	| catcher capturedShortcut macro morph spy event |
+	event := self keyboardEventForCharacter: $f buttons: 16.
+	catcher := KMCatcherMorph new.
+	catcher keyStroke: event.
+	capturedShortcut := ReplayShortcut fromShortcut: catcher shortcut.
+	spy := ReplayMacroRunSpy new.
+	macro := ReplayMacro
+		named: 'Captured shortcut macro'
+		shortcut: capturedShortcut
+		scenario: spy.
+	macro identifier: 'captured-shortcut-run-test'.
+	morph := Morph new.
+	[
+		self assert: capturedShortcut text equals: 'f'.
+		self assert: capturedShortcut flags equals: 16.
+		macro contextNames: { #RubTextEditor }.
+		macro install.
+		morph kmDispatcher reset.
+		morph attachKeymapCategory: #RubTextEditor.
+		morph kmDispatcher dispatchKeystroke: event.
+		self assert: spy hasRun ]
+		ensure: [
+			macro uninstall.
+			morph delete.
+			catcher delete ]
+]
+
 { #category : 'tests' }
 ReplayMacroTest >> testInstalledMacroUsesReplacedScenarioWhenShortcutRuns [
 
@@ -135,6 +196,17 @@ ReplayMacroTest >> testMacroContextDetectsCategoriesAttachedToMorph [
 	categoryNames := ReplayMacroContext categoryNamesForMorph: morph.
 
 	self assert: (categoryNames includes: #RubTextEditor)
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroContextDetectsNestedRubricTextEditorCategory [
+
+	| field categoryNames |
+	field := RubTextFieldMorph new.
+	[
+		categoryNames := ReplayMacroContext categoryNamesForMorph: field.
+		self assert: (categoryNames includes: #RubTextEditor) ]
+		ensure: [ field delete ]
 ]
 
 { #category : 'tests' }
@@ -286,6 +358,34 @@ ReplayMacroTest >> testMacroEditorInstallsSelectedMacroInActiveMorphContext [
 		self assert: (editor installationStatusPresenter label includesSubstring: 'Text editor') ]
 
 		ensure: [ macro uninstall ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorInstallsTextFieldActiveContextForTextEditorDispatch [
+
+	| field editingArea macro editor spy event |
+	spy := ReplayMacroRunSpy new.
+	macro := ReplayMacro
+		named: 'Text field active context macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: spy.
+	macro identifier: 'text-field-active-context-test'.
+	field := RubTextFieldMorph new.
+	[
+		editor := ReplayMacroEditor on: macro.
+		editor installInActiveContextForMorph: field.
+		self assert: (macro contextNames includes: #RubTextEditor).
+		self assert: (macro installedInContextNamed: #RubTextEditor).
+		editingArea := self textEditingMorphIn: field.
+		event := self keyboardEventForCharacter: $f buttons: 16.
+		editingArea kmDispatcher dispatchKeystroke: event.
+		self assert: spy hasRun ]
+		ensure: [
+			macro uninstall.
+			field delete ]
 ]
 
 { #category : 'tests' }
@@ -1146,7 +1246,7 @@ ReplayMacroTest >> testMacroRoundTripsThroughSton [
 	copy := STON fromString: (STON toString: macro).
 
 	self assert: copy name equals: 'Save macro'.
-	self assert: copy shortcut text equals: 'S'.
+	self assert: copy shortcut text equals: 's'.
 	self assert: copy shortcut flags equals: 64.
 	self assert: copy scenario title equals: 'Macro scenario'.
 	self assert: copy contextNames asArray equals: #( RubSmalltalkEditor )
@@ -1255,7 +1355,7 @@ ReplayMacroTest >> testReplayShortcutCanBeBuiltFromKeymap [
 		action: [ ].
 	shortcut := ReplayShortcut fromKeymap: keymap.
 
-	self assert: shortcut text equals: 'S'.
+	self assert: shortcut text equals: 's'.
 	self assert: shortcut flags equals: 64.
 	self assert: (shortcut matchesKeymap: keymap)
 ]
@@ -1307,4 +1407,12 @@ ReplayMacroTest >> testShortcutConflictUsesCommandDisplayForMetaShortcut [
 	conflict := ReplayShortcutConflict category: category keymap: keymap.
 
 	self assert: conflict shortcutString equals: 'Command + F'
+]
+
+{ #category : 'support' }
+ReplayMacroTest >> textEditingMorphIn: aMorph [
+
+	^ aMorph allMorphs
+		detect: [ :each | (ReplayMacroContext categoryNamesForMorph: each) includes: #RubTextEditor ]
+		ifNone: [ self fail: 'Expected a nested Rubric text editor morph.' ]
 ]
