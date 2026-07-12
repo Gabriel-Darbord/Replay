@@ -864,6 +864,24 @@ ReplayUIBackendTest >> testSelectTextSupportsRubricEditingArea [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testSelectTextThenTypeReplacesRubricSelection [
+
+	| area selectAction typeAction |
+	area := RubEditingArea new.
+	selectAction := ReplaySelectText new
+		startIndex: 2;
+		stopIndex: 4;
+		yourself.
+	typeAction := ReplayType new text: 'X'.
+	[
+		area setTextWith: 'abcdef'.
+		selectAction selectTextIn: area.
+		typeAction typeOn: area.
+		self assert: area text asString equals: 'aXef' ]
+		ensure: [ area delete ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testShortcutActionDelegatesToResolvedUIBackend [
 
 	| backend action resolved |
