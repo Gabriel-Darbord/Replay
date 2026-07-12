@@ -197,6 +197,30 @@ ReplayUIBackendTest >> testAnnotationLabelsAndLinesAreNotWorldTopmost [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testAnnotationLayoutAvoidsOtherAnnotatedTargets [
+
+	| root manager firstAnnotation secondAnnotation |
+	root := Morph new bounds: (100 @ 100 extent: 500 @ 260); yourself.
+	root openInWorld.
+	manager := ReplayUIManager new attachTo: root.
+	firstAnnotation := ReplayAnnotation
+		annotate: (170 @ 80 extent: 80 @ 40)
+		label: 'First target'.
+	secondAnnotation := ReplayAnnotation
+		annotate: (20 @ 80 extent: 80 @ 40)
+		label: 'Second annotation label that wants the right side'.
+
+	[
+		manager addOverlay: firstAnnotation.
+		manager addOverlay: secondAnnotation.
+		self deny: (secondAnnotation label bounds intersects: firstAnnotation targetBoundsInWorld).
+		self deny: (firstAnnotation label bounds intersects: secondAnnotation targetBoundsInWorld) ]
+		ensure: [
+			manager close.
+			root delete ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testAnnotationLayoutAvoidsSiblingLabelOverlap [
 
 	| root manager firstAnnotation secondAnnotation |

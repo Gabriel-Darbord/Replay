@@ -93,6 +93,13 @@ ReplayUIManager >> annotationLayoutBounds [
 ]
 
 { #category : 'annotation layout' }
+ReplayUIManager >> annotationTargetBounds [
+
+	^ self annotationsWithLabels collect: [ :annotation |
+		annotation targetBoundsInWorld ]
+]
+
+{ #category : 'annotation layout' }
 ReplayUIManager >> annotationsWithLabels [
 
 	overlay ifNil: [ ^ #() ].
@@ -314,6 +321,12 @@ ReplayUIManager >> hideOverlay [
 	root addMorphFront: managed
 ]
 
+{ #category : 'annotation layout' }
+ReplayUIManager >> initialAnnotationAvoidBounds [
+
+	^ self annotationTargetBounds asOrderedCollection
+]
+
 { #category : 'managing UI' }
 ReplayUIManager >> installBlockingHandlersOn: aMorph [
 
@@ -369,7 +382,7 @@ ReplayUIManager >> labelCandidatesFor: anAnnotation [
 ReplayUIManager >> layoutAnnotations [
 
 	| placedBounds |
-	placedBounds := OrderedCollection new.
+	placedBounds := self initialAnnotationAvoidBounds.
 	self annotationsWithLabels do: [ :annotation |
 		| bestBounds |
 		annotation ensureLabelInWorld.
