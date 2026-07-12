@@ -36,7 +36,7 @@ ReplaySpecBackend >> canPerformNativeClickOn: aPresenter [
 ReplaySpecBackend >> canRun: anAction nativelyOn: nativeElement [
 
 	(anAction isKindOf: ReplayClick) ifTrue: [
-		^ anAction flags = MouseEvent redButton
+		^ anAction isSimpleLeftClick
 			and: [ self canPerformNativeClickOn: nativeElement ] ].
 	(anAction isKindOf: ReplayFocus) ifTrue: [
 		^ nativeElement isKindOf: SpAbstractPresenter ].
@@ -105,8 +105,7 @@ ReplaySpecBackend >> runClick: aReplayClick on: aResolvedUI [
 
 	| targetPresenter |
 	targetPresenter := aResolvedUI nativeElement.
-	(aReplayClick flags = MouseEvent redButton
-		and: [ self canPerformNativeClickOn: targetPresenter ])
+	(aReplayClick isSimpleLeftClick and: [ self canPerformNativeClickOn: targetPresenter ])
 		ifTrue: [ targetPresenter performAction ]
 		ifFalse: [ super runClick: aReplayClick on: aResolvedUI ]
 ]

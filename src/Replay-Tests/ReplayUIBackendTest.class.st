@@ -438,6 +438,35 @@ ReplayUIBackendTest >> testClickActionDelegatesToResolvedUIBackend [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testClickCanTargetLocalPositionWithModifiers [
+
+	| action target downEvent clickEvent |
+	target := ReplayEventRecorderMorph new bounds: (10 @ 20 extent: 100 @ 60).
+	action := ReplayClick new
+		position: 25 @ 15;
+		modifiers: UserInputEvent cmdKeyMask;
+		yourself.
+	action clickOn: target.
+	self assert: target eventLabels asArray equals: #(mouseDown click mouseUp).
+	downEvent := target events first value.
+	clickEvent := target events second value.
+	self assert: downEvent position equals: 35 @ 35.
+	self assert: downEvent redButtonPressed.
+	self assert: downEvent commandKeyPressed.
+	self assert: clickEvent position equals: downEvent position
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testClickCountSendsDoubleClick [
+
+	| action target |
+	target := ReplayEventRecorderMorph new.
+	action := ReplayClick new clickCount: 2; yourself.
+	action clickOn: target.
+	self assert: target eventLabels asArray equals: #(mouseDown click mouseUp mouseDown click doubleClick mouseUp)
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testCloseAttachedMorphManagerRemovesOnlyReplayOverlay [
 
 	| root target manager overlay |
@@ -610,6 +639,50 @@ ReplayUIBackendTest >> testDeleteTextSettingsPresenterBuilds [
 	action := ReplayDeleteText new direction: #forward; count: 2; yourself.
 	presenter := action settingsPresenterOn: ReplayEditor new.
 	self assert: presenter notNil
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDragActionDelegatesToResolvedUIBackend [
+
+	| backend action resolved |
+	backend := ReplayRecordingBackend new.
+	action := ReplayDrag new startPosition: 5 @ 5; endPosition: 40 @ 25; steps: 3; yourself.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'Slider')
+		nativeElement: Object new
+		morph: ReplayEventRecorderMorph new.
+	action runOn: ReplayRunner new resolvedUI: resolved.
+	self assert: backend lastInteraction equals: #drag.
+	self assert: backend lastAction equals: action.
+	self assert: backend lastResolvedUI equals: resolved
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDragSendsDownMoveAndUpEvents [
+
+	| action target downEvent firstMove upEvent |
+	target := ReplayEventRecorderMorph new bounds: (10 @ 20 extent: 100 @ 60).
+	action := ReplayDrag new
+		startPosition: 10 @ 5;
+		endPosition: 40 @ 20;
+		steps: 2;
+		modifiers: UserInputEvent shiftKeyMask;
+		yourself.
+	action dragOn: target.
+	self assert: target eventLabels asArray equals: #(mouseDown mouseMove mouseMove mouseUp).
+	downEvent := target events first value.
+	firstMove := target events second value.
+	upEvent := target events last value.
+	self assert: downEvent position equals: 20 @ 25.
+	self assert: downEvent redButtonPressed.
+	self assert: downEvent shiftPressed.
+	self assert: firstMove startPoint equals: 20 @ 25.
+	self assert: firstMove endPoint equals: 35 @ 32.5.
+	self assert: firstMove redButtonPressed.
+	self assert: upEvent position equals: 50 @ 40.
+	self deny: upEvent redButtonPressed.
+	self assert: upEvent shiftPressed
 ]
 
 { #category : 'tests' }
@@ -787,6 +860,14 @@ ReplayUIBackendTest >> testOwnedMorphManagerInstallsBlockingOverlayHandlers [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testPointerActionSettingsPresentersBuild [
+
+	self assert: (ReplayClick new settingsPresenterOn: ReplayEditor new) notNil.
+	self assert: (ReplayScroll new settingsPresenterOn: ReplayEditor new) notNil.
+	self assert: (ReplayDrag new settingsPresenterOn: ReplayEditor new) notNil
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testPressKeyActionDelegatesToResolvedUIBackend [
 
 	| backend action resolved |
@@ -906,6 +987,42 @@ ReplayUIBackendTest >> testResolvedUIElementKeyboardTargetUsesMorph [
 		morph: morph.
 
 	self assert: resolved keyboardTarget == morph
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testScrollActionDelegatesToResolvedUIBackend [
+
+	| backend action resolved |
+	backend := ReplayRecordingBackend new.
+	action := ReplayScroll new direction: #down; count: 3; yourself.
+	resolved := ReplayResolvedUIElement
+		backend: backend
+		reference: (ReplayUIReference named: 'List')
+		nativeElement: Object new
+		morph: ReplayEventRecorderMorph new.
+	action runOn: ReplayRunner new resolvedUI: resolved.
+	self assert: backend lastInteraction equals: #scroll.
+	self assert: backend lastAction equals: action.
+	self assert: backend lastResolvedUI equals: resolved
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testScrollSendsWheelEventsAtLocalPositionWithModifiers [
+
+	| action target firstEvent |
+	target := ReplayEventRecorderMorph new bounds: (10 @ 20 extent: 100 @ 60).
+	action := ReplayScroll new
+		direction: #up;
+		count: 2;
+		position: 30 @ 10;
+		modifiers: UserInputEvent altKeyMask;
+		yourself.
+	action scrollOn: target.
+	self assert: target eventLabels asArray equals: #(mouseWheel mouseWheel).
+	firstEvent := target events first value.
+	self assert: firstEvent position equals: 40 @ 30.
+	self assert: firstEvent isUp.
+	self assert: firstEvent altKeyPressed
 ]
 
 { #category : 'tests' }

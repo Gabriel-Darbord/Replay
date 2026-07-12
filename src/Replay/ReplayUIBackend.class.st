@@ -82,6 +82,12 @@ ReplayUIBackend >> runDeleteText: aReplayDeleteText on: aResolvedUI [
 ]
 
 { #category : 'running' }
+ReplayUIBackend >> runDrag: aReplayDrag on: aResolvedUI [
+
+	aReplayDrag dragOn: (aResolvedUI morphRequiredFor: aReplayDrag class displayName)
+]
+
+{ #category : 'running' }
 ReplayUIBackend >> runFocus: aReplayFocus on: aResolvedUI [
 
 	| target |
@@ -94,6 +100,12 @@ ReplayUIBackend >> runFocus: aReplayFocus on: aResolvedUI [
 ReplayUIBackend >> runPressKey: aReplayPressKey on: aResolvedUI [
 
 	aReplayPressKey pressKeyOn: aResolvedUI keyboardTarget
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runScroll: aReplayScroll on: aResolvedUI [
+
+	aReplayScroll scrollOn: (aResolvedUI morphRequiredFor: aReplayScroll class displayName)
 ]
 
 { #category : 'running' }

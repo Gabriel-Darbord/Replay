@@ -77,6 +77,12 @@ ReplayRecordingBackend >> runDeleteText: aReplayDeleteText on: aResolvedUI [
 ]
 
 { #category : 'running' }
+ReplayRecordingBackend >> runDrag: aReplayDrag on: aResolvedUI [
+
+	self record: #drag action: aReplayDrag resolvedUI: aResolvedUI
+]
+
+{ #category : 'running' }
 ReplayRecordingBackend >> runFocus: aReplayFocus on: aResolvedUI [
 
 	self record: #focus action: aReplayFocus resolvedUI: aResolvedUI
@@ -86,6 +92,12 @@ ReplayRecordingBackend >> runFocus: aReplayFocus on: aResolvedUI [
 ReplayRecordingBackend >> runPressKey: aReplayPressKey on: aResolvedUI [
 
 	self record: #pressKey action: aReplayPressKey resolvedUI: aResolvedUI
+]
+
+{ #category : 'running' }
+ReplayRecordingBackend >> runScroll: aReplayScroll on: aResolvedUI [
+
+	self record: #scroll action: aReplayScroll resolvedUI: aResolvedUI
 ]
 
 { #category : 'running' }

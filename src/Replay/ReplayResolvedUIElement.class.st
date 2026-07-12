@@ -141,6 +141,12 @@ ReplayResolvedUIElement >> runDeleteText: aReplayDeleteText [
 ]
 
 { #category : 'running' }
+ReplayResolvedUIElement >> runDrag: aReplayDrag [
+
+	^ backend runDrag: aReplayDrag on: self
+]
+
+{ #category : 'running' }
 ReplayResolvedUIElement >> runFocus: aReplayFocus [
 
 	^ backend runFocus: aReplayFocus on: self
@@ -150,6 +156,12 @@ ReplayResolvedUIElement >> runFocus: aReplayFocus [
 ReplayResolvedUIElement >> runPressKey: aReplayPressKey [
 
 	^ backend runPressKey: aReplayPressKey on: self
+]
+
+{ #category : 'running' }
+ReplayResolvedUIElement >> runScroll: aReplayScroll [
+
+	^ backend runScroll: aReplayScroll on: self
 ]
 
 { #category : 'running' }

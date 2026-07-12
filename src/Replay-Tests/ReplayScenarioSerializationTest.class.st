@@ -41,6 +41,24 @@ ReplayScenarioSerializationTest >> testAwaitUIActionRoundTripsThroughSton [
 ]
 
 { #category : 'tests' }
+ReplayScenarioSerializationTest >> testClickActionOptionsRoundTripThroughSton [
+
+	| action copy |
+	action := ReplayClick new
+		targetNamed: 'Button';
+		position: 12 @ 8;
+		clickCount: 2;
+		modifiers: UserInputEvent shiftKeyMask;
+		yourself.
+	copy := self roundTripAction: action.
+	self assert: copy class equals: ReplayClick.
+	self assert: copy targetName equals: 'Button'.
+	self assert: copy position equals: 12 @ 8.
+	self assert: copy clickCount equals: 2.
+	self assert: copy modifiers equals: UserInputEvent shiftKeyMask
+]
+
+{ #category : 'tests' }
 ReplayScenarioSerializationTest >> testDeleteTextActionRoundTripsThroughSton [
 
 	| action copy |
@@ -50,6 +68,28 @@ ReplayScenarioSerializationTest >> testDeleteTextActionRoundTripsThroughSton [
 	self assert: copy targetName equals: 'Action script'.
 	self assert: copy direction equals: #forward.
 	self assert: copy count equals: 3
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testDragActionRoundTripsThroughSton [
+
+	| action copy |
+	action := ReplayDrag new
+		targetNamed: 'Slider';
+		startPosition: 3 @ 4;
+		endPosition: 30 @ 40;
+		steps: 5;
+		flags: MouseEvent yellowButton;
+		modifiers: UserInputEvent cmdKeyMask;
+		yourself.
+	copy := self roundTripAction: action.
+	self assert: copy class equals: ReplayDrag.
+	self assert: copy targetName equals: 'Slider'.
+	self assert: copy startPosition equals: 3 @ 4.
+	self assert: copy endPosition equals: 30 @ 40.
+	self assert: copy steps equals: 5.
+	self assert: copy flags equals: MouseEvent yellowButton.
+	self assert: copy modifiers equals: UserInputEvent cmdKeyMask
 ]
 
 { #category : 'tests' }
@@ -122,6 +162,26 @@ ReplayScenarioSerializationTest >> testScenarioRoundTripsThroughSton [
 	copyAction := copyStep actions first.
 	self assert: copyAction class equals: ReplayScript.
 	self assert: copyAction script equals: '1 + 1'
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testScrollActionRoundTripsThroughSton [
+
+	| action copy |
+	action := ReplayScroll new
+		targetNamed: 'List';
+		direction: #left;
+		count: 4;
+		position: 9 @ 7;
+		modifiers: UserInputEvent ctrlKeyMask;
+		yourself.
+	copy := self roundTripAction: action.
+	self assert: copy class equals: ReplayScroll.
+	self assert: copy targetName equals: 'List'.
+	self assert: copy direction equals: #left.
+	self assert: copy count equals: 4.
+	self assert: copy position equals: 9 @ 7.
+	self assert: copy modifiers equals: UserInputEvent ctrlKeyMask
 ]
 
 { #category : 'tests' }
