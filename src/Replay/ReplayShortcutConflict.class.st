@@ -21,7 +21,11 @@ ReplayShortcutConflict class >> category: aKMCategory keymap: aKMKeymap [
 { #category : 'formatting' }
 ReplayShortcutConflict class >> displayNameForCategoryName: aSymbol [
 
-	| technical readable |
+	| knownContext technical readable |
+	knownContext := ReplayMacroContext defaultContexts
+		detect: [ :context | context categoryNames includes: aSymbol ]
+		ifNone: [ nil ].
+	knownContext ifNotNil: [ ^ knownContext displayName ].
 	technical := aSymbol asString.
 	readable := self readableNameForCategoryName: technical.
 	^ readable = technical

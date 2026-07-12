@@ -190,7 +190,8 @@ ReplayMacroEditor >> conflictStatusTextFor: conflicts [
 ReplayMacroEditor >> conflicts [
 
 	| categories conflicts |
-	categories := self availableMacroContexts flatCollect: [ :context | context categories ].
+	categories := (self availableMacroContexts
+		flatCollect: [ :context | context conflictCategories ]) asSet asArray.
 	conflicts := (self macro conflictsInCategories: categories) asOrderedCollection.
 	self macroLibrary ifNotNil: [ :library |
 		conflicts addAll: (library internalConflictsForMacro: self macro) ].

@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'identifier',
 		'displayName',
-		'categoryNames'
+		'categoryNames',
+		'conflictCategoryNames'
 	],
 	#category : 'Replay',
 	#package : 'Replay'
@@ -46,6 +47,26 @@ ReplayMacroContext class >> categoryNamesForMorph: aMorph [
 	^ (categoryNames asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
 ]
 
+{ #category : 'detecting' }
+ReplayMacroContext class >> conflictCategoryNamesForCategoryName: aSymbol [
+
+	| contexts names |
+	contexts := self defaultContexts select: [ :context |
+		context categoryNames includes: aSymbol ].
+	contexts ifEmpty: [ ^ { aSymbol } asOrderedCollection ].
+	names := contexts flatCollect: [ :context | context conflictCategoryNames ].
+	^ (names asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
+]
+
+{ #category : 'detecting' }
+ReplayMacroContext class >> conflictCategoryNamesForCategoryNames: aCollection [
+
+	| names |
+	names := aCollection flatCollect: [ :categoryName |
+		self conflictCategoryNamesForCategoryName: categoryName ].
+	^ (names asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
+]
+
 { #category : 'defaults' }
 ReplayMacroContext class >> defaultContexts [
 
@@ -57,7 +78,8 @@ ReplayMacroContext class >> defaultContexts [
 		self
 			identifier: #smalltalkEditors
 			displayName: 'Smalltalk code editors'
-			categoryNames: { #RubSmalltalkEditor }.
+			categoryNames: { #RubSmalltalkEditor }
+			conflictCategoryNames: { #RubSmalltalkEditor. #RubTextEditor }.
 		self
 			identifier: #morphicNavigation
 			displayName: 'Morphic navigation'
@@ -91,10 +113,21 @@ ReplayMacroContext class >> forMorph: aMorph [
 { #category : 'instance creation' }
 ReplayMacroContext class >> identifier: aSymbol displayName: aString categoryNames: aCollection [
 
+	^ self
+		identifier: aSymbol
+		displayName: aString
+		categoryNames: aCollection
+		conflictCategoryNames: aCollection
+]
+
+{ #category : 'instance creation' }
+ReplayMacroContext class >> identifier: aSymbol displayName: aString categoryNames: categoryCollection conflictCategoryNames: conflictCollection [
+
 	^ self new
 		identifier: aSymbol;
 		displayName: aString;
-		categoryNames: aCollection;
+		categoryNames: categoryCollection;
+		conflictCategoryNames: conflictCollection;
 		yourself
 ]
 
@@ -115,6 +148,25 @@ ReplayMacroContext >> categoryNames [
 ReplayMacroContext >> categoryNames: aCollection [
 
 	categoryNames := aCollection asOrderedCollection
+]
+
+{ #category : 'accessing' }
+ReplayMacroContext >> conflictCategories [
+
+	^ self conflictCategoryNames collect: [ :categoryName |
+		KMRepository default categoryForName: categoryName ]
+]
+
+{ #category : 'accessing' }
+ReplayMacroContext >> conflictCategoryNames [
+
+	^ conflictCategoryNames ifNil: [ self categoryNames ]
+]
+
+{ #category : 'accessing' }
+ReplayMacroContext >> conflictCategoryNames: aCollection [
+
+	conflictCategoryNames := aCollection asOrderedCollection
 ]
 
 { #category : 'accessing' }

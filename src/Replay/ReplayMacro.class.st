@@ -92,9 +92,22 @@ ReplayMacro >> addContextNamed: aSymbol [
 ]
 
 { #category : 'conflicts' }
+ReplayMacro >> conflictCategories [
+
+	^ self conflictCategoryNames collect: [ :contextName |
+		KMRepository default categoryForName: contextName ]
+]
+
+{ #category : 'conflicts' }
+ReplayMacro >> conflictCategoryNames [
+
+	^ ReplayMacroContext conflictCategoryNamesForCategoryNames: self contextNames
+]
+
+{ #category : 'conflicts' }
 ReplayMacro >> conflicts [
 
-	^ self conflictsInCategories: self contextCategories
+	^ self conflictsInCategories: self conflictCategories
 ]
 
 { #category : 'conflicts' }

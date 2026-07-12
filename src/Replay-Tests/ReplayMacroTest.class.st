@@ -6,6 +6,23 @@ Class {
 }
 
 { #category : 'support' }
+ReplayMacroTest >> defaultFindShortcut [
+
+	^ ReplayShortcut new
+		text: 'f';
+		addFlags: OSPlatform current defaultModifier eventCode;
+		yourself
+]
+
+{ #category : 'support' }
+ReplayMacroTest >> findKeymapInCategoryNamed: aSymbol [
+
+	^ (KMRepository default categoryForName: aSymbol) allEntries keymaps
+		detect: [ :keymap | keymap name = #find ]
+		ifNone: [ self fail: 'Expected find keymap in ' , aSymbol asString ]
+]
+
+{ #category : 'support' }
 ReplayMacroTest >> keyboardEventForCharacter: aCharacter buttons: flags [
 
 	| event |
@@ -175,11 +192,12 @@ ReplayMacroTest >> testMacroContextDefaultContextsExposeUserFacingChoices [
 	codeContext := contexts detect: [ :context | context identifier = #smalltalkEditors ].
 	morphicContext := contexts detect: [ :context | context identifier = #morphicNavigation ].
 	windowContext := contexts detect: [ :context | context identifier = #windows ].
-
 	self assert: textContext displayName equals: 'Text editors'.
 	self assert: textContext categoryNames asArray equals: { #RubTextEditor }.
+	self assert: textContext conflictCategoryNames asArray equals: { #RubTextEditor }.
 	self assert: codeContext displayName equals: 'Smalltalk code editors'.
 	self assert: codeContext categoryNames asArray equals: { #RubSmalltalkEditor }.
+	self assert: codeContext conflictCategoryNames asArray equals: { #RubSmalltalkEditor. #RubTextEditor }.
 	self assert: morphicContext displayName equals: 'Morphic navigation'.
 	self assert: morphicContext categoryNames asArray equals: { #MorphCtrlNavigation }.
 	self assert: windowContext displayName equals: 'Windows'.
@@ -221,6 +239,21 @@ ReplayMacroTest >> testMacroContextTextEditorsMapsToRubTextEditor [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroDetectsBaseTextFindConflictInSmalltalkEditorContext [
+
+	| macro conflicts |
+	macro := ReplayMacro
+		named: 'Smalltalk find replacement'
+		shortcut: self defaultFindShortcut
+		scenario: ReplayScenario new.
+	macro contextNames: { #RubSmalltalkEditor }.
+
+	conflicts := macro conflicts.
+	self assert: (conflicts anySatisfy: [ :conflict |
+		conflict categoryName = #RubTextEditor and: [ conflict name = #find ] ])
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroDetectsConflictingKeymapInCategory [
 
 	| category conflictingKeymap otherKeymap macro conflicts conflict |
@@ -246,6 +279,21 @@ ReplayMacroTest >> testMacroDetectsConflictingKeymapInCategory [
 	self assert: conflict keymap equals: conflictingKeymap.
 	self assert: conflict category equals: category.
 	self assert: conflict shortcutString equals: conflictingKeymap shortcut asString
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroDetectsFindConflictInTextEditorContext [
+
+	| macro conflicts |
+	macro := ReplayMacro
+		named: 'Find replacement'
+		shortcut: self defaultFindShortcut
+		scenario: ReplayScenario new.
+	macro contextNames: { #RubTextEditor }.
+
+	conflicts := macro conflicts.
+	self assert: (conflicts anySatisfy: [ :conflict |
+		conflict categoryName = #RubTextEditor and: [ conflict name = #find ] ])
 ]
 
 { #category : 'tests' }
@@ -472,6 +520,24 @@ ReplayMacroTest >> testMacroEditorShowsNoContextStatusInitially [
 
 	self assert: editor conflictList items isEmpty.
 	self assert: editor conflictStatusPresenter label equals: 'Enter shortcut keys to check known contexts.'
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorShowsSmalltalkFindConflictFromBaseTextContext [
+
+	| macro editor conflicts |
+	macro := ReplayMacro
+		named: 'Smalltalk find replacement'
+		shortcut: self defaultFindShortcut
+		scenario: ReplayScenario new.
+	macro contextNames: { #RubSmalltalkEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	conflicts := editor conflictList items.
+	self assert: (conflicts anySatisfy: [ :conflict |
+		conflict categoryName = #RubTextEditor and: [ conflict name = #find ] ]).
+	self assert: (editor conflictStatusPresenter label includesSubstring: 'Text editors').
+	self deny: (editor conflictStatusPresenter label includesSubstring: 'RubTextEditor')
 ]
 
 { #category : 'tests' }
@@ -1395,7 +1461,7 @@ ReplayMacroTest >> testShortcutConflictShowsReadableContextDisplayName [
 	keymap := category keymapNamed: #find.
 	conflict := ReplayShortcutConflict category: category keymap: keymap.
 
-	self assert: conflict contextDisplayName equals: 'Text editor (RubTextEditor)'
+	self assert: conflict contextDisplayName equals: 'Text editors'
 ]
 
 { #category : 'tests' }
@@ -1407,6 +1473,17 @@ ReplayMacroTest >> testShortcutConflictUsesCommandDisplayForMetaShortcut [
 	conflict := ReplayShortcutConflict category: category keymap: keymap.
 
 	self assert: conflict shortcutString equals: 'Command + F'
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testShortcutConflictUsesUserFacingKnownContextNames [
+
+	| conflict |
+	conflict := ReplayShortcutConflict
+		category: (KMRepository default categoryForName: #RubTextEditor)
+		keymap: (self findKeymapInCategoryNamed: #RubTextEditor).
+
+	self assert: conflict contextDisplayName equals: 'Text editors'
 ]
 
 { #category : 'support' }
