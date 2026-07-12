@@ -979,6 +979,29 @@ ReplayMacroTest >> testMacroLibraryEditorListAddCreatesOneMacro [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorRemoveSelectedMacroUninstallsIt [
+
+	| library macro editor |
+	library := ReplayMacroLibrary new.
+	macro := library addNewMacro.
+	macro
+		identifier: 'editor-remove-installed-macro-test';
+		shortcut: (ReplayShortcut new
+			text: 'r';
+			addFlags: 16;
+			yourself);
+		contextNames: { #RubTextEditor }.
+	editor := ReplayMacroLibraryEditor on: library.
+	[
+		macro install.
+		editor macroList selectItem: macro.
+		editor removeSelectedMacro.
+		self deny: (macro installedInContextNamed: #RubTextEditor).
+		self assert: editor installationSummaryPresenter label equals: 'Installed macros: 0 / 0. Replay keymaps in image: 0.' ]
+		ensure: [ macro uninstall ]
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroLibraryEditorRemovesSelectedMacro [
 
 	| library first second editor |
@@ -1088,6 +1111,29 @@ ReplayMacroTest >> testMacroLibraryNamesNewMacros [
 
 	self assert: first name equals: 'Macro 1'.
 	self assert: second name equals: 'Macro 2'
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryRemoveMacroUninstallsIt [
+
+	| library macro |
+	library := ReplayMacroLibrary new.
+	macro := ReplayMacro
+		named: 'Remove installed macro'
+		shortcut: (ReplayShortcut new
+			text: 'r';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro identifier: 'remove-installed-macro-test'.
+	macro contextNames: { #RubTextEditor }.
+	library addMacro: macro.
+	[
+		macro install.
+		self assert: (macro installedInContextNamed: #RubTextEditor).
+		library removeMacro: macro.
+		self deny: (macro installedInContextNamed: #RubTextEditor) ]
+		ensure: [ macro uninstall ]
 ]
 
 { #category : 'tests' }

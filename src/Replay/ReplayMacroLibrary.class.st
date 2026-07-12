@@ -132,6 +132,7 @@ ReplayMacroLibrary >> nextMacroName [
 { #category : 'removing' }
 ReplayMacroLibrary >> removeMacro: aReplayMacro [
 
+	aReplayMacro uninstall.
 	self macros remove: aReplayMacro ifAbsent: [ ]
 ]
 
