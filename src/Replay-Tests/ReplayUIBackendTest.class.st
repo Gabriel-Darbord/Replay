@@ -848,6 +848,22 @@ ReplayUIBackendTest >> testSelectTextRejectsUnsupportedTarget [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testSelectTextSupportsRubricEditingArea [
+
+	| action area |
+	action := ReplaySelectText new
+		startIndex: 2;
+		stopIndex: 4;
+		yourself.
+	area := RubEditingArea new.
+	[
+		area setTextWith: 'abcdef'.
+		action selectTextIn: area.
+		self assert: area selectionInterval equals: (2 to: 4) ]
+		ensure: [ area delete ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testShortcutActionDelegatesToResolvedUIBackend [
 
 	| backend action resolved |

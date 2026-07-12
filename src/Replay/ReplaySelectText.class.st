@@ -22,7 +22,9 @@ ReplaySelectText class >> displayName [
 { #category : 'testing' }
 ReplaySelectText >> canSelectTextIn: anObject [
 
-	^ anObject notNil and: [ anObject respondsTo: #selectionInterval: ]
+	^ anObject notNil and: [
+		(anObject respondsTo: #selectionInterval:)
+			or: [ anObject respondsTo: #selectFrom:to: ] ]
 ]
 
 { #category : 'editing' }
@@ -70,9 +72,10 @@ ReplaySelectText >> runOn: runner resolvedUI: resolvedUI [
 { #category : 'running' }
 ReplaySelectText >> selectTextIn: anObject [
 
-	(self canSelectTextIn: anObject) ifFalse: [
-		^ self unsupportedTarget: anObject ].
-	anObject selectionInterval: self selectionInterval
+	(self canSelectTextIn: anObject) ifFalse: [ ^ self unsupportedTarget: anObject ].
+	(anObject respondsTo: #selectionInterval:) ifTrue: [
+		^ anObject selectionInterval: self selectionInterval ].
+	anObject selectFrom: self selectionInterval first to: self selectionInterval last
 ]
 
 { #category : 'accessing' }
