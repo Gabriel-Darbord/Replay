@@ -262,8 +262,8 @@ ReplayEditor >> initializePresenters [
 		help: 'Record delays between captured actions.';
 		yourself.
 	recordButton := self newButton
-		label: 'Record';
-		help: 'Start recording user actions.';
+		label: 'Record World';
+		help: 'Start recording user actions in existing windows and the World.';
 		action: [ self startRecording ];
 		yourself.
 	stopRecordingButton := self newButton
@@ -323,12 +323,7 @@ ReplayEditor >> recordingShortcutFlags [
 
 { #category : 'recording' }
 ReplayEditor >> recordingTargetMorph [
-	| uiAdapter widget |
-	uiAdapter := self adapter.
-	uiAdapter ifNil: [ ReplayError new messageText: 'Open the Scenario Editor before recording.'; signal ].
-	widget := uiAdapter widget.
-	widget ifNil: [ ReplayError new messageText: 'Scenario Editor has no rendered widget to record.'; signal ].
-	^ widget
+	^ World
 ]
 
 { #category : 'replay' }
@@ -545,6 +540,6 @@ ReplayEditor >> toolbar [
 ReplayEditor >> updateRecordingStatus [
 	recordingStatusPresenter ifNil: [ ^ self ].
 	recordingStatusPresenter label: (self isRecording
-		ifTrue: [ 'Recording.' ]
+		ifTrue: [ 'Recording World.' ]
 		ifFalse: [ 'Not recording.' ])
 ]

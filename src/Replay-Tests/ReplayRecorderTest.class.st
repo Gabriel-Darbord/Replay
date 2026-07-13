@@ -79,6 +79,25 @@ ReplayRecorderTest >> testEditorAppendsRecordedActionsToCurrentStep [
 ]
 
 { #category : 'tests' }
+ReplayRecorderTest >> testEditorRecordsWorldByDefault [
+	| editor |
+	editor := ReplayEditor new.
+	self assert: editor recordingTargetMorph equals: World
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testEditorStartRecordingObservesWorldWithoutOverlay [
+	| editor activeRecorder |
+	editor := ReplayEditor new.
+	[
+		editor startRecording.
+		activeRecorder := editor instVarNamed: 'recorder'.
+		self assert: activeRecorder manager managedUI equals: World.
+		self assert: activeRecorder manager overlay isNil ]
+		ensure: [ editor stopRecording ]
+]
+
+{ #category : 'tests' }
 ReplayRecorderTest >> testRecorderCanRecordActionsWithoutTiming [
 	| recorder first second recorded |
 	recorder := ReplayRecorder new preserveTiming: false; yourself.
@@ -201,6 +220,23 @@ ReplayRecorderTest >> testRecorderStopShortcutInvokesStopBlockWithoutRecordingSh
 	stopped := false.
 	[
 		hand keyboardFocus: target.
+		recorder recordEvent: (self keyboardEventType: #keyDown character: $r buttons: UserInputEvent cmdKeyMask hand: hand).
+		self assert: stopped.
+		self assert: recorder actions isEmpty ]
+		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderStopShortcutWorksWithoutKeyboardFocus [
+	| root recorder hand previousFocus stopped |
+	root := Morph new extent: 200 @ 100.
+	recorder := self newRecorderOn: root.
+	recorder stopShortcutText: 'r' flags: UserInputEvent cmdKeyMask do: [ stopped := true ].
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+	stopped := false.
+	[
+		hand keyboardFocus: nil.
 		recorder recordEvent: (self keyboardEventType: #keyDown character: $r buttons: UserInputEvent cmdKeyMask hand: hand).
 		self assert: stopped.
 		self assert: recorder actions isEmpty ]

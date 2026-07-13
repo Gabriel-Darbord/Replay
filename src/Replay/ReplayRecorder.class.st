@@ -192,6 +192,16 @@ ReplayRecorder >> manager: aReplayUIManager [
 ]
 
 { #category : 'testing' }
+ReplayRecorder >> matchesStopShortcutEvent: anEvent [
+	| flags text |
+	anEvent isKeyDown ifFalse: [ ^ false ].
+	flags := self modifierFlagsFrom: anEvent.
+	flags = 0 ifTrue: [ ^ false ].
+	text := anEvent modifiedCharacter asString asLowercase.
+	^ self matchesStopShortcutText: text flags: flags
+]
+
+{ #category : 'testing' }
 ReplayRecorder >> matchesStopShortcutText: aString flags: anInteger [
 	stopShortcutText ifNil: [ ^ false ].
 	^ stopShortcutText = aString asLowercase and: [ stopShortcutFlags = anInteger ]
@@ -283,6 +293,7 @@ ReplayRecorder >> recordEvent: anEvent [
 { #category : 'event handling' }
 ReplayRecorder >> recordKeyboardEvent: anEvent [
 	| target |
+	(self matchesStopShortcutEvent: anEvent) ifTrue: [ ^ self requestStop ].
 	target := anEvent hand keyboardFocus.
 	(self managedIncludesMorph: target) ifFalse: [ ^ self ].
 	anEvent isKeystroke ifTrue: [ ^ self recordKeystroke: anEvent on: target ].

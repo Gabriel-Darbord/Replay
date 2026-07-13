@@ -501,18 +501,12 @@ ReplayUIManager >> observe: aMorph [
 
 { #category : 'managing UI' }
 ReplayUIManager >> observe: aMorph usingBackend: aReplayUIBackend [
-	"Observe an existing UI without creating an overlay or taking ownership."
-	| owner |
-	owner := aMorph owner ifNil: [
-		ReplayError new
-			messageText: 'Cannot observe Replay Morph without owner.';
-			tag: aMorph;
-			signal ].
+	"Observe an existing UI without creating an overlay or taking ownership. Root morphs such as World can be observed directly."
 	ownsUI := false.
 	self allowUserInteraction.
 	backend := aReplayUIBackend.
 	managed := aMorph.
-	root := owner.
+	root := aMorph owner ifNil: [ aMorph ].
 	overlay := nil.
 	^ self
 ]

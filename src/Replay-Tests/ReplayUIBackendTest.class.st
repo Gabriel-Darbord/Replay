@@ -804,6 +804,18 @@ ReplayUIBackendTest >> testObserveMorphDoesNotCreateOverlay [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testObserveRootMorphDoesNotRequireOwnerOrOverlay [
+	| root manager |
+	root := Morph new extent: 200 @ 100.
+	manager := ReplayUIManager new observe: root.
+	[
+		self assert: manager managedUI equals: root.
+		self assert: manager overlay isNil.
+		self deny: manager ownsUI ]
+		ensure: [ manager close ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testOpenLabeledAppliesRequestedContentExtent [
 
 	| manager morph requestedExtent |
