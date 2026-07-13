@@ -68,6 +68,64 @@ ReplayRecorderTest >> newRecorderOn: targetMorph [
 ]
 
 { #category : 'tests' }
+ReplayRecorderTest >> testAttachActiveWindowObservesFocusedWindowWithoutOverlay [
+
+	| root target window hand previousFocus runner action |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	window := root openInWindowLabeled: 'Replay attach target'.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+	runner := ReplayRunner on: ReplayScenario new.
+	action := ReplayAttachActiveWindow new.
+
+	[
+		hand keyboardFocus: target.
+		action runOn: runner.
+		self assert: runner manager managedUI equals: window.
+		self assert: runner manager overlay isNil.
+		runner manager close ]
+
+		ensure: [
+			hand keyboardFocus: previousFocus.
+			window delete ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testAttachActiveWindowUsesFocusedWindow [
+
+	| root target window hand previousFocus resolved |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	window := root openInWindowLabeled: 'Replay recorder target'.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		resolved := ReplayAttachActiveWindow activeWindowMorphFromHand: hand.
+		self assert: resolved equals: window ]
+
+		ensure: [
+			hand keyboardFocus: previousFocus.
+			window delete ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testAttachWorldObservesWorldWithoutOverlay [
+
+	| runner action |
+	runner := ReplayRunner on: ReplayScenario new.
+	action := ReplayAttachWorld new.
+	action runOn: runner.
+	self assert: runner manager managedUI equals: World.
+	self assert: runner manager overlay isNil.
+	runner manager close
+]
+
+{ #category : 'tests' }
 ReplayRecorderTest >> testEditorAppendsRecordedActionsToCurrentStep [
 	| editor click type |
 	editor := ReplayEditor new.
@@ -76,6 +134,23 @@ ReplayRecorderTest >> testEditorAppendsRecordedActionsToCurrentStep [
 	editor addRecordedActions: { click. type }.
 	self assert: editor model currentStep actions asArray equals: { click. type }.
 	self assert: editor actions items asArray equals: { click. type }
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testEditorRecordedWorldActionsBeginWithAttachWorld [
+
+	| editor activeRecorder recorded |
+	editor := ReplayEditor new.
+
+	[
+		editor startRecording.
+		activeRecorder := editor instVarNamed: 'recorder'.
+		activeRecorder recordAction: ReplayClick new.
+		recorded := editor stopRecording.
+		self assert: recorded first class equals: ReplayAttachWorld.
+		self assert: editor model currentStep actions first class equals: ReplayAttachWorld ]
+
+		ensure: [ editor isRecording ifTrue: [ editor stopRecording ] ]
 ]
 
 { #category : 'tests' }
@@ -165,6 +240,21 @@ ReplayRecorderTest >> testRecorderInsertsDelayBetweenActionsWhenTimingIsPreserve
 	self assert: actions size equals: 3.
 	self assert: actions second class equals: ReplayDelay.
 	self assert: actions second seconds equals: 1.5
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderPrependsPrologueOnlyWhenActionsWereRecorded [
+
+	| recorder recorded |
+	recorder := ReplayRecorder new
+		preserveTiming: false;
+		prologueActions: { ReplayAttachWorld new };
+		yourself.
+	self assert: recorder recordedActions isEmpty.
+	recorder recordAction: ReplayClick new.
+	recorded := recorder recordedActions.
+	self assert: recorded first class equals: ReplayAttachWorld.
+	self assert: recorded second class equals: ReplayClick
 ]
 
 { #category : 'tests' }
@@ -315,4 +405,90 @@ ReplayRecorderTest >> testRecorderTranslatesMouseWheelToReplayScroll [
 		self assert: action modifiers equals: UserInputEvent ctrlKeyMask.
 		self assert: action position equals: 5 @ 5 ]
 		ensure: [ recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecordingToggleListenerIgnoresMouseEvents [
+
+	| editor listener event |
+	editor := ReplayEditor new.
+	listener := ReplayRecordingToggleListener on: editor.
+	event := self
+		mouseButtonEventType: #mouseDown
+		position: 10 @ 10
+		which: MouseEvent redButton
+		buttons: MouseEvent redButton
+		hand: World activeHand.
+
+	self shouldnt: [ listener handleListenEvent: event ] raise: MessageNotUnderstood.
+	self deny: editor isRecording
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecordingToggleListenerStartsAndStopsFromShortcut [
+
+	| root target window hand previousFocus editor listener startEvent stopEvent |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	window := root openInWindowLabeled: 'Replay listener recording target'.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+	editor := ReplayEditor new.
+	listener := ReplayRecordingToggleListener on: editor.
+	startEvent := self
+		keyboardEventType: #keyDown
+		character: $r
+		buttons: editor recordingShortcutFlags
+		hand: hand.
+	stopEvent := self
+		keyboardEventType: #keyDown
+		character: $r
+		buttons: editor recordingShortcutFlags
+		hand: hand.
+
+	[
+		hand keyboardFocus: target.
+		listener handleListenEvent: startEvent.
+		self assert: editor isRecording.
+		self assert: (editor instVarNamed: 'recorder') manager managedUI equals: window.
+		listener handleListenEvent: stopEvent.
+		self deny: editor isRecording ]
+
+		ensure: [
+			editor isRecording ifTrue: [ editor stopRecording ].
+			hand keyboardFocus: previousFocus.
+			window delete ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testShortcutStartedRecordingTargetsFocusedWindow [
+
+	| root target window hand previousFocus editor event activeRecorder recorded |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	window := root openInWindowLabeled: 'Replay shortcut recording target'.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+	editor := ReplayEditor new.
+	event := self
+		keyboardEventType: #keyDown
+		character: $r
+		buttons: editor recordingShortcutFlags
+		hand: hand.
+
+	[
+		hand keyboardFocus: target.
+		editor startRecordingFromShortcutEvent: event.
+		activeRecorder := editor instVarNamed: 'recorder'.
+		self assert: activeRecorder manager managedUI equals: window.
+		activeRecorder recordAction: ReplayClick new.
+		recorded := editor stopRecording.
+		self assert: recorded first class equals: ReplayAttachActiveWindow ]
+
+		ensure: [
+			editor isRecording ifTrue: [ editor stopRecording ].
+			hand keyboardFocus: previousFocus.
+			window delete ]
 ]

@@ -15,7 +15,9 @@ Class {
 		'recordTimingCheckBox',
 		'recordButton',
 		'stopRecordingButton',
-		'recordingStatusPresenter'
+		'recordingStatusPresenter',
+		'recordingShortcutListener',
+		'recordingTargetDescription'
 	],
 	#category : 'Replay-Editing',
 	#package : 'Replay',
@@ -113,13 +115,20 @@ ReplayEditor >> addRecordedActions: aCollectionOfActions [
 
 { #category : 'recording' }
 ReplayEditor >> bindRecordingShortcut [
-	self bindKeyCombination: self recordingShortcut toAction: [ self toggleRecording ]
+	"Recording shortcuts are handled by a hand listener while the editor window is open."
 ]
 
 { #category : 'replay' }
 ReplayEditor >> clearReplayPresenterTargets [
 
 	replayPresenters := Dictionary new
+]
+
+{ #category : 'recording' }
+ReplayEditor >> closeRecordingSession [
+
+	self isRecording ifTrue: [ self stopRecording ].
+	self uninstallRecordingShortcutListener
 ]
 
 { #category : 'initialization' }
@@ -263,7 +272,7 @@ ReplayEditor >> initializePresenters [
 		yourself.
 	recordButton := self newButton
 		label: 'Record World';
-		help: 'Start recording user actions in existing windows and the World.';
+		help: 'Record at World scope. Use the recording shortcut from another window to record that active window.';
 		action: [ self startRecording ];
 		yourself.
 	stopRecordingButton := self newButton
@@ -282,8 +291,19 @@ ReplayEditor >> initializePresenters [
 { #category : 'initialization' }
 ReplayEditor >> initializeWindow: aWindow [
 
+	super initializeWindow: aWindow.
 	aWindow title: 'Scenario Editor'.
-	aWindow initialExtent: 1200 @ 675
+	aWindow initialExtent: 1200 @ 675.
+	self installRecordingShortcutListener.
+	aWindow whenClosedDo: [ self closeRecordingSession ]
+]
+
+{ #category : 'recording' }
+ReplayEditor >> installRecordingShortcutListener [
+
+	recordingShortcutListener ifNotNil: [ ^ self ].
+	recordingShortcutListener := ReplayRecordingToggleListener on: self.
+	World activeHand addEventListener: recordingShortcutListener
 ]
 
 { #category : 'recording' }
@@ -295,6 +315,18 @@ ReplayEditor >> isRecording [
 ReplayEditor >> model [
 
 	^ model ifNil: [ model := ReplayEditorModel new ]
+]
+
+{ #category : 'recording' }
+ReplayEditor >> modifierFlagsFromEvent: anEvent [
+
+	| modifiers |
+	modifiers := 0.
+	anEvent shiftPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent shiftKeyMask ].
+	anEvent controlKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent ctrlKeyMask ].
+	(anEvent optionKeyPressed or: [ anEvent altKeyPressed ]) ifTrue: [ modifiers := modifiers bitOr: UserInputEvent altKeyMask ].
+	anEvent commandKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent cmdKeyMask ].
+	^ modifiers
 ]
 
 { #category : 'layout' }
@@ -322,8 +354,33 @@ ReplayEditor >> recordingShortcutFlags [
 ]
 
 { #category : 'recording' }
+ReplayEditor >> recordingShortcutMatchesEvent: anEvent [
+
+	| flags text |
+	anEvent isKeyboard ifFalse: [ ^ false ].
+	anEvent isKeyDown ifFalse: [ ^ false ].
+	flags := self modifierFlagsFromEvent: anEvent.
+	flags = self recordingShortcutFlags ifFalse: [ ^ false ].
+	text := anEvent modifiedCharacter asString asLowercase.
+	^ text = 'r'
+]
+
+{ #category : 'recording' }
+ReplayEditor >> recordingStatusForTargetMorph: aMorph [
+
+	aMorph == World ifTrue: [ ^ 'Recording World.' ].
+	^ 'Recording active window.'
+]
+
+{ #category : 'recording' }
 ReplayEditor >> recordingTargetMorph [
 	^ World
+]
+
+{ #category : 'recording' }
+ReplayEditor >> recordingTargetMorphForShortcutEvent: anEvent [
+
+	^ ReplayAttachActiveWindow activeWindowMorphFromHand: anEvent hand
 ]
 
 { #category : 'replay' }
@@ -453,15 +510,40 @@ ReplayEditor >> selectStep: step [
 
 { #category : 'recording' }
 ReplayEditor >> startRecording [
-	| target manager |
+
+	self
+		startRecordingOn: self recordingTargetMorph
+		attachAction: ReplayAttachWorld new
+		status: 'Recording World.'
+]
+
+{ #category : 'recording' }
+ReplayEditor >> startRecordingFromShortcutEvent: anEvent [
+
+	| target attachAction |
+	target := self recordingTargetMorphForShortcutEvent: anEvent.
+	attachAction := target == World
+		ifTrue: [ ReplayAttachWorld new ]
+		ifFalse: [ ReplayAttachActiveWindow new ].
+	self
+		startRecordingOn: target
+		attachAction: attachAction
+		status: (self recordingStatusForTargetMorph: target)
+]
+
+{ #category : 'recording' }
+ReplayEditor >> startRecordingOn: targetMorph attachAction: attachAction status: statusString [
+
+	| manager |
 	self isRecording ifTrue: [ ^ self ].
 	self ensureStep.
-	target := self recordingTargetMorph.
-	manager := ReplayUIManager new observe: target.
+	manager := ReplayUIManager new observe: targetMorph.
 	recorder := ReplayRecorder new
 		manager: manager;
 		preserveTiming: recordTimingCheckBox state;
+		prologueActions: { attachAction };
 		yourself.
+	recordingTargetDescription := statusString.
 	recorder stopShortcutText: 'r' flags: self recordingShortcutFlags do: [ self stopRecording ].
 	self ignoreRecordingControlsOn: recorder.
 	recorder start.
@@ -488,12 +570,14 @@ ReplayEditor >> steps [
 
 { #category : 'recording' }
 ReplayEditor >> stopRecording [
+
 	| recordedActions activeRecorder |
 	recorder ifNil: [ ^ #() ].
 	activeRecorder := recorder.
 	recordedActions := activeRecorder stop.
 	activeRecorder manager close.
 	recorder := nil.
+	recordingTargetDescription := nil.
 	self updateRecordingStatus.
 	self addRecordedActions: recordedActions.
 	^ recordedActions
@@ -504,6 +588,14 @@ ReplayEditor >> toggleRecording [
 	self isRecording
 		ifTrue: [ self stopRecording ]
 		ifFalse: [ self startRecording ]
+]
+
+{ #category : 'recording' }
+ReplayEditor >> toggleRecordingFromShortcutEvent: anEvent [
+
+	self isRecording
+		ifTrue: [ self stopRecording ]
+		ifFalse: [ self startRecordingFromShortcutEvent: anEvent ]
 ]
 
 { #category : 'layout' }
@@ -537,9 +629,18 @@ ReplayEditor >> toolbar [
 ]
 
 { #category : 'recording' }
+ReplayEditor >> uninstallRecordingShortcutListener [
+
+	recordingShortcutListener ifNil: [ ^ self ].
+	World activeHand removeEventListener: recordingShortcutListener.
+	recordingShortcutListener := nil
+]
+
+{ #category : 'recording' }
 ReplayEditor >> updateRecordingStatus [
+
 	recordingStatusPresenter ifNil: [ ^ self ].
 	recordingStatusPresenter label: (self isRecording
-		ifTrue: [ 'Recording World.' ]
+		ifTrue: [ recordingTargetDescription ifNil: [ 'Recording.' ] ]
 		ifFalse: [ 'Not recording.' ])
 ]

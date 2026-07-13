@@ -24,7 +24,7 @@ ReplayAction class >> actionsForMenu [
 { #category : 'editing' }
 ReplayAction class >> actionsThatOpenUI [
 
-	^ ReplayOpenUI selectActions: [ :action | true ]
+	^ self selectActions: [ :action | action new isUIOpener ]
 ]
 
 { #category : 'accessing' }

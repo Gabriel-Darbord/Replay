@@ -24,7 +24,8 @@ Class {
 		'ignoredMorphs',
 		'stopShortcutText',
 		'stopShortcutFlags',
-		'stopBlock'
+		'stopBlock',
+		'prologueActions'
 	],
 	#category : 'Replay-Recording',
 	#package : 'Replay',
@@ -255,6 +256,18 @@ ReplayRecorder >> preserveTiming: aBoolean [
 	preserveTiming := aBoolean = true
 ]
 
+{ #category : 'accessing' }
+ReplayRecorder >> prologueActions [
+
+	^ prologueActions ifNil: [ #() ]
+]
+
+{ #category : 'accessing' }
+ReplayRecorder >> prologueActions: aCollection [
+
+	prologueActions := aCollection asOrderedCollection
+]
+
 { #category : 'recording' }
 ReplayRecorder >> recordAction: aReplayAction [
 	self preserveTiming ifTrue: [ self recordDelayBeforeNextAction ].
@@ -391,9 +404,16 @@ ReplayRecorder >> recordShortcut: anEvent on: targetMorph [
 
 { #category : 'recording' }
 ReplayRecorder >> recordedActions [
-	^ self preserveTiming
+
+	| recorded all |
+	recorded := self preserveTiming
 		ifTrue: [ self actions copy ]
-		ifFalse: [ self actionsWithoutRecordedTiming ]
+		ifFalse: [ self actionsWithoutRecordedTiming ].
+	recorded ifEmpty: [ ^ recorded ].
+	all := OrderedCollection new.
+	all addAll: self prologueActions.
+	all addAll: recorded.
+	^ all
 ]
 
 { #category : 'targeting' }
