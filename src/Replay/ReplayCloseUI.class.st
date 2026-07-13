@@ -1,6 +1,5 @@
 "
-Closes the active window.
-I am not a UI action, because I don't depend on UI.
+I close the active managed UI and clear it from the runner.
 "
 Class {
 	#name : 'ReplayCloseUI',

@@ -1,3 +1,6 @@
+"
+I load, save, install, uninstall, and run macros from the persisted Replay macro library.
+"
 Class {
 	#name : 'ReplayMacroRegistry',
 	#superclass : 'Object',

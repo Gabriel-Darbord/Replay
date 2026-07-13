@@ -1,5 +1,5 @@
 "
-Open a browser on a class.
+I open a system browser focused on a configured class name.
 "
 Class {
 	#name : 'ReplayBrowseClass',

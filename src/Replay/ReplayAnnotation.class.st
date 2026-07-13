@@ -1,21 +1,5 @@
 "
-I annotate an element in the World by adding a border around it.
-I am based on bounds, usually taken from a target Morph but it can be arbitrary.
-I can include a linked label that can be moved independently.
-Note that when applying a label, the target must already be open.
-% Well there's probably a way to trigger the label only when building...
-
-% The example is randomized but when a comment is parsed, it is made into a Form and cached so it will not change
-```script
-ReplayAnnotation example close adapter widget
-```
-
-% The following line adds a space to separate from the above
- 
-Try with a label and moving both it and the window around:
-```pharoeval
-ReplayAnnotation exampleWithLabel
-```
+I am the overlay morph that draws an annotation highlight around target bounds and owns its label and leader line placement.
 "
 Class {
 	#name : 'ReplayAnnotation',

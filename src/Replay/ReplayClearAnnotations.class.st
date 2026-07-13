@@ -1,5 +1,5 @@
 "
-A scenario action that removes all annotation overlay morphs from the currently managed UI.
+I remove every annotation overlay morph from the active managed UI.
 "
 Class {
 	#name : 'ReplayClearAnnotations',

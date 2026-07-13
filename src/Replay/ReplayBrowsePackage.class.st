@@ -1,5 +1,5 @@
 "
-Open a browser on a package.
+I open a system browser focused on a configured package.
 "
 Class {
 	#name : 'ReplayBrowsePackage',

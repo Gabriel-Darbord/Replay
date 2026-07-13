@@ -1,5 +1,5 @@
 "
-Applies to actions that use a string containing a script.
+I add script storage, editing UI, and debugging support to actions that execute Smalltalk source.
 "
 Trait {
 	#name : 'TReplayActionWithScript',

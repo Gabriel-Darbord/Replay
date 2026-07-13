@@ -1,9 +1,5 @@
 "
-A version of `KMDescriptionPresenter` to be integrated in the `ReplayEditor`.
-Differences:
-- No action bar, does not steal window controls from the editor window.
-- With instance variable accessors, to connect with its presenters without using reflection.
-- Filters out empty categories, to avoid drop list options that serve no purpose.
+I display available Pharo keymaps so shortcut actions and macro editors can inspect and adopt existing shortcuts.
 "
 Class {
 	#name : 'ReplayShortcutDescriptionPresenter',

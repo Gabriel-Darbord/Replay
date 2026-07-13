@@ -1,5 +1,5 @@
 "
-Abstract base for UI backend adapters used by ReplayUIManager.
+I define the backend protocol used by ReplayUIManager to resolve targets, dispatch UI actions, and settle the active UI framework.
 "
 Class {
 	#name : 'ReplayUIBackend',

@@ -1,5 +1,5 @@
 "
-Focus on a UI element. (WIP)
+I move keyboard focus to a resolved UI target.
 "
 Class {
 	#name : 'ReplayFocus',

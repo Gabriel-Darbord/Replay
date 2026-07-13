@@ -1,5 +1,5 @@
 "
-I resolve Morphic Replay UI references.
+I resolve ReplayUIReference values against a Morphic surface using semantic names when possible and morph paths otherwise.
 "
 Class {
 	#name : 'ReplayMorphicResolver',

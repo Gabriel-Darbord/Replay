@@ -1,5 +1,5 @@
 "
-I replay mouse wheel scrolling over a target UI element.
+I simulate mouse wheel scrolling over a resolved UI target with direction, count, local offset, and modifiers.
 "
 Class {
 	#name : 'ReplayScroll',

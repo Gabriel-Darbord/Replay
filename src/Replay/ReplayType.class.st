@@ -1,5 +1,5 @@
 "
-Type some text using the keyboard.
+I type configured text into a resolved UI target by sending keystroke events for each character.
 "
 Class {
 	#name : 'ReplayType',

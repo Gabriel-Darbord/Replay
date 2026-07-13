@@ -1,5 +1,5 @@
 "
-I execute a script with the currently managed Spec presenter as the receiver.
+I execute Smalltalk script with the managed Spec presenter as the receiver.
 "
 Class {
 	#name : 'ReplayPresenterScript',

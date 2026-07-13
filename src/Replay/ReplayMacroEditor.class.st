@@ -1,3 +1,6 @@
+"
+I am the Spec editor for one ReplayMacro, including name, shortcut, contexts, conflict status, and install controls.
+"
 Class {
 	#name : 'ReplayMacroEditor',
 	#superclass : 'SpPresenter',

@@ -1,14 +1,5 @@
 "
-A presenter for switching between different views.
-```script
-ReplayViewSwitcherPresenter example close adapter widget
-```
-
-% make space
- 
-```pharoeval
-ReplayViewSwitcherPresenter example
-```
+I am a Spec presenter that displays radio buttons for named views and swaps the active child presenter in place.
 "
 Class {
 	#name : 'ReplayViewSwitcherPresenter',

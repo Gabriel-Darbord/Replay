@@ -1,3 +1,6 @@
+"
+I press a configured non-text keyboard key, optionally repeated and with modifiers.
+"
 Class {
 	#name : 'ReplayPressKey',
 	#superclass : 'ReplayKeyboardEvent',

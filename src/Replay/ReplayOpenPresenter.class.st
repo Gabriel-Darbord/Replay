@@ -1,5 +1,5 @@
 "
-Open a presenter using a script.
+I evaluate a script that creates a Spec presenter and opens it as Replay managed UI.
 "
 Class {
 	#name : 'ReplayOpenPresenter',

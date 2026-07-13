@@ -1,5 +1,5 @@
 "
-I attach Replay to an existing Morph or already-rendered Spec presenter without taking ownership of its window.
+I attach Replay to an existing Morphic morph or already-rendered Spec presenter. Unlike open actions, I do not take ownership of the target UI.
 "
 Class {
 	#name : 'ReplayAttachUI',

@@ -1,5 +1,5 @@
 "
-I describe a backend-independent target for a Replay UI action.
+I am a backend-independent target reference, such as a semantic name or a Morphic path.
 "
 Class {
 	#name : 'ReplayUIReference',

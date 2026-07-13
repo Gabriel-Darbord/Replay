@@ -1,5 +1,5 @@
 "
-I am responsible for opening a UI.
+I am the abstract base for actions that create or attach a UI manager for a scenario.
 "
 Class {
 	#name : 'ReplayOpenUI',

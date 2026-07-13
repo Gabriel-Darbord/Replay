@@ -1,16 +1,5 @@
 "
-I am a simple multiline string morph.
-
-```script|show=both
-ReplayAnnotationLabel new contents: 'Each line in the string
-is a line in the morph.'
-```
-% blank to make space
- 
-With rich text support:
-```script|show=both
-ReplayAnnotationLabel new contents: (self iconNamed: #pharo) asText
-```
+I display wrapped annotation text in the overlay. I size myself to the text and keep the visual style used by Replay callouts.
 "
 Class {
 	#name : 'ReplayAnnotationLabel',

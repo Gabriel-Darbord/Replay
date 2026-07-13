@@ -1,7 +1,5 @@
 "
-I resolve a recorded Replay UI path against a Morph tree on UI cycles.
-
-Replay UI actions store paths as child indexes. Some Morph trees, especially browser and Spec-backed widgets, finish building asynchronously. I centralize the retry policy so actions do not recursively fork and defer their own lookup logic.
+I resolve recorded Morphic child-index paths over one or more UI cycles so actions can wait for late-created morphs with minimal latency.
 "
 Class {
 	#name : 'ReplayUIPathResolver',

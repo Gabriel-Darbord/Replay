@@ -1,5 +1,5 @@
 "
-User interface for editing scenarios.
+I am the Spec editor for Replay scenarios. I edit scenario metadata, step navigation, action ordering, and per-action settings.
 "
 Class {
 	#name : 'ReplayEditor',

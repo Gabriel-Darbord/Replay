@@ -1,5 +1,5 @@
 "
-A scenario action that pauses runner continuation for a configured number of seconds.
+I pause runner continuation for a configured number of seconds. I am intended for explicit demo pacing, not for waiting on UI layout.
 "
 Class {
 	#name : 'ReplayDelay',

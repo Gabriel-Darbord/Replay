@@ -1,3 +1,6 @@
+"
+I hold the ordered collection of macros persisted by ReplayMacroRegistry and provide conflict and installation helpers.
+"
 Class {
 	#name : 'ReplayMacroLibrary',
 	#superclass : 'Object',

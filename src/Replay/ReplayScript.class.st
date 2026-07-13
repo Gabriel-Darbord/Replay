@@ -1,5 +1,5 @@
 "
-Executes the configured script.
+I execute configured Smalltalk script with the Replay runner as receiver.
 "
 Class {
 	#name : 'ReplayScript',

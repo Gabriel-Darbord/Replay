@@ -1,5 +1,5 @@
 "
-Open a browser on a method.
+I open a system browser focused on a configured method reference.
 "
 Class {
 	#name : 'ReplayBrowseMethod',

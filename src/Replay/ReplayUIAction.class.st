@@ -1,5 +1,5 @@
 "
-I am responsible for opening or interacting with UI.
+I am the abstract base for actions that open, attach, or interact with managed UI.
 "
 Class {
 	#name : 'ReplayUIAction',

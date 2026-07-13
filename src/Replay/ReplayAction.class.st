@@ -1,6 +1,5 @@
 "
-I am responsible for executing a specific configurable task.
-An action is part of a `ReplayStep`.
+I am the abstract root of executable Replay scenario actions. Subclasses carry editable action state and know how to run themselves in a ReplayRunner.
 "
 Class {
 	#name : 'ReplayAction',

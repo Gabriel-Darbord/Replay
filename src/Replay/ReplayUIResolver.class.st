@@ -1,5 +1,5 @@
 "
-I resolve Replay UI references for one backend.
+I am the abstract resolver that turns ReplayUIReference values into ReplayResolvedUIElement objects for a backend.
 "
 Class {
 	#name : 'ReplayUIResolver',

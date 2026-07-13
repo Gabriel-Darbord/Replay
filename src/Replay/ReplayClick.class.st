@@ -1,5 +1,5 @@
 "
-Simulates a mouse click on a UI element.
+I simulate a mouse click on a resolved UI target. I can click at a local offset, repeat for double-clicks, and include mouse button and keyboard modifier flags.
 "
 Class {
 	#name : 'ReplayClick',

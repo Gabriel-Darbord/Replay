@@ -1,3 +1,6 @@
+"
+I describe one existing keymap that conflicts with a Replay macro shortcut in a specific context.
+"
 Class {
 	#name : 'ReplayShortcutConflict',
 	#superclass : 'Object',

@@ -1,5 +1,5 @@
 "
-I resolve Spec presenter references semantically, falling back to Morphic surface paths.
+I resolve ReplayUIReference values against Spec presenter registrations first, then fall back to Morphic surface paths.
 "
 Class {
 	#name : 'ReplaySpecResolver',

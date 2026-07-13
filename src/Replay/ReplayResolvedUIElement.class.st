@@ -1,5 +1,5 @@
 "
-I represent a UI element resolved by a backend-specific Replay resolver.
+I carry a backend-resolved UI target: the original reference, optional native backend element, and optional Morphic element.
 "
 Class {
 	#name : 'ReplayResolvedUIElement',

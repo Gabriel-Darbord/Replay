@@ -1,5 +1,5 @@
 "
-I am responsible for opening a code browser.
+I am the abstract open action for code browsers. Concrete subclasses provide the class, method, or package browser target.
 "
 Class {
 	#name : 'ReplayBrowse',

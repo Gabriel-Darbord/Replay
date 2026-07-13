@@ -1,5 +1,5 @@
 "
-Applies to actions that use a bitwise-encoded integer to represent flags.
+I add bitwise flag storage and checkbox editing UI to actions that encode buttons or modifiers as integer masks.
 "
 Trait {
 	#name : 'TReplayActionWithFlags',

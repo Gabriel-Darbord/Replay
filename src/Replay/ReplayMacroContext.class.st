@@ -1,3 +1,6 @@
+"
+I describe keymap contexts where macros can be installed and checked for shortcut conflicts.
+"
 Class {
 	#name : 'ReplayMacroContext',
 	#superclass : 'Object',

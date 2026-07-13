@@ -1,5 +1,5 @@
 "
-Trigger a shortcut using a key combination.
+I send a keyboard shortcut chord to a resolved UI target and can adopt shortcuts from Pharo keymaps.
 "
 Class {
 	#name : 'ReplayShortcut',

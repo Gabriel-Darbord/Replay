@@ -1,5 +1,5 @@
 "
-UI backend for Spec presenters rendered as Morphic widgets.
+I adapt Replay UI management and target resolution for Spec presenters rendered through Morphic.
 "
 Class {
 	#name : 'ReplaySpecBackend',

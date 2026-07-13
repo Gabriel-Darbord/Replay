@@ -1,6 +1,5 @@
 "
-A particular action that is executed at the end of a `ReplayStep`.
-It is responsible for letting users navigate through the scenario.
+I configure the navigation prompt shown between scenario steps, including labels, skip behavior, and optional window placement.
 "
 Class {
 	#name : 'ReplayNavigate',

@@ -1,5 +1,5 @@
 "
-I am responsible for triggering keyboard events.
+I am the abstract base for actions that synthesize keyboard events for a resolved UI target.
 "
 Class {
 	#name : 'ReplayKeyboardEvent',

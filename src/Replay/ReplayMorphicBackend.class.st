@@ -1,5 +1,5 @@
 "
-UI backend for directly managed Morphic morphs.
+I adapt Replay UI management and target resolution for directly managed Morphic morphs.
 "
 Class {
 	#name : 'ReplayMorphicBackend',

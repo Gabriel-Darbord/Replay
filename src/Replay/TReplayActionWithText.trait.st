@@ -1,5 +1,5 @@
 "
-Applies to actions that use a string as text.
+I add text storage and editing UI to actions that carry plain string input.
 "
 Trait {
 	#name : 'TReplayActionWithText',

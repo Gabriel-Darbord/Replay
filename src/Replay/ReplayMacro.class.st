@@ -1,3 +1,6 @@
+"
+I represent a named keyboard macro: shortcut, scenario, target contexts, and persistent identity.
+"
 Class {
 	#name : 'ReplayMacro',
 	#superclass : 'Object',

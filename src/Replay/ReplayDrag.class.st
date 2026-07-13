@@ -1,5 +1,5 @@
 "
-I replay a mouse drag gesture from one local target position to another.
+I simulate a mouse drag gesture across a resolved UI target using local start and end offsets, button flags, modifiers, and interpolated move events.
 "
 Class {
 	#name : 'ReplayDrag',

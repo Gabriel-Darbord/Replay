@@ -1,5 +1,5 @@
 "
-I am responsible for interacting with UI.
+I am the abstract base for actions that resolve a target UI element before running.
 "
 Class {
 	#name : 'ReplayUIHandler',

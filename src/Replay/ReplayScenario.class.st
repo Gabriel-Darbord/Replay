@@ -1,7 +1,5 @@
 "
-I represent a user interaction scenario.
-A scenario is composed of `ReplayStep`s that are executed sequentially.
-I can be run by a `ReplayRunner` and edited by a `ReplayEditor`.
+I am a named sequence of ReplayStep objects that can be edited, saved, and run.
 "
 Class {
 	#name : 'ReplayScenario',

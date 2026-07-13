@@ -1,5 +1,5 @@
 "
-I select a text range in a resolved UI element that supports selectionInterval:.
+I select a text range in a resolved UI target that supports text selection.
 "
 Class {
 	#name : 'ReplaySelectText',

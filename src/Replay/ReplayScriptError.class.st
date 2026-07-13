@@ -1,3 +1,6 @@
+"
+I wrap errors raised while compiling or running Replay script actions.
+"
 Class {
 	#name : 'ReplayScriptError',
 	#superclass : 'ReplayError',

@@ -1,6 +1,5 @@
 "
-Used by the `TutorialEditor` to build the managed UI for a specific action.
-**Not** used for running tutorials.
+I build a managed UI preview up to a selected step or action for editor tooling and action debugging.
 "
 Class {
 	#name : 'ReplayUIBuilder',

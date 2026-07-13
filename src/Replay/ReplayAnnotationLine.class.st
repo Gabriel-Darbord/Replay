@@ -1,5 +1,5 @@
 "
-I am the line between an annotation and its label.
+I draw the leader line connecting an annotation label to the highlighted target bounds.
 "
 Class {
 	#name : 'ReplayAnnotationLine',

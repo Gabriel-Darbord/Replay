@@ -1,5 +1,5 @@
 "
-I delete text around the current text selection or caret.
+I delete text around the current caret or selection in a resolved text target. I use editor deletion APIs so selection and forward/backward deletion match user behavior.
 "
 Class {
 	#name : 'ReplayDeleteText',

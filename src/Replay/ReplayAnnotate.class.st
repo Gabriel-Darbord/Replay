@@ -1,5 +1,5 @@
 "
-Annotate a UI element.
+I add a visual annotation around a resolved UI target. I use the active UI manager overlay so scenarios can explain widgets without modifying the managed UI.
 "
 Class {
 	#name : 'ReplayAnnotate',

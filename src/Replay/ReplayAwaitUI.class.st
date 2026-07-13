@@ -1,5 +1,5 @@
 "
-I let Morphic/Spec process pending UI layout and deferred work before the next Replay action runs.
+I let the active backend process one UI cycle before Replay continues. Use me after actions that schedule layout or rendering work.
 "
 Class {
 	#name : 'ReplayAwaitUI',

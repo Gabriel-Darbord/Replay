@@ -1,3 +1,6 @@
+"
+I am the Spec editor for a macro library, with macro list, detail editor, startup policy, and installation controls.
+"
 Class {
 	#name : 'ReplayMacroLibraryEditor',
 	#superclass : 'SpPresenter',

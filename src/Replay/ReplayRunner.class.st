@@ -1,5 +1,5 @@
 "
-A state-based iterator for running a tutorial.
+I execute a ReplayScenario step by step, managing action dispatch, UI manager state, and navigation.
 "
 Class {
 	#name : 'ReplayRunner',

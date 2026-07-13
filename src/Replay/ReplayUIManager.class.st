@@ -1,6 +1,5 @@
 "
-I am responsible for managing a UI.
-To accomplish this, I create a root element that contains the UI and an overlay to display elements on top of it.
+I own the active Replay UI session: managed UI, backend, overlays, interaction policy, and recording wrappers.
 "
 Class {
 	#name : 'ReplayUIManager',
