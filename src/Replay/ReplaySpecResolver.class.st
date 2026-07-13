@@ -83,7 +83,7 @@ ReplaySpecResolver >> resolve: aReference thenDo: foundBlock onMissing: missingB
 			resolveNamed: aReference
 			thenDo: foundBlock
 			onMissing: missingBlock ].
-	aReference isMorphicPath ifTrue: [
+	(aReference isMorphicPath or: [ aReference isKeyboardFocus ]) ifTrue: [
 		^ (ReplayMorphicResolver on: backend)
 			resolve: aReference
 			thenDo: foundBlock

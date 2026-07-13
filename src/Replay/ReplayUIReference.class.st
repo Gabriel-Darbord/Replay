@@ -14,6 +14,15 @@ Class {
 }
 
 { #category : 'instance creation' }
+ReplayUIReference class >> keyboardFocus [
+
+	^ self new
+		kind: #keyboardFocus;
+		value: nil;
+		yourself
+]
+
+{ #category : 'instance creation' }
 ReplayUIReference class >> morphicPath: aCollection [
 
 	^ self new
@@ -38,6 +47,12 @@ ReplayUIReference class >> world [
 		kind: #world;
 		value: nil;
 		yourself
+]
+
+{ #category : 'testing' }
+ReplayUIReference >> isKeyboardFocus [
+
+	^ kind = #keyboardFocus
 ]
 
 { #category : 'testing' }

@@ -9,13 +9,26 @@ Class {
 	#tag : 'Backends'
 }
 
+{ #category : 'testing' }
+ReplayMorphicResolver >> morph: aMorph isInSurface: surfaceMorph [
+
+	surfaceMorph ifNil: [ ^ false ].
+	aMorph == surfaceMorph ifTrue: [ ^ true ].
+	^ aMorph ownerChain includes: surfaceMorph
+]
+
 { #category : 'resolving' }
 ReplayMorphicResolver >> resolve: aReference thenDo: foundBlock onMissing: missingBlock [
 
+	aReference isKeyboardFocus ifTrue: [
+		^ self
+			resolveKeyboardFocus: aReference
+			thenDo: foundBlock
+			onMissing: missingBlock ].
 	aReference isMorphicPath ifFalse: [
 		^ self
 			missingReference: aReference
-			reason: 'Morphic backend can only resolve Morphic path references.'
+			reason: 'Morphic backend can only resolve Morphic path or keyboard focus references.'
 			onMissing: missingBlock ].
 	^ ReplayUIPathResolver new
 		root: backend surfaceMorph;
@@ -30,8 +43,30 @@ ReplayMorphicResolver >> resolve: aReference thenDo: foundBlock onMissing: missi
 		resolve
 ]
 
+{ #category : 'resolving' }
+ReplayMorphicResolver >> resolveKeyboardFocus: aReference thenDo: foundBlock onMissing: missingBlock [
+
+	| focus surface |
+	focus := World activeHand keyboardFocus.
+	focus ifNil: [
+		^ self
+			missingReference: aReference
+			reason: 'No Morphic keyboard focus is available.'
+			onMissing: missingBlock ].
+	surface := backend surfaceMorph.
+	(self morph: focus isInSurface: surface) ifFalse: [
+		^ self
+			missingReference: aReference
+			reason: 'Keyboard focus is outside the managed UI.'
+			onMissing: missingBlock ].
+	^ foundBlock value: (self
+		resolvedElementFor: aReference
+		nativeElement: focus
+		morph: focus)
+]
+
 { #category : 'testing' }
 ReplayMorphicResolver >> supportsReference: aReference [
 
-	^ aReference isMorphicPath
+	^ aReference isMorphicPath or: [ aReference isKeyboardFocus ]
 ]

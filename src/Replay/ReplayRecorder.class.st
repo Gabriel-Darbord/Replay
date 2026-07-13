@@ -171,6 +171,12 @@ ReplayRecorder >> ignoresShortcutText: aString flags: anInteger [
 	^ ignoredShortcutText = aString asLowercase and: [ ignoredShortcutFlags = anInteger ]
 ]
 
+{ #category : 'targeting' }
+ReplayRecorder >> keyboardFocusReference [
+
+	^ ReplayUIReference keyboardFocus
+]
+
 { #category : 'accessing' }
 ReplayRecorder >> listener [
 	^ listener ifNil: [ listener := ReplayRecorderListener on: self ]
@@ -320,8 +326,7 @@ ReplayRecorder >> recordKeystroke: anEvent on: targetMorph [
 	(self shortcutModifierFlagsFrom: anEvent) ~= 0 ifTrue: [ ^ self ].
 	character := anEvent keyCharacter.
 	code := character asInteger.
-	reference := self referenceForMorph: targetMorph.
-	reference ifNil: [ ^ self ].
+	reference := self keyboardFocusReference.
 	code = 8 ifTrue: [ ^ self recordDeleteTextOn: reference direction: #backward ].
 	code = 127 ifTrue: [ ^ self recordDeleteTextOn: reference direction: #forward ].
 	code = 0 ifTrue: [ ^ self ].
@@ -393,8 +398,7 @@ ReplayRecorder >> recordShortcut: anEvent on: targetMorph [
 	text := anEvent modifiedCharacter asString asLowercase.
 	(self matchesStopShortcutText: text flags: flags) ifTrue: [ ^ self requestStop ].
 	(self ignoresShortcutText: text flags: flags) ifTrue: [ ^ self ].
-	reference := self referenceForMorph: targetMorph.
-	reference ifNil: [ ^ self ].
+	reference := self keyboardFocusReference.
 	self recordAction: (ReplayShortcut new
 		reference: reference;
 		flags: flags;

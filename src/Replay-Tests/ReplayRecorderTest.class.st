@@ -196,6 +196,7 @@ ReplayRecorderTest >> testRecorderCoalescesTypedCharactersForFocusedTarget [
 	recorder := self newRecorderOn: root.
 	hand := World activeHand.
 	previousFocus := hand keyboardFocus.
+
 	[
 		hand keyboardFocus: target.
 		recorder recordEvent: (self keyboardEventType: #keystroke character: $a buttons: 0 hand: hand).
@@ -204,7 +205,34 @@ ReplayRecorderTest >> testRecorderCoalescesTypedCharactersForFocusedTarget [
 		self assert: recorder actions size equals: 1.
 		self assert: action class equals: ReplayType.
 		self assert: action text equals: 'ab'.
-		self assert: action uiReference value equals: #(1) ]
+		self assert: action uiReference isKeyboardFocus ]
+
+		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderCoalescesTypingWhenFocusedMorphPathChanges [
+	| root filler target recorder hand previousFocus action |
+	root := Morph new extent: 200 @ 100.
+	filler := Morph new bounds: (5 @ 5 extent: 10 @ 10).
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: filler.
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self keyboardEventType: #keystroke character: $a buttons: 0 hand: hand).
+		filler delete.
+		recorder recordEvent: (self keyboardEventType: #keystroke character: $b buttons: 0 hand: hand).
+		action := recorder actions first.
+		self assert: recorder actions size equals: 1.
+		self assert: action class equals: ReplayType.
+		self assert: action text equals: 'ab'.
+		self assert: action uiReference isKeyboardFocus ]
+
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
 
@@ -266,6 +294,7 @@ ReplayRecorderTest >> testRecorderRecordsDeleteTextForBackspace [
 	recorder := self newRecorderOn: root.
 	hand := World activeHand.
 	previousFocus := hand keyboardFocus.
+
 	[
 		hand keyboardFocus: target.
 		recorder recordEvent: (self keyboardEventType: #keystroke character: (Character value: 8) buttons: 0 hand: hand).
@@ -273,7 +302,8 @@ ReplayRecorderTest >> testRecorderRecordsDeleteTextForBackspace [
 		self assert: action class equals: ReplayDeleteText.
 		self assert: action direction equals: #backward.
 		self assert: action count equals: 1.
-		self assert: action uiReference value equals: #(1) ]
+		self assert: action uiReference isKeyboardFocus ]
+
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
 
@@ -286,6 +316,7 @@ ReplayRecorderTest >> testRecorderRecordsShortcutForModifiedKeyDown [
 	recorder := self newRecorderOn: root.
 	hand := World activeHand.
 	previousFocus := hand keyboardFocus.
+
 	[
 		hand keyboardFocus: target.
 		recorder recordEvent: (self keyboardEventType: #keyDown character: $f buttons: UserInputEvent cmdKeyMask hand: hand).
@@ -293,7 +324,8 @@ ReplayRecorderTest >> testRecorderRecordsShortcutForModifiedKeyDown [
 		self assert: action class equals: ReplayShortcut.
 		self assert: action text equals: 'f'.
 		self assert: action flags equals: UserInputEvent cmdKeyMask.
-		self assert: action uiReference value equals: #(1) ]
+		self assert: action uiReference isKeyboardFocus ]
+
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
 

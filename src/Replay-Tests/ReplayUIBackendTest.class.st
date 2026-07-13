@@ -790,6 +790,28 @@ ReplayUIBackendTest >> testMorphicBackendHasNoSemanticScriptReceiverByDefault [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testMorphicResolverResolvesKeyboardFocusWithinManagedSurface [
+	| root target manager hand previousFocus resolved |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	manager := ReplayUIManager new observe: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		manager
+			resolve: ReplayUIReference keyboardFocus
+			thenDo: [ :element | resolved := element ].
+		self assert: resolved morph equals: target ]
+
+		ensure: [
+			hand keyboardFocus: previousFocus.
+			manager close ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testObserveMorphDoesNotCreateOverlay [
 	| root target manager |
 	root := Morph new extent: 200 @ 100.
