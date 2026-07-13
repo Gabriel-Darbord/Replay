@@ -11,8 +11,9 @@ Class {
 		'actionIndex',
 		'focus'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Core',
+	#package : 'Replay',
+	#tag : 'Core'
 }
 
 { #category : 'instance creation' }

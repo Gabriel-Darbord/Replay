@@ -9,8 +9,9 @@ Class {
 		'currentStep',
 		'currentAction'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Editing',
+	#package : 'Replay',
+	#tag : 'Editing'
 }
 
 { #category : 'adding' }

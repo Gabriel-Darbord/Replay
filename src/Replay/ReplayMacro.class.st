@@ -11,8 +11,9 @@ Class {
 		'scenario',
 		'contextNames'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Macros',
+	#package : 'Replay',
+	#tag : 'Macros'
 }
 
 { #category : 'keymapping' }

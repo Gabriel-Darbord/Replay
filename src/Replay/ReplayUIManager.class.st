@@ -15,8 +15,9 @@ Class {
 		'ownsUI',
 		'interactionPolicy'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Core',
+	#package : 'Replay',
+	#tag : 'Core'
 }
 
 { #category : 'utilities' }

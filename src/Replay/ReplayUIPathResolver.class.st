@@ -14,9 +14,9 @@ Class {
 		'lastFailure',
 		'scheduleBlock'
 	],
-	#category : 'Replay-Actions',
+	#category : 'Replay-Backends',
 	#package : 'Replay',
-	#tag : 'Actions'
+	#tag : 'Backends'
 }
 
 { #category : 'instance creation' }

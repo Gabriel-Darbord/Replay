@@ -9,8 +9,9 @@ Class {
 		'endActionIndex',
 		'callback'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Editing',
+	#package : 'Replay',
+	#tag : 'Editing'
 }
 
 { #category : 'managing UI' }

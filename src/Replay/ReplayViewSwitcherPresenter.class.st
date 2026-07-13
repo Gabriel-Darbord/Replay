@@ -4,8 +4,9 @@ I am a Spec presenter that displays radio buttons for named views and swaps the 
 Class {
 	#name : 'ReplayViewSwitcherPresenter',
 	#superclass : 'SpPresenter',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Editing',
+	#package : 'Replay',
+	#tag : 'Editing'
 }
 
 { #category : 'examples' }

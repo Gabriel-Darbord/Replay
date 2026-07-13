@@ -6,8 +6,9 @@ Trait {
 	#instVars : [
 		'text'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Traits',
+	#package : 'Replay',
+	#tag : 'Traits'
 }
 
 { #category : 'accessing - text' }

@@ -15,8 +15,9 @@ Class {
 		'enableStartupButton',
 		'disableStartupButton'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Macros',
+	#package : 'Replay',
+	#tag : 'Macros'
 }
 
 { #category : 'instance creation' }

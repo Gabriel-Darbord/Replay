@@ -8,8 +8,9 @@ Class {
 		'index',
 		'wrappedMorph'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Morphs',
+	#package : 'Replay',
+	#tag : 'Morphs'
 }
 
 { #category : 'accessing' }

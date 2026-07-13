@@ -8,8 +8,9 @@ Trait {
 	],
 	#traits : 'TReplayActionWithDebugging',
 	#classTraits : 'TReplayActionWithDebugging classTrait',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Traits',
+	#package : 'Replay',
+	#tag : 'Traits'
 }
 
 { #category : 'debugging' }

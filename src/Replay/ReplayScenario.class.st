@@ -9,8 +9,9 @@ Class {
 		'steps',
 		'description'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Core',
+	#package : 'Replay',
+	#tag : 'Core'
 }
 
 { #category : 'examples' }

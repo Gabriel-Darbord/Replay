@@ -7,8 +7,9 @@ Class {
 	#instVars : [
 		'macros'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Macros',
+	#package : 'Replay',
+	#tag : 'Macros'
 }
 
 { #category : 'adding' }

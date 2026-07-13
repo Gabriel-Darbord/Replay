@@ -3,8 +3,9 @@ I add common debugging helpers for Replay actions that can open a debugger on th
 "
 Trait {
 	#name : 'TReplayActionWithDebugging',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Traits',
+	#package : 'Replay',
+	#tag : 'Traits'
 }
 
 { #category : 'debugging' }

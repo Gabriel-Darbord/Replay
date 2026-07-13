@@ -12,8 +12,9 @@ Class {
 		'actionList',
 		'replayPresenters'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Editing',
+	#package : 'Replay',
+	#tag : 'Editing'
 }
 
 { #category : 'instance creation' }
