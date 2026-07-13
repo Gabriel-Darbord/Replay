@@ -10,7 +10,12 @@ Class {
 		'actionEditor',
 		'stepList',
 		'actionList',
-		'replayPresenters'
+		'replayPresenters',
+		'recorder',
+		'recordTimingCheckBox',
+		'recordButton',
+		'stopRecordingButton',
+		'recordingStatusPresenter'
 	],
 	#category : 'Replay-Editing',
 	#package : 'Replay',
@@ -97,6 +102,20 @@ ReplayEditor >> addActionLast: action [
 	actionList selectIndex: actionList items size
 ]
 
+{ #category : 'recording' }
+ReplayEditor >> addRecordedActions: aCollectionOfActions [
+	self ensureStep.
+	aCollectionOfActions do: [ :action | self model addAction: action ].
+	actionList items: self model currentStep actions.
+	actionList rebuildLayout.
+	aCollectionOfActions ifNotEmpty: [ actionList selectItem: aCollectionOfActions last ]
+]
+
+{ #category : 'recording' }
+ReplayEditor >> bindRecordingShortcut [
+	self bindKeyCombination: self recordingShortcut toAction: [ self toggleRecording ]
+]
+
 { #category : 'replay' }
 ReplayEditor >> clearReplayPresenterTargets [
 
@@ -105,7 +124,6 @@ ReplayEditor >> clearReplayPresenterTargets [
 
 { #category : 'initialization' }
 ReplayEditor >> connectPresenters [
-
 	stepList
 		addItemBlock: [ self model newStep ];
 		removeItemBlock: [ :step | self removeStep: step ];
@@ -117,36 +135,37 @@ ReplayEditor >> connectPresenters [
 		removeItemBlock: [ :item | self removeAction: item ];
 		whenSelectionChangedDo: [ :selection |
 			selection selectedItem ifNotNil: [ :action |
-					self selectAction: action ] ].
+				self selectAction: action ] ].
 
-	"Create an action when it is selected in the drop list"
+	"Create an action when it is selected in drop list"
 	actionDropList whenSelectedItemChangedDo: [ :actionClass |
-		self addActionLast: actionClass new ]
+		self addActionLast: actionClass new ].
+
+	self bindRecordingShortcut
 ]
 
 { #category : 'layout' }
 ReplayEditor >> defaultLayout [
-
 	^ SpBoxLayout newTopToBottom
-		  add: self toolbar expand: false;
-		  add: (SpPanedLayout newLeftToRight
-				   positionOfSlider: 0.3;
-				   add: (SpBoxLayout newLeftToRight
-						    add: (SpBoxLayout newTopToBottom
-								     add: self editScenarioButton expand: false;
-								     add: stepList;
-								     yourself);
-						    add: (SpBoxLayout newTopToBottom
-								     add: self stepNavigationEditor expand: false;
-								     add: actionDropList expand: false;
-								     add: actionList;
-								     yourself);
-						    yourself);
-				   add: (SpBoxLayout newLeftToRight
-						    add: actionEditor
-						    withConstraints: [ :c | c padding: 10 ]);
-				   yourself);
-		  yourself
+		add: self toolbar expand: false;
+		add: self recordingControls expand: false;
+		add: (SpPanedLayout newLeftToRight
+			positionOfSlider: 0.3;
+			add: (SpBoxLayout newLeftToRight
+				add: (SpBoxLayout newTopToBottom
+					add: self editScenarioButton expand: false;
+					add: stepList;
+					yourself);
+				add: (SpBoxLayout newTopToBottom
+					add: self stepNavigationEditor expand: false;
+					add: actionDropList expand: false;
+					add: actionList;
+					yourself);
+				yourself);
+			add: (SpBoxLayout newLeftToRight
+				add: actionEditor withConstraints: [ :c | c padding: 10 ]);
+			yourself);
+		yourself
 ]
 
 { #category : 'layout' }
@@ -213,14 +232,32 @@ ReplayEditor >> importScenario [
 
 { #category : 'initialization' }
 ReplayEditor >> initializePresenters [
-
 	stepList := SpEditableListPresenter new.
 	actionList := SpEditableListPresenter new.
 
 	(actionDropList := self newDropList)
 		items: ReplayAction actionsForDropList;
 		display: [ :action | action displayName ];
-		help: 'Choose an action to add to the current step.'.
+		help: 'Choose an action to add to current step.'.
+
+	recordTimingCheckBox := self newCheckBox
+		label: 'Preserve timing';
+		state: false;
+		help: 'Record delays between captured actions.';
+		yourself.
+	recordButton := self newButton
+		label: 'Record';
+		help: 'Start recording user actions.';
+		action: [ self startRecording ];
+		yourself.
+	stopRecordingButton := self newButton
+		label: 'Stop';
+		help: 'Stop recording and add captured actions to current step.';
+		action: [ self stopRecording ];
+		yourself.
+	recordingStatusPresenter := self newLabel
+		label: 'Not recording.';
+		yourself.
 
 	actionEditor := SpBoxLayout newLeftToRight.
 	actionEditor add: self homePresenter
@@ -233,10 +270,49 @@ ReplayEditor >> initializeWindow: aWindow [
 	aWindow initialExtent: 1200 @ 675
 ]
 
+{ #category : 'recording' }
+ReplayEditor >> isRecording [
+	^ recorder notNil
+]
+
 { #category : 'accessing' }
 ReplayEditor >> model [
 
 	^ model ifNil: [ model := ReplayEditorModel new ]
+]
+
+{ #category : 'layout' }
+ReplayEditor >> recordingControls [
+	^ SpBoxLayout newLeftToRight
+		spacing: 8;
+		add: recordButton expand: false;
+		add: stopRecordingButton expand: false;
+		add: recordTimingCheckBox expand: false;
+		add: recordingStatusPresenter expand: false;
+		yourself
+]
+
+{ #category : 'recording' }
+ReplayEditor >> recordingShortcut [
+	^ ReplayShortcut new
+		text: 'r';
+		flags: self recordingShortcutFlags;
+		asKMShortcut
+]
+
+{ #category : 'recording' }
+ReplayEditor >> recordingShortcutFlags [
+	^ OSPlatform current defaultModifier eventCode
+]
+
+{ #category : 'recording' }
+ReplayEditor >> recordingTargetMorph [
+	| uiAdapter widget |
+	uiAdapter := self adapter.
+	uiAdapter ifNil: [ ReplayError new messageText: 'Open the Scenario Editor before recording.'; signal ].
+	widget := uiAdapter widget.
+	widget ifNil: [ ReplayError new messageText: 'Scenario Editor has no rendered widget to record.'; signal ].
+	^ widget
 ]
 
 { #category : 'replay' }
@@ -292,11 +368,14 @@ ReplayEditor >> removeStep: step [
 
 { #category : 'replay' }
 ReplayEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
-
 	aPresenterName = 'Step list' ifTrue: [ ^ stepList ].
 	aPresenterName = 'Action list' ifTrue: [ ^ actionList ].
 	aPresenterName = 'Action chooser' ifTrue: [ ^ actionDropList ].
 	aPresenterName = 'Action editor' ifTrue: [ ^ self actionEditor ].
+	aPresenterName = 'Record button' ifTrue: [ ^ recordButton ].
+	aPresenterName = 'Stop recording button' ifTrue: [ ^ stopRecordingButton ].
+	aPresenterName = 'Preserve timing checkbox' ifTrue: [ ^ recordTimingCheckBox ].
+	aPresenterName = 'Recording status' ifTrue: [ ^ recordingStatusPresenter ].
 	^ self replayPresenters
 		at: aPresenterName
 		ifAbsent: [ super replayPresenterAt: aPresenterName ifAbsent: absentBlock ]
@@ -361,6 +440,22 @@ ReplayEditor >> selectStep: step [
 		ifNotEmpty: [ actionList selectIndex: 1 ]
 ]
 
+{ #category : 'recording' }
+ReplayEditor >> startRecording [
+	| target manager |
+	self isRecording ifTrue: [ ^ self ].
+	self ensureStep.
+	target := self recordingTargetMorph.
+	manager := ReplayUIManager new attachTo: target.
+	recorder := ReplayRecorder new
+		manager: manager;
+		preserveTiming: recordTimingCheckBox state;
+		yourself.
+	recorder ignoreShortcutText: 'r' flags: self recordingShortcutFlags.
+	recorder start.
+	self updateRecordingStatus
+]
+
 { #category : 'layout' }
 ReplayEditor >> stepNavigationEditor [
 
@@ -377,6 +472,26 @@ ReplayEditor >> steps [
 	"The step list presenter"
 
 	^ stepList
+]
+
+{ #category : 'recording' }
+ReplayEditor >> stopRecording [
+	| recordedActions activeRecorder |
+	recorder ifNil: [ ^ #() ].
+	activeRecorder := recorder.
+	recordedActions := activeRecorder stop.
+	activeRecorder manager close.
+	recorder := nil.
+	self updateRecordingStatus.
+	self addRecordedActions: recordedActions.
+	^ recordedActions
+]
+
+{ #category : 'recording' }
+ReplayEditor >> toggleRecording [
+	self isRecording
+		ifTrue: [ self stopRecording ]
+		ifFalse: [ self startRecording ]
 ]
 
 { #category : 'layout' }
@@ -407,4 +522,12 @@ ReplayEditor >> toolbar [
 				   help: 'Execute the currently selected step.';
 				   action: [ self runStep ]);
 		  yourself
+]
+
+{ #category : 'recording' }
+ReplayEditor >> updateRecordingStatus [
+	recordingStatusPresenter ifNil: [ ^ self ].
+	recordingStatusPresenter label: (self isRecording
+		ifTrue: [ 'Recording.' ]
+		ifFalse: [ 'Not recording.' ])
 ]

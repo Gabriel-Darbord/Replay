@@ -88,3 +88,8 @@ ReplayDelay >> secondsPresenterOn: editor labeled: label [
 		 add: textPresenter expand: false;
 		 yourself
 ]
+
+{ #category : 'recording' }
+ReplayDelay >> shouldRecordWhenTimingStripped [
+	^ false
+]

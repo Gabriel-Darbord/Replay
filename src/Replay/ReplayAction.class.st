@@ -70,6 +70,14 @@ ReplayAction >> controlsRunnerContinuation [
 	^ false
 ]
 
+{ #category : 'recording' }
+ReplayAction >> copyWithoutRecordedTiming [
+	| copy |
+	copy := self copy.
+	copy removeRecordedTiming.
+	^ copy
+]
+
 { #category : 'editing' }
 ReplayAction >> editionPresenterOn: editor [
 	"Build a presenter on the editor to configure the action"
@@ -148,8 +156,18 @@ ReplayAction >> printOn: stream [
 	stream nextPutAll: self class displayName
 ]
 
+{ #category : 'recording' }
+ReplayAction >> removeRecordedTiming [
+	"Subclasses with duration-bearing state can clear it here when recorded timing is stripped."
+]
+
 { #category : 'running' }
 ReplayAction >> runOn: aReplayRunner [
 
 	self subclassResponsibility
+]
+
+{ #category : 'recording' }
+ReplayAction >> shouldRecordWhenTimingStripped [
+	^ true
 ]
