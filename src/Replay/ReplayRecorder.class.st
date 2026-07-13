@@ -20,7 +20,11 @@ Class {
 		'mouseMoveCount',
 		'mouseMoved',
 		'ignoredShortcutText',
-		'ignoredShortcutFlags'
+		'ignoredShortcutFlags',
+		'ignoredMorphs',
+		'stopShortcutText',
+		'stopShortcutFlags',
+		'stopBlock'
 	],
 	#category : 'Replay-Recording',
 	#package : 'Replay',
@@ -138,9 +142,26 @@ ReplayRecorder >> hasManagedTarget [
 ]
 
 { #category : 'accessing' }
+ReplayRecorder >> ignoreMorph: aMorph [
+	aMorph ifNotNil: [ self ignoredMorphs add: aMorph ]
+]
+
+{ #category : 'accessing' }
 ReplayRecorder >> ignoreShortcutText: aString flags: anInteger [
 	ignoredShortcutText := aString asLowercase.
 	ignoredShortcutFlags := anInteger
+]
+
+{ #category : 'accessing' }
+ReplayRecorder >> ignoredMorphs [
+	^ ignoredMorphs ifNil: [ ignoredMorphs := OrderedCollection new ]
+]
+
+{ #category : 'testing' }
+ReplayRecorder >> ignoresMorph: aMorph [
+	aMorph ifNil: [ ^ false ].
+	^ self ignoredMorphs anySatisfy: [ :ignored |
+		aMorph == ignored or: [ aMorph ownerChain includes: ignored ] ]
 ]
 
 { #category : 'testing' }
@@ -168,6 +189,12 @@ ReplayRecorder >> manager [
 { #category : 'accessing' }
 ReplayRecorder >> manager: aReplayUIManager [
 	manager := aReplayUIManager
+]
+
+{ #category : 'testing' }
+ReplayRecorder >> matchesStopShortcutText: aString flags: anInteger [
+	stopShortcutText ifNil: [ ^ false ].
+	^ stopShortcutText = aString asLowercase and: [ stopShortcutFlags = anInteger ]
 ]
 
 { #category : 'events' }
@@ -245,6 +272,7 @@ ReplayRecorder >> recordDeleteTextOn: aReplayUIReference direction: directionSym
 { #category : 'event handling' }
 ReplayRecorder >> recordEvent: anEvent [
 	anEvent isMouse ifTrue: [
+		(self shouldIgnoreMouseEvent: anEvent) ifTrue: [ ^ self clearMouseGesture ].
 		anEvent isMouseDown ifTrue: [ ^ self recordMouseDown: anEvent ].
 		anEvent isMouseMove ifTrue: [ ^ self recordMouseMove: anEvent ].
 		anEvent isMouseUp ifTrue: [ ^ self recordMouseUp: anEvent ].
@@ -339,6 +367,7 @@ ReplayRecorder >> recordShortcut: anEvent on: targetMorph [
 	| flags text reference |
 	flags := self modifierFlagsFrom: anEvent.
 	text := anEvent modifiedCharacter asString asLowercase.
+	(self matchesStopShortcutText: text flags: flags) ifTrue: [ ^ self requestStop ].
 	(self ignoresShortcutText: text flags: flags) ifTrue: [ ^ self ].
 	reference := self referenceForMorph: targetMorph.
 	reference ifNil: [ ^ self ].
@@ -362,6 +391,11 @@ ReplayRecorder >> referenceForMorph: aMorph [
 	path := self pathForMorph: aMorph.
 	path ifNil: [ ^ nil ].
 	^ ReplayUIReference morphicPath: path
+]
+
+{ #category : 'recording' }
+ReplayRecorder >> requestStop [
+	stopBlock ifNotNil: [ stopBlock value ]
 ]
 
 { #category : 'testing' }
@@ -397,6 +431,11 @@ ReplayRecorder >> shortcutModifierFlagsFrom: anEvent [
 	^ modifiers
 ]
 
+{ #category : 'testing' }
+ReplayRecorder >> shouldIgnoreMouseEvent: anEvent [
+	^ self ignoresMorph: (self targetMorphAtWorldPoint: anEvent position)
+]
+
 { #category : 'recording' }
 ReplayRecorder >> start [
 	self startOnHand: World activeHand
@@ -415,6 +454,14 @@ ReplayRecorder >> stop [
 		hand removeEventListener: self listener.
 		hand := nil ].
 	^ self recordedActions
+]
+
+{ #category : 'accessing' }
+ReplayRecorder >> stopShortcutText: aString flags: anInteger do: aBlock [
+	stopShortcutText := aString asLowercase.
+	stopShortcutFlags := anInteger.
+	stopBlock := aBlock.
+	self ignoreShortcutText: aString flags: anInteger
 ]
 
 { #category : 'targeting' }

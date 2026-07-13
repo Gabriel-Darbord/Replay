@@ -790,6 +790,20 @@ ReplayUIBackendTest >> testMorphicBackendHasNoSemanticScriptReceiverByDefault [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testObserveMorphDoesNotCreateOverlay [
+	| root target manager |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (10 @ 10 extent: 80 @ 30).
+	root addMorph: target.
+	manager := ReplayUIManager new observe: target.
+	[
+		self assert: manager managedUI equals: target.
+		self assert: manager overlay isNil.
+		self deny: manager ownsUI ]
+		ensure: [ manager close ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testOpenLabeledAppliesRequestedContentExtent [
 
 	| manager morph requestedExtent |

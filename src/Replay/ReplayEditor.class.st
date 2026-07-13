@@ -220,6 +220,22 @@ ReplayEditor >> homePresenter [
 		  yourself
 ]
 
+{ #category : 'recording' }
+ReplayEditor >> ignoreRecordingControlsOn: aReplayRecorder [
+	{ recordButton. stopRecordingButton. recordTimingCheckBox } do: [ :presenter |
+		self ignoreRecordingPresenter: presenter on: aReplayRecorder ]
+]
+
+{ #category : 'recording' }
+ReplayEditor >> ignoreRecordingPresenter: aPresenter on: aReplayRecorder [
+	| presenterAdapter widget |
+	aPresenter ifNil: [ ^ self ].
+	presenterAdapter := aPresenter adapter.
+	presenterAdapter ifNil: [ ^ self ].
+	widget := presenterAdapter widget.
+	widget ifNotNil: [ aReplayRecorder ignoreMorph: widget ]
+]
+
 { #category : 'tools' }
 ReplayEditor >> importScenario [
 
@@ -446,12 +462,13 @@ ReplayEditor >> startRecording [
 	self isRecording ifTrue: [ ^ self ].
 	self ensureStep.
 	target := self recordingTargetMorph.
-	manager := ReplayUIManager new attachTo: target.
+	manager := ReplayUIManager new observe: target.
 	recorder := ReplayRecorder new
 		manager: manager;
 		preserveTiming: recordTimingCheckBox state;
 		yourself.
-	recorder ignoreShortcutText: 'r' flags: self recordingShortcutFlags.
+	recorder stopShortcutText: 'r' flags: self recordingShortcutFlags do: [ self stopRecording ].
+	self ignoreRecordingControlsOn: recorder.
 	recorder start.
 	self updateRecordingStatus
 ]

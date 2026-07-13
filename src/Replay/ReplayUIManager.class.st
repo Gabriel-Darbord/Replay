@@ -493,6 +493,30 @@ ReplayUIManager >> newOverlay [
 		yourself
 ]
 
+{ #category : 'managing UI' }
+ReplayUIManager >> observe: aMorph [
+	"Observe an existing Morph without adding an overlay. This is for passive event recording where user interaction must continue normally."
+	^ self observe: aMorph usingBackend: (ReplayMorphicBackend on: aMorph)
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> observe: aMorph usingBackend: aReplayUIBackend [
+	"Observe an existing UI without creating an overlay or taking ownership."
+	| owner |
+	owner := aMorph owner ifNil: [
+		ReplayError new
+			messageText: 'Cannot observe Replay Morph without owner.';
+			tag: aMorph;
+			signal ].
+	ownsUI := false.
+	self allowUserInteraction.
+	backend := aReplayUIBackend.
+	managed := aMorph.
+	root := owner.
+	overlay := nil.
+	^ self
+]
+
 { #category : 'event handling' }
 ReplayUIManager >> onClick: event onWrapper: morph [
 

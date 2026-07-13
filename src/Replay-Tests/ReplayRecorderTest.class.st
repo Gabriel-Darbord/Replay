@@ -115,6 +115,24 @@ ReplayRecorderTest >> testRecorderCoalescesTypedCharactersForFocusedTarget [
 ]
 
 { #category : 'tests' }
+ReplayRecorderTest >> testRecorderIgnoresMouseEventsInsideIgnoredMorph [
+	| root target ignored recorder hand |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	ignored := Morph new bounds: (90 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	root addMorph: ignored.
+	recorder := self newRecorderOn: root.
+	recorder ignoreMorph: ignored.
+	hand := World activeHand.
+	[
+		recorder recordEvent: (self mouseButtonEventType: #mouseDown position: 95 @ 15 which: MouseEvent redButton buttons: MouseEvent redButton hand: hand).
+		recorder recordEvent: (self mouseButtonEventType: #mouseUp position: 95 @ 15 which: MouseEvent redButton buttons: 0 hand: hand).
+		self assert: recorder actions isEmpty ]
+		ensure: [ recorder manager close ]
+]
+
+{ #category : 'tests' }
 ReplayRecorderTest >> testRecorderInsertsDelayBetweenActionsWhenTimingIsPreserved [
 	| times recorder actions |
 	times := OrderedCollection withAll: #(1000 2500).
@@ -167,6 +185,25 @@ ReplayRecorderTest >> testRecorderRecordsShortcutForModifiedKeyDown [
 		self assert: action text equals: 'f'.
 		self assert: action flags equals: UserInputEvent cmdKeyMask.
 		self assert: action uiReference value equals: #(1) ]
+		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderStopShortcutInvokesStopBlockWithoutRecordingShortcut [
+	| root target recorder hand previousFocus stopped |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	recorder stopShortcutText: 'r' flags: UserInputEvent cmdKeyMask do: [ stopped := true ].
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+	stopped := false.
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self keyboardEventType: #keyDown character: $r buttons: UserInputEvent cmdKeyMask hand: hand).
+		self assert: stopped.
+		self assert: recorder actions isEmpty ]
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
 
