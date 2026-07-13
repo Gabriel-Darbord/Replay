@@ -1,5 +1,5 @@
 "
-I simulate a mouse click on a resolved UI target. I can click at a local offset, repeat for double-clicks, and include mouse button and keyboard modifier flags.
+I simulate mouse button interactions on a resolved UI target. My mousePhase controls whether I send a full synthetic click, only mouse-down, only mouse-up, or a down/up pair. I can click at a local offset, repeat double-clicks, and include mouse button and keyboard modifier flags.
 "
 Class {
 	#name : 'ReplayClick',
@@ -9,7 +9,8 @@ Class {
 	#instVars : [
 		'position',
 		'clickCount',
-		'modifiers'
+		'modifiers',
+		'mousePhase'
 	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
@@ -20,6 +21,16 @@ Class {
 ReplayClick class >> displayName [
 
 	^ 'Click'
+]
+
+{ #category : 'accessing' }
+ReplayClick class >> mousePhaseChoices [
+
+	^ {
+		#click -> 'Click'.
+		#down -> 'Mouse down'.
+		#up -> 'Mouse up'.
+		#downUp -> 'Mouse down/up' }
 ]
 
 { #category : 'adding' }
@@ -80,21 +91,24 @@ ReplayClick >> clickCountPresenterOn: editor [
 { #category : 'running' }
 ReplayClick >> clickOn: ui [
 
-	| worldPoint hand target |
+	| worldPoint hand |
 	worldPoint := self worldPositionIn: ui.
 	hand := self newHandAt: worldPoint.
-	target := nil.
 	1 to: self clickCount do: [ :index |
-		| downEvent upEvent |
+		| downEvent upEvent target |
 		hand position: worldPoint.
-		downEvent := self mouseDownEventAt: worldPoint hand: hand.
-		target := self targetStartingAt: ui handling: #handlesMouseDown: with: downEvent.
-		hand mouseFocus: target.
-		downEvent sentTo: target.
-		target click: downEvent.
-		index = 2 ifTrue: [ target doubleClick: downEvent asPseudoDoubleClickEvent ].
-		upEvent := self mouseUpEventAt: worldPoint hand: hand.
-		upEvent sentTo: target ]
+		self sendsMouseDown ifTrue: [
+			downEvent := self mouseDownEventAt: worldPoint hand: hand.
+			target := self targetStartingAt: ui handling: #handlesMouseDown: with: downEvent.
+			hand mouseFocus: target.
+			downEvent sentTo: target ].
+		self sendsSyntheticClick ifTrue: [
+			target click: downEvent.
+			index = 2 ifTrue: [ target doubleClick: downEvent asPseudoDoubleClickEvent ] ].
+		self sendsMouseUp ifTrue: [
+			upEvent := self mouseUpEventAt: worldPoint hand: hand.
+			target ifNil: [ target := ui ].
+			upEvent sentTo: target ] ]
 ]
 
 { #category : 'debugging' }
@@ -129,7 +143,8 @@ ReplayClick >> initialize [
 
 	flags := MouseEvent redButton.
 	clickCount := 1.
-	modifiers := 0
+	modifiers := 0.
+	mousePhase := #click
 ]
 
 { #category : 'testing' }
@@ -141,10 +156,11 @@ ReplayClick >> isClick [
 { #category : 'testing' }
 ReplayClick >> isSimpleLeftClick [
 
-	^ self flags = MouseEvent redButton
-		and: [ self modifiers = 0
-			and: [ self position isNil
-				and: [ self clickCount = 1 ] ] ]
+	^ self mousePhase = #click
+		and: [ self flags = MouseEvent redButton
+			and: [ self modifiers = 0
+				and: [ self position isNil
+					and: [ self clickCount = 1 ] ] ] ]
 ]
 
 { #category : 'running' }
@@ -202,6 +218,54 @@ ReplayClick >> mouseDownEventAt: aPoint hand: aHand [
 		buttons: (self flags bitOr: self modifiers)
 		hand: aHand
 		stamp: Time millisecondClockValue
+]
+
+{ #category : 'accessing' }
+ReplayClick >> mousePhase [
+
+	^ mousePhase ifNil: [ #click ]
+]
+
+{ #category : 'accessing' }
+ReplayClick >> mousePhase: aSymbol [
+
+	| normalized |
+	normalized := aSymbol ifNil: [ #click ] ifNotNil: [ aSymbol asSymbol ].
+	(self class mousePhaseChoices anySatisfy: [ :association | association key = normalized ])
+		ifFalse: [ normalized := #click ].
+	mousePhase := normalized
+]
+
+{ #category : 'accessing' }
+ReplayClick >> mousePhaseLabel [
+
+	^ (self class mousePhaseChoices
+		detect: [ :association | association key = self mousePhase ]
+		ifNone: [ self class mousePhaseChoices first ]) value
+]
+
+{ #category : 'editing' }
+ReplayClick >> mousePhasePresenterOn: editor [
+
+	| dropList choices |
+	choices := self class mousePhaseChoices.
+	dropList := editor newDropList.
+	dropList
+		items: choices;
+		display: [ :association | association value ];
+		whenSelectedItemChangedDo: [ :association |
+			association ifNotNil: [
+				self mousePhase: association key.
+				editor actions rebuildLayout ] ].
+	dropList selectItem: (choices
+		detect: [ :association | association key = self mousePhase ]
+		ifNone: [ choices first ]).
+	editor registerReplayPresenter: dropList named: 'Action click phase'.
+	editor registerReplayPresenter: dropList named: self class displayName , ' phase'.
+	^ SpBoxLayout newTopToBottom
+		add: 'Mouse phase:' expand: false;
+		add: dropList expand: false;
+		yourself
 ]
 
 { #category : 'running' }
@@ -278,6 +342,8 @@ ReplayClick >> positionPresenterOn: editor [
 ReplayClick >> printOn: stream [
 
 	super printOn: stream.
+	self mousePhase = #click ifFalse: [
+		stream nextPutAll: ' phase='; print: self mousePhase ].
 	self position ifNotNil: [ :point |
 		stream nextPutAll: ' @ '; print: point ].
 	self clickCount = 1 ifFalse: [
@@ -305,6 +371,24 @@ ReplayClick >> runOn: runner resolvedUI: resolvedUI [
 	resolvedUI runClick: self
 ]
 
+{ #category : 'testing' }
+ReplayClick >> sendsMouseDown [
+
+	^ #(click down downUp) includes: self mousePhase
+]
+
+{ #category : 'testing' }
+ReplayClick >> sendsMouseUp [
+
+	^ #(click up downUp) includes: self mousePhase
+]
+
+{ #category : 'testing' }
+ReplayClick >> sendsSyntheticClick [
+
+	^ self mousePhase = #click
+]
+
 { #category : 'editing' }
 ReplayClick >> settingsPresenterOn: editor [
 
@@ -312,6 +396,7 @@ ReplayClick >> settingsPresenterOn: editor [
 		layout: (SpBoxLayout newTopToBottom
 			spacing: 10;
 			add: (self targetPresenterOn: editor) expand: false;
+			add: (self mousePhasePresenterOn: editor) expand: false;
 			add: (self buttonsPresenterOn: editor) expand: false;
 			add: (self modifiersPresenterOn: editor) expand: false;
 			add: (self positionPresenterOn: editor) expand: false;

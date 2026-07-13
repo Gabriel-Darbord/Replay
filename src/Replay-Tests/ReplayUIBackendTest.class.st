@@ -438,6 +438,42 @@ ReplayUIBackendTest >> testClickActionDelegatesToResolvedUIBackend [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testClickCanSendMouseDownAndMouseUpWithoutSyntheticClick [
+
+	| action target |
+	target := ReplayEventRecorderMorph new.
+	action := ReplayClick new
+		mousePhase: #downUp;
+		yourself.
+	action clickOn: target.
+	self assert: target eventLabels asArray equals: #(mouseDown mouseUp)
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testClickCanSendOnlyMouseDown [
+
+	| action target |
+	target := ReplayEventRecorderMorph new.
+	action := ReplayClick new
+		mousePhase: #down;
+		yourself.
+	action clickOn: target.
+	self assert: target eventLabels asArray equals: #(mouseDown)
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testClickCanSendOnlyMouseUp [
+
+	| action target |
+	target := ReplayEventRecorderMorph new.
+	action := ReplayClick new
+		mousePhase: #up;
+		yourself.
+	action clickOn: target.
+	self assert: target eventLabels asArray equals: #(mouseUp)
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testClickCanTargetLocalPositionWithModifiers [
 
 	| action target downEvent clickEvent |

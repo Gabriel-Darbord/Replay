@@ -382,7 +382,8 @@ ReplayRecorderTest >> testRecorderStripsRecordedTiming [
 
 { #category : 'tests' }
 ReplayRecorderTest >> testRecorderTranslatesMouseClickToReplayClick [
-	| root target recorder hand action |
+
+	| root target recorder hand actions downAction upAction |
 	root := Morph new extent: 200 @ 100.
 	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
 	root addMorph: target.
@@ -391,11 +392,19 @@ ReplayRecorderTest >> testRecorderTranslatesMouseClickToReplayClick [
 	[
 		recorder recordEvent: (self mouseButtonEventType: #mouseDown position: 25 @ 15 which: MouseEvent redButton buttons: MouseEvent redButton hand: hand).
 		recorder recordEvent: (self mouseButtonEventType: #mouseUp position: 25 @ 15 which: MouseEvent redButton buttons: 0 hand: hand).
-		action := recorder actions first.
-		self assert: action class equals: ReplayClick.
-		self assert: action uiReference isMorphicPath.
-		self assert: action uiReference value equals: #(1).
-		self assert: action position equals: 5 @ 5 ]
+		actions := recorder actions asArray.
+		self assert: actions size equals: 2.
+		downAction := actions first.
+		upAction := actions second.
+		self assert: downAction class equals: ReplayClick.
+		self assert: downAction mousePhase equals: #down.
+		self assert: downAction uiReference isMorphicPath.
+		self assert: downAction uiReference value equals: #(1).
+		self assert: downAction position equals: 5 @ 5.
+		self assert: upAction class equals: ReplayClick.
+		self assert: upAction mousePhase equals: #up.
+		self assert: upAction uiReference value equals: #(1).
+		self assert: upAction position equals: 5 @ 5 ]
 		ensure: [ recorder manager close ]
 ]
 

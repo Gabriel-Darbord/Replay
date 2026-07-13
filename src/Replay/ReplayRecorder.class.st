@@ -71,12 +71,14 @@ ReplayRecorder >> clearMouseGesture [
 ]
 
 { #category : 'event handling' }
-ReplayRecorder >> clickActionFor: aReplayUIReference at: aPoint event: anEvent [
+ReplayRecorder >> clickActionFor: aReplayUIReference at: aPoint event: anEvent phase: aSymbol [
+
 	^ ReplayClick new
 		reference: aReplayUIReference;
 		position: aPoint;
 		flags: (mouseDownButtons ifNil: [ anEvent whichButton ]);
 		modifiers: (mouseDownModifiers ifNil: [ self modifierFlagsFrom: anEvent ]);
+		mousePhase: aSymbol;
 		yourself
 ]
 
@@ -362,17 +364,31 @@ ReplayRecorder >> recordMouseMove: anEvent [
 
 { #category : 'event handling' }
 ReplayRecorder >> recordMouseUp: anEvent [
-	| target reference endPosition action |
+
+	| target reference endPosition downAction upAction action |
 	target := mouseDownTarget ifNil: [ self targetMorphAtWorldPoint: anEvent position ].
 	target ifNil: [ ^ self clearMouseGesture ].
 	reference := mouseDownReference ifNil: [ self referenceForMorph: target ].
 	reference ifNil: [ ^ self clearMouseGesture ].
 	endPosition := self offsetForWorldPoint: anEvent position inMorph: target.
-	action := mouseMoved = true
-		ifTrue: [ self dragActionFor: reference endingAt: endPosition ]
-		ifFalse: [ self clickActionFor: reference at: endPosition event: anEvent ].
+	mouseMoved = true ifTrue: [
+		action := self dragActionFor: reference endingAt: endPosition.
+		self clearMouseGesture.
+		^ self recordAction: action ].
+	mouseDownPosition ifNotNil: [
+		downAction := self
+			clickActionFor: reference
+			at: mouseDownPosition
+			event: anEvent
+			phase: #down ].
+	upAction := self
+		clickActionFor: reference
+		at: endPosition
+		event: anEvent
+		phase: #up.
 	self clearMouseGesture.
-	self recordAction: action
+	downAction ifNotNil: [ self recordAction: downAction ].
+	self recordAction: upAction
 ]
 
 { #category : 'event handling' }
