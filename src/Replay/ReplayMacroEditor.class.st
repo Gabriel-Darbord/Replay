@@ -20,8 +20,7 @@ Class {
 		'conflictList',
 		'editScenarioButton',
 		'runMacroButton',
-		'installMacroButton',
-		'uninstallMacroButton',
+		'macroInstallationButton',
 		'changeBlock',
 		'activeContextStatusPresenter',
 		'refreshActiveContextButton',
@@ -59,8 +58,7 @@ ReplayMacroEditor class >> defaultLayout [
 			spacing: 8;
 			add: #editScenarioButton expand: false;
 			add: #runMacroButton expand: false;
-			add: #installMacroButton expand: false;
-			add: #uninstallMacroButton expand: false;
+			add: #macroInstallationButton expand: false;
 			yourself)
 		expand: false;
 		yourself
@@ -300,14 +298,10 @@ ReplayMacroEditor >> initializePresenters [
 		label: 'Run macro';
 		action: [ self macro run ];
 		yourself.
-	installMacroButton := self newButton
-		label: 'Install/update';
-		action: [ self installMacro ];
+	macroInstallationButton := self newButton
+		action: [ self toggleMacroInstallation ];
 		yourself.
-	uninstallMacroButton := self newButton
-		label: 'Uninstall';
-		action: [ self uninstallMacro ];
-		yourself
+	self updateMacroInstallationButton
 ]
 
 { #category : 'initialization' }
@@ -369,6 +363,12 @@ ReplayMacroEditor >> installationStatusText [
 	^ 'Installed in: ' , (', ' join: installedContexts)
 ]
 
+{ #category : 'testing' }
+ReplayMacroEditor >> isMacroInstalled [
+
+	^ self macro installedCategories isNotEmpty
+]
+
 { #category : 'accessing' }
 ReplayMacroEditor >> macro [
 
@@ -390,6 +390,12 @@ ReplayMacroEditor >> macroChanged [
 	self updateInstallationStatus.
 	self refreshActiveContextStatus.
 	self notifyMacroChanged
+]
+
+{ #category : 'accessing' }
+ReplayMacroEditor >> macroInstallationButton [
+
+	^ macroInstallationButton
 ]
 
 { #category : 'accessing' }
@@ -502,8 +508,7 @@ ReplayMacroEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 	aPresenterName = 'Conflict list' ifTrue: [ ^ conflictList ].
 	aPresenterName = 'Edit scenario button' ifTrue: [ ^ editScenarioButton ].
 	aPresenterName = 'Run macro button' ifTrue: [ ^ runMacroButton ].
-	aPresenterName = 'Install macro button' ifTrue: [ ^ installMacroButton ].
-	aPresenterName = 'Uninstall macro button' ifTrue: [ ^ uninstallMacroButton ].
+	(#('Macro installation button' 'Install macro button' 'Uninstall macro button') includes: aPresenterName) ifTrue: [ ^ macroInstallationButton ].
 	^ absentBlock value
 ]
 
@@ -520,18 +525,20 @@ ReplayMacroEditor >> shortcutTextPresenter [
 ]
 
 { #category : 'actions' }
+ReplayMacroEditor >> toggleMacroInstallation [
+
+	self isMacroInstalled
+		ifTrue: [ self uninstallMacro ]
+		ifFalse: [ self installMacro ]
+]
+
+{ #category : 'actions' }
 ReplayMacroEditor >> uninstallMacro [
 
 	self macro uninstall.
 	self updateInstallationStatus.
 	self updateConflicts.
 	self notifyMacroChanged
-]
-
-{ #category : 'accessing' }
-ReplayMacroEditor >> uninstallMacroButton [
-
-	^ uninstallMacroButton
 ]
 
 { #category : 'updating' }
@@ -548,7 +555,17 @@ ReplayMacroEditor >> updateConflicts [
 ReplayMacroEditor >> updateInstallationStatus [
 
 	installationStatusPresenter ifNotNil: [
-		installationStatusPresenter label: self installationStatusText ]
+		installationStatusPresenter label: self installationStatusText ].
+	self updateMacroInstallationButton
+]
+
+{ #category : 'updating' }
+ReplayMacroEditor >> updateMacroInstallationButton [
+
+	macroInstallationButton ifNil: [ ^ self ].
+	macroInstallationButton label: (self isMacroInstalled
+		ifTrue: [ 'Uninstall' ]
+		ifFalse: [ 'Install' ])
 ]
 
 { #category : 'updating' }

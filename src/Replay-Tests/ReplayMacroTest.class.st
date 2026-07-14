@@ -504,6 +504,33 @@ ReplayMacroTest >> testMacroEditorShowsConflictsInAllKnownContexts [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroEditorShowsContextualInstallationButton [
+
+	| macro editor |
+	macro := ReplayMacro
+		named: 'Find macro'
+		shortcut: (ReplayShortcut new
+			text: 'f';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'editor-contextual-install-button-test';
+		contextNames: { #RubTextEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	[
+		self assert: editor macroInstallationButton label equals: 'Install'.
+		editor toggleMacroInstallation.
+		self assert: (macro installedInContextNamed: #RubTextEditor).
+		self assert: editor macroInstallationButton label equals: 'Uninstall'.
+		editor toggleMacroInstallation.
+		self deny: (macro installedInContextNamed: #RubTextEditor).
+		self assert: editor macroInstallationButton label equals: 'Install' ]
+		ensure: [ macro uninstall ]
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroEditorShowsLibraryInternalConflicts [
 
 	| library first second editor conflict |
@@ -1099,6 +1126,27 @@ ReplayMacroTest >> testMacroLibraryEditorRemovesUnselectedMacro [
 	self assert: library macros size equals: 1.
 	self assert: library macros first identicalTo: second.
 	self assert: editor selectedMacro identicalTo: second
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorShowsContextualStartupButton [
+
+	| editor |
+	ReplayMacroRegistry disableStartupInstallation.
+	editor := ReplayMacroLibraryEditor new.
+
+	[
+		self assert: editor startupPolicyPresenter label equals: 'Startup install: disabled.'.
+		self deny: (editor startupPolicyPresenter label includesSubstring: 'Script:').
+		self assert: editor startupPolicyButton label equals: 'Enable startup'.
+		editor toggleStartupInstallation.
+		self assert: ReplayMacroRegistry startupInstallationEnabled.
+		self assert: editor startupPolicyPresenter label equals: 'Startup install: enabled.'.
+		self assert: editor startupPolicyButton label equals: 'Disable startup'.
+		editor toggleStartupInstallation.
+		self deny: ReplayMacroRegistry startupInstallationEnabled.
+		self assert: editor startupPolicyButton label equals: 'Enable startup' ]
+		ensure: [ ReplayMacroRegistry disableStartupInstallation ]
 ]
 
 { #category : 'tests' }

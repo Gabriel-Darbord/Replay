@@ -1,5 +1,5 @@
 "
-I am the Spec editor for a macro library, with macro list, detail editor, startup policy, and installation controls.
+I am Spec editor for a macro library, macro list, detail editor, startup policy, and installation controls.
 "
 Class {
 	#name : 'ReplayMacroLibraryEditor',
@@ -12,8 +12,7 @@ Class {
 		'macroEditorPresenter',
 		'installationSummaryPresenter',
 		'startupPolicyPresenter',
-		'enableStartupButton',
-		'disableStartupButton'
+		'startupPolicyButton'
 	],
 	#category : 'Replay-Macros',
 	#package : 'Replay',
@@ -115,29 +114,18 @@ ReplayMacroLibraryEditor >> defaultLayout [
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
 			add: startupPolicyPresenter;
-			add: enableStartupButton expand: false;
-			add: disableStartupButton expand: false;
-			yourself) expand: false;
+			add: startupPolicyButton expand: false;
+			yourself)
+		expand: false;
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
-			add: (SpBoxLayout newTopToBottom
-				spacing: 8;
-				add: 'Macros' expand: false;
-				add: macroList;
-				yourself)
-			withConstraints: [ :c | c width: 300 ];
+			add: macroList withConstraints: [ :c | c width: 300 ];
 			add: (SpBoxLayout newLeftToRight
 				add: macroEditorPane
 				withConstraints: [ :c | c padding: 10 ];
 				yourself);
 			yourself);
 		yourself
-]
-
-{ #category : 'accessing' }
-ReplayMacroLibraryEditor >> disableStartupButton [
-
-	^ disableStartupButton
 ]
 
 { #category : 'actions' }
@@ -164,12 +152,6 @@ ReplayMacroLibraryEditor >> emptyMacroPresenter [
 		yourself
 ]
 
-{ #category : 'accessing' }
-ReplayMacroLibraryEditor >> enableStartupButton [
-
-	^ enableStartupButton
-]
-
 { #category : 'actions' }
 ReplayMacroLibraryEditor >> enableStartupInstallation [
 
@@ -194,13 +176,8 @@ ReplayMacroLibraryEditor >> initializePresenters [
 	macroList items: self library macros.
 	installationSummaryPresenter := self newLabel.
 	startupPolicyPresenter := self newLabel.
-	enableStartupButton := self newButton
-		label: 'Enable startup';
-		action: [ self enableStartupInstallation ];
-		yourself.
-	disableStartupButton := self newButton
-		label: 'Disable startup';
-		action: [ self disableStartupInstallation ];
+	startupPolicyButton := self newButton
+		action: [ self toggleStartupInstallation ];
 		yourself.
 	macroEditorPane := SpBoxLayout newLeftToRight.
 	macroEditorPane add: self emptyMacroPresenter.
@@ -336,8 +313,7 @@ ReplayMacroLibraryEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBl
 	aPresenterName = 'Macro editor' ifTrue: [ ^ macroEditorPresenter ifNil: [ macroEditorPane ] ].
 	aPresenterName = 'Installation summary' ifTrue: [ ^ installationSummaryPresenter ].
 	aPresenterName = 'Startup policy' ifTrue: [ ^ startupPolicyPresenter ].
-	aPresenterName = 'Enable startup button' ifTrue: [ ^ enableStartupButton ].
-	aPresenterName = 'Disable startup button' ifTrue: [ ^ disableStartupButton ].
+	(#('Startup policy button' 'Enable startup button' 'Disable startup button') includes: aPresenterName) ifTrue: [ ^ startupPolicyButton ].
 	macroEditorPresenter ifNotNil: [
 		^ macroEditorPresenter replayPresenterAt: aPresenterName ifAbsent: absentBlock ].
 	^ absentBlock value
@@ -386,6 +362,20 @@ ReplayMacroLibraryEditor >> selectedMacro [
 ]
 
 { #category : 'accessing' }
+ReplayMacroLibraryEditor >> startupPolicyButton [
+
+	^ startupPolicyButton
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> startupPolicyButtonLabel [
+
+	^ ReplayMacroRegistry startupInstallationEnabled
+		ifTrue: [ 'Disable startup' ]
+		ifFalse: [ 'Enable startup' ]
+]
+
+{ #category : 'accessing' }
 ReplayMacroLibraryEditor >> startupPolicyPresenter [
 
 	^ startupPolicyPresenter
@@ -398,9 +388,15 @@ ReplayMacroLibraryEditor >> startupPolicyText [
 		, (ReplayMacroRegistry startupInstallationEnabled
 			ifTrue: [ 'enabled' ]
 			ifFalse: [ 'disabled' ])
-		, '. Script: '
-		, ReplayMacroRegistry startupInstallationScriptText
 		, '.'
+]
+
+{ #category : 'actions' }
+ReplayMacroLibraryEditor >> toggleStartupInstallation [
+
+	ReplayMacroRegistry startupInstallationEnabled
+		ifTrue: [ self disableStartupInstallation ]
+		ifFalse: [ self enableStartupInstallation ]
 ]
 
 { #category : 'layout' }
@@ -465,5 +461,7 @@ ReplayMacroLibraryEditor >> updateInstallationSummary [
 ReplayMacroLibraryEditor >> updateStartupPolicyStatus [
 
 	startupPolicyPresenter ifNotNil: [
-		startupPolicyPresenter label: self startupPolicyText ]
+		startupPolicyPresenter label: self startupPolicyText ].
+	startupPolicyButton ifNotNil: [
+		startupPolicyButton label: self startupPolicyButtonLabel ]
 ]
