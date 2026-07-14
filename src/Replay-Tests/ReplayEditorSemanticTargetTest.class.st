@@ -199,7 +199,6 @@ ReplayEditorSemanticTargetTest >> testShortcutActionRegistersVisibleKeyEditors [
 	presenter := action shortcutKeysPresenterOn: editor.
 	self assert: presenter class equals: ReplayShortcutKeysPresenter.
 	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) identicalTo: presenter.
-	self assert: (editor replayPresenterAt: 'Action shortcut key list label' ifAbsent: [ nil ]) identicalTo: presenter keyListLabelPresenter.
 	self assert: (editor replayPresenterAt: 'Action shortcut key list' ifAbsent: [ nil ]) identicalTo: presenter keyList.
 	self assert: (editor replayPresenterAt: 'Action shortcut capture shortcut button' ifAbsent: [ nil ]) identicalTo: presenter captureShortcutButton.
 	self assert: (editor replayPresenterAt: 'Shortcut key list' ifAbsent: [ nil ]) identicalTo: presenter keyList

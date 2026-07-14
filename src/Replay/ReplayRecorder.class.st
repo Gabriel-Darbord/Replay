@@ -546,18 +546,13 @@ ReplayRecorder >> recordMouseWheel: anEvent [
 { #category : 'event handling' }
 ReplayRecorder >> recordShortcut: anEvent on: targetMorph [
 
-	| flags text reference action |
+	| flags text action |
 	flags := self modifierFlagsFrom: anEvent.
 	text := self shortcutTextFrom: anEvent.
 	(self isNullShortcutText: text) ifTrue: [ ^ self ].
 	(self matchesStopShortcutText: text flags: flags) ifTrue: [ ^ self requestStop ].
 	(self ignoresShortcutText: text flags: flags) ifTrue: [ ^ self ].
-	reference := self keyboardFocusReference.
-	action := ReplayShortcut new
-		reference: reference;
-		flags: flags;
-		text: text;
-		yourself.
+	action := self shortcutFromEvent: anEvent.
 	(self shouldDeferShortcutWithFlags: flags) ifTrue: [
 		self flushPendingShortcut.
 		pendingShortcutAction := action.
@@ -615,6 +610,19 @@ ReplayRecorder >> scrollDirectionFrom: anEvent [
 	direction = Character arrowRight ifTrue: [ ^ #right ].
 	(#(#up #down #left #right) includes: direction) ifTrue: [ ^ direction ].
 	^ #down
+]
+
+{ #category : 'events' }
+ReplayRecorder >> shortcutFromEvent: anEvent [
+
+	| text |
+	text := self shortcutTextFrom: anEvent.
+	(self isNullShortcutText: text) ifTrue: [ ^ nil ].
+	^ ReplayShortcut new
+		reference: self keyboardFocusReference;
+		flags: (self modifierFlagsFrom: anEvent);
+		text: text;
+		yourself
 ]
 
 { #category : 'events' }

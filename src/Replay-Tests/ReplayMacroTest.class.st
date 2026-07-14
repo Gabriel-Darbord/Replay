@@ -1727,6 +1727,19 @@ ReplayMacroTest >> testReplayShortcutMatchesKeymapCaseInsensitively [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testShortcutCaptureListenerUsesRecorderConversion [
+
+	| event listener captured |
+	event := ReplayShortcut new keyDown: $a buttons: 0.
+	listener := ReplayShortcutCaptureListener
+		onHand: nil
+		do: [ :shortcut | captured := shortcut ].
+	listener handleListenEvent: event.
+	self assert: captured text equals: 'a'.
+	self assert: captured flags equals: 0
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testShortcutConflictShowsReadableContextDisplayName [
 
 	| category keymap conflict |
@@ -1786,20 +1799,21 @@ ReplayMacroTest >> testShortcutKeysPresenterAddsAndRemovesKeys [
 { #category : 'tests' }
 ReplayMacroTest >> testShortcutKeysPresenterCapturesNextShortcut [
 
-	| shortcut presenter event |
-	shortcut := ReplayShortcut new text: 'a'; yourself.
+	| shortcut presenter event listener |
+	shortcut := ReplayShortcut new text: 'z'; yourself.
 	presenter := ReplayShortcutKeysPresenter on: shortcut.
-	event := ReplayShortcut new keyDown: $f buttons: 64.
+	event := ReplayShortcut new keyDown: $a buttons: 64.
 	presenter startShortcutCapture.
-	self assert: presenter captureMorph isCapturing.
-	presenter captureMorph keyStroke: event.
-	self assert: shortcut text equals: 'f'.
+	listener := presenter captureListener.
+	self assert: listener isActive.
+	listener handleListenEvent: event.
+	self assert: shortcut text equals: 'a'.
 	self assert: shortcut flags equals: 64.
-	self deny: presenter captureMorph isCapturing
+	self assert: presenter captureListener isNil
 ]
 
 { #category : 'tests' }
-ReplayMacroTest >> testShortcutKeysPresenterHasIconControlsAndListLabel [
+ReplayMacroTest >> testShortcutKeysPresenterHasIconControls [
 
 	| presenter |
 	presenter := ReplayShortcutKeysPresenter on: ReplayShortcut new.
@@ -1807,7 +1821,6 @@ ReplayMacroTest >> testShortcutKeysPresenterHasIconControlsAndListLabel [
 	self deny: presenter addKeyButton icon isNil.
 	self assert: presenter addCharacterButton label equals: ''.
 	self deny: presenter addCharacterButton icon isNil.
-	self assert: presenter keyListLabelPresenter label equals: 'Characters:'.
 	self deny: presenter removeKeyButton icon isNil.
 	self assert: (presenter removeKeyButton help includesSubstring: 'Delete').
 	self assert: presenter captureShortcutButton label equals: 'Set from next shortcut'
@@ -1828,14 +1841,16 @@ ReplayMacroTest >> testShortcutKeysPresenterShowsSpecialCharacters [
 ]
 
 { #category : 'tests' }
-ReplayMacroTest >> testShortcutKeysPresenterUsesCapturedShortcut [
+ReplayMacroTest >> testShortcutKeysPresenterUsesShortcut [
 
-	| shortcut presenter event |
+	| shortcut presenter captured |
 	shortcut := ReplayShortcut new.
 	presenter := ReplayShortcutKeysPresenter on: shortcut.
-	event := ReplayShortcut new keyDown: $f buttons: 64.
-	presenter captureMorph keystrokes: (OrderedCollection with: event).
-	presenter useCapturedShortcut.
+	captured := ReplayShortcut new
+		text: 'f';
+		flags: 64;
+		yourself.
+	presenter useShortcut: captured.
 	self assert: shortcut text equals: 'f'.
 	self assert: shortcut flags equals: 64
 ]
