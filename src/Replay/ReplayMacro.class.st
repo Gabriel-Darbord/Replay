@@ -265,7 +265,7 @@ ReplayMacro >> printOn: stream [
 	self shortcut text isEmpty ifTrue: [ ^ self ].
 	stream
 		nextPutAll: ' (';
-		nextPutAll: self shortcut asKMShortcut asString;
+		nextPutAll: self shortcut displayString;
 		nextPut: $)
 ]
 

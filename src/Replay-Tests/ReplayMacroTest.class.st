@@ -1090,6 +1090,24 @@ ReplayMacroTest >> testMacroLibraryEditorListAddCreatesOneMacro [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorOpensWithUnmappedShortcutCharacter [
+
+	| character macro library editor |
+	character := Character value: 16rFFC3.
+	macro := ReplayMacro
+		named: 'Stored malformed shortcut'
+		shortcut: (ReplayShortcut new
+			text: (String with: character);
+			yourself)
+		scenario: ReplayScenario new.
+	library := ReplayMacroLibrary new.
+	library addMacro: macro.
+	editor := ReplayMacroLibraryEditor on: library.
+	self assert: editor macroList items first identicalTo: macro.
+	self shouldnt: [ editor macroList items first printString ] raise: Error
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroLibraryEditorRemoveSelectedMacroUninstallsIt [
 
 	| library macro editor |
@@ -1351,6 +1369,22 @@ ReplayMacroTest >> testMacroLibraryRoundTripsThroughSton [
 	self assert: copy macros size equals: 1.
 	self assert: copy macros first name equals: 'Save macro'.
 	self assert: copy macros first shortcut asKMShortcut asString equals: 'Cmd + S'
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroPrintStringToleratesUnmappedShortcutCharacter [
+
+	| character macro printString |
+	character := Character value: 16rFFC3.
+	macro := ReplayMacro
+		named: 'Malformed shortcut'
+		shortcut: (ReplayShortcut new
+			text: (String with: character);
+			yourself)
+		scenario: ReplayScenario new.
+	printString := macro printString.
+	self assert: (printString includesSubstring: 'Malformed shortcut').
+	self assert: (printString includesSubstring: 'Character value: 65475')
 ]
 
 { #category : 'tests' }
@@ -1710,6 +1744,19 @@ ReplayMacroTest >> testReplayShortcutConvertsBackToKMShortcut [
 	self assert: copy asString equals: original asString.
 	self assert: (ReplayShortcut fromShortcut: copy) text equals: replay text.
 	self assert: (ReplayShortcut fromShortcut: copy) flags equals: replay flags
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testReplayShortcutDisplayStringFallsBackForUnmappedCharacter [
+
+	| character shortcut display |
+	character := Character value: 16rFFC3.
+	shortcut := ReplayShortcut new
+		text: (String with: character);
+		yourself.
+	display := shortcut displayString.
+	self assert: (display includesSubstring: 'Character value: 65475').
+	self assert: (display includesSubstring: 'code 65475')
 ]
 
 { #category : 'tests' }

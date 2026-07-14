@@ -64,6 +64,24 @@ ReplayShortcut >> beForShortcut: aShortcut [
 	aShortcut configureReplayShortcut: self
 ]
 
+{ #category : 'printing' }
+ReplayShortcut >> displayString [
+
+	^ [ self asKMShortcut asString ]
+		on: Error
+		do: [ :error | self fallbackDisplayString ]
+]
+
+{ #category : 'printing' }
+ReplayShortcut >> fallbackDisplayString [
+
+	^ String streamContents: [ :stream |
+		self writeModifierDisplayOn: stream.
+		self text withIndexDo: [ :character :index |
+			(index > 1 or: [ self flags ~= 0 ]) ifTrue: [ stream nextPutAll: ' + ' ].
+			self writeCharacterDisplayFor: character on: stream ] ]
+]
+
 { #category : 'testing' }
 ReplayShortcut >> isReplayableShortcutCharacter: aCharacter [
 
@@ -221,4 +239,34 @@ ReplayShortcut >> shortcutOn: ui [
 	"What listens to keyUp? Doesn't seem required for shortcuts"
 	"self text do: [ :character |
 		(self keyUp: character buttons: self flags) sentTo: ui ]"
+]
+
+{ #category : 'printing' }
+ReplayShortcut >> writeCharacterDisplayFor: character on: stream [
+
+	stream nextPutAll: character storeString.
+	stream nextPutAll: ' (code '.
+	stream print: character asInteger.
+	stream nextPut: $)
+]
+
+{ #category : 'printing' }
+ReplayShortcut >> writeModifierDisplayOn: stream [
+
+	| wrote |
+	wrote := false.
+	(self flags bitAnd: 64) ~= 0 ifTrue: [
+		stream nextPutAll: 'Cmd'.
+		wrote := true ].
+	(self flags bitAnd: 16) ~= 0 ifTrue: [
+		wrote ifTrue: [ stream nextPutAll: ' + ' ].
+		stream nextPutAll: 'Ctrl'.
+		wrote := true ].
+	(self flags bitAnd: 32) ~= 0 ifTrue: [
+		wrote ifTrue: [ stream nextPutAll: ' + ' ].
+		stream nextPutAll: 'Alt'.
+		wrote := true ].
+	(self flags bitAnd: 8) ~= 0 ifTrue: [
+		wrote ifTrue: [ stream nextPutAll: ' + ' ].
+		stream nextPutAll: 'Shift' ]
 ]
