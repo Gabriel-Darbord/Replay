@@ -263,7 +263,7 @@ ReplayEditor >> initializePresenters [
 	(actionDropList := self newDropList)
 		items: ReplayAction actionsForDropList;
 		display: [ :action | action displayName ];
-		help: 'Choose an action to add to current step.'.
+		help: 'Choose an action to add current step.'.
 
 	recordTimingCheckBox := self newCheckBox
 		label: 'Preserve timing';
@@ -272,16 +272,16 @@ ReplayEditor >> initializePresenters [
 		yourself.
 	recordButton := self newButton
 		label: 'Record World';
-		help: 'Record at World scope. Use the recording shortcut from another window to record that active window.';
+		help: 'Record at World scope. Use ' , self recordingShortcutDescription , ' from another window to record the active window.';
 		action: [ self startRecording ];
 		yourself.
 	stopRecordingButton := self newButton
 		label: 'Stop';
-		help: 'Stop recording and add captured actions to current step.';
+		help: 'Stop recording with ' , self recordingShortcutDescription , ' and add captured actions to current step.';
 		action: [ self stopRecording ];
 		yourself.
 	recordingStatusPresenter := self newLabel
-		label: 'Not recording.';
+		label: self recordingStatusText;
 		yourself.
 
 	actionEditor := SpBoxLayout newLeftToRight.
@@ -349,6 +349,12 @@ ReplayEditor >> recordingShortcut [
 ]
 
 { #category : 'recording' }
+ReplayEditor >> recordingShortcutDescription [
+
+	^ self recordingShortcut asString
+]
+
+{ #category : 'recording' }
 ReplayEditor >> recordingShortcutFlags [
 	^ OSPlatform current defaultModifier eventCode
 ]
@@ -370,6 +376,16 @@ ReplayEditor >> recordingStatusForTargetMorph: aMorph [
 
 	aMorph == World ifTrue: [ ^ 'Recording World.' ].
 	^ 'Recording active window.'
+]
+
+{ #category : 'recording' }
+ReplayEditor >> recordingStatusText [
+
+	| shortcut |
+	shortcut := self recordingShortcutDescription.
+	^ self isRecording
+		ifTrue: [ (recordingTargetDescription ifNil: [ 'Recording.' ]) , ' Stop with ' , shortcut , '.' ]
+		ifFalse: [ 'Not recording. Record or stop with ' , shortcut , '.' ]
 ]
 
 { #category : 'recording' }
@@ -640,7 +656,5 @@ ReplayEditor >> uninstallRecordingShortcutListener [
 ReplayEditor >> updateRecordingStatus [
 
 	recordingStatusPresenter ifNil: [ ^ self ].
-	recordingStatusPresenter label: (self isRecording
-		ifTrue: [ recordingTargetDescription ifNil: [ 'Recording.' ] ]
-		ifFalse: [ 'Not recording.' ])
+	recordingStatusPresenter label: self recordingStatusText
 ]

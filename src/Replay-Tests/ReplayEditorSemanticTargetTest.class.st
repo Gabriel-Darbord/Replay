@@ -89,6 +89,16 @@ ReplayEditorSemanticTargetTest >> testOpenPlacementTargetsAreRegistered [
 ]
 
 { #category : 'tests' }
+ReplayEditorSemanticTargetTest >> testRecordingStatusShowsShortcut [
+
+	| editor |
+	editor := self newEditor.
+	self assert: editor recordingShortcutDescription equals: editor recordingShortcut asString.
+	self assert: (editor recordingStatusText includesSubstring: editor recordingShortcutDescription).
+	self assert: (editor recordingStatusText includesSubstring: 'Record or stop')
+]
+
+{ #category : 'tests' }
 ReplayEditorSemanticTargetTest >> testRegistersAndClearsDynamicReplayTargets [
 
 	| editor presenter |
