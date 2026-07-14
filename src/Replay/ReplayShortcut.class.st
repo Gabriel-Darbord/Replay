@@ -90,15 +90,22 @@ ReplayShortcut >> matchesKeymap: aKMKeymap [
 
 { #category : 'editing' }
 ReplayShortcut >> modifierPresenterOn: editor [
-	"Flags for the keyboard modifier, a combination of the shift, control, alt and command keys being pressed."
+	"Flags for keyboard modifiers in the shortcut combination."
+
+	^ self modifierPresenterOn: editor whenChangedDo: [ ]
+]
+
+{ #category : 'editing' }
+ReplayShortcut >> modifierPresenterOn: editor whenChangedDo: aBlock [
+	"Flags for keyboard modifiers in the shortcut combination."
 
 	^ SpBoxLayout newTopToBottom
-		  add: 'Which modifiers to activate:';
-		  add: (self
-				   flagsPresenterOn: editor
-				   namesAndValues:
-					   #( Shift 8 Control 16 'Alt/Option' 32 Command 64 ));
-		  yourself
+		add: 'Modifier keys:';
+		add: (self
+			flagsPresenterOn: editor
+			namesAndValues: #( Shift 8 Control 16 'Alt/Option' 32 Command 64 )
+			whenChangedDo: aBlock);
+		yourself
 ]
 
 { #category : 'testing' }

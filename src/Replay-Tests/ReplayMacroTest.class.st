@@ -464,6 +464,24 @@ ReplayMacroTest >> testMacroEditorMovesInstalledMacroWhenContextChanges [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroEditorReusesShortcutModifierTargets [
+
+	| macro editor command |
+	macro := ReplayMacro
+		named: 'Save macro'
+		shortcut: (ReplayShortcut fromShortcut: $s command)
+		scenario: ReplayScenario new.
+	editor := ReplayMacroEditor on: macro.
+
+	self assert: editor modifierPresenter notNil.
+	command := editor replayPresenterAt: 'Shortcut command' ifAbsent: [ nil ].
+	self assert: command == editor commandCheckBox.
+	self assert: (editor replayPresenterAt: 'Action command' ifAbsent: [ nil ]) == editor commandCheckBox.
+	self assert: (editor replayPresenterAt: 'Command modifier' ifAbsent: [ nil ]) == editor commandCheckBox.
+	self assert: (editor replayPresenterAt: 'Shortcut alt option' ifAbsent: [ nil ]) == editor altCheckBox
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroEditorShowsConflictsInAllKnownContexts [
 
 	| macro editor conflict |

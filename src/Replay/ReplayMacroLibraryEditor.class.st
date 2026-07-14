@@ -411,37 +411,37 @@ ReplayMacroLibraryEditor >> toolbar [
 		add: (self newToolbarButton
 			label: 'Copy';
 			icon: (self iconNamed: #smallCopy);
-			help: 'Copy current macro library clipboard STON string.';
+			help: 'Copy the current macro library as a clipboard STON string.';
 			action: [ self saveLibrary ]);
 		add: (self newToolbarButton
-			label: 'Paste';
+			label: 'Import';
 			icon: (self iconNamed: #smallLoadProject);
-			help: 'Import serialized macro library STON string.';
+			help: 'Import a macro library from a clipboard STON string.';
 			action: [ self importLibrary ]);
 		add: (self newToolbarButton
-			label: 'Save';
+			label: 'Save file';
 			icon: (self iconNamed: #save);
-			help: 'Save current macro library to the default Replay macro file.';
+			help: 'Save the current macro library to the default Replay macro file.';
 			action: [ self saveDefaultFile ]);
 		add: (self newToolbarButton
-			label: 'Load';
+			label: 'Load file';
 			icon: (self iconNamed: #open);
 			help: 'Load the default Replay macro file.';
 			action: [ self loadDefaultFile ]);
 		add: (self newToolbarButton
 			label: 'Install all';
 			icon: (self iconNamed: #smallOk);
-			help: 'Install all macros in selected contexts.';
+			help: 'Install all macros in their configured contexts.';
 			action: [ self installAllMacros ]);
 		add: (self newToolbarButton
-			label: 'Uninstall all';
+			label: 'Uninstall library';
 			icon: (self iconNamed: #smallCancel);
-			help: 'Uninstall all macros from every context where they are installed.';
+			help: 'Uninstall only macros from the current library.';
 			action: [ self uninstallAllMacros ]);
 		add: (self newToolbarButton
-			label: 'Clear installed';
+			label: 'Clear all installs';
 			icon: (self iconNamed: #smallCancel);
-			help: 'Remove every installed Replay macro keymap, including stale entries.';
+			help: 'Remove every installed Replay macro keymap, including stale entries not present in this library.';
 			action: [ self clearInstalledReplayMacros ]);
 		yourself
 ]

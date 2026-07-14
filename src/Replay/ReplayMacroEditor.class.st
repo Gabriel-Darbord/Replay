@@ -1,5 +1,5 @@
 "
-I am the Spec editor for one ReplayMacro, including name, shortcut, contexts, conflict status, and install controls.
+I am Spec editor for one ReplayMacro, including name, shortcut, contexts, conflict status, and install controls.
 "
 Class {
 	#name : 'ReplayMacroEditor',
@@ -9,6 +9,7 @@ Class {
 		'macroLibrary',
 		'namePresenter',
 		'shortcutTextPresenter',
+		'modifierPresenter',
 		'commandCheckBox',
 		'controlCheckBox',
 		'altCheckBox',
@@ -40,20 +41,7 @@ ReplayMacroEditor class >> defaultLayout [
 		add: #namePresenter expand: false;
 		add: 'Shortcut keys:' expand: false;
 		add: #shortcutTextPresenter expand: false;
-		add: 'Modifiers:' expand: false;
-		add: (SpBoxLayout newTopToBottom
-			spacing: 4;
-			add: (SpBoxLayout newLeftToRight
-				spacing: 12;
-				add: #commandCheckBox expand: false;
-				add: #controlCheckBox expand: false;
-				yourself) expand: false;
-			add: (SpBoxLayout newLeftToRight
-				spacing: 12;
-				add: #altCheckBox expand: false;
-				add: #shiftCheckBox expand: false;
-				yourself) expand: false;
-			yourself) expand: false;
+		add: #modifierPresenter expand: false;
 		add: 'Install in context:' expand: false;
 		add: #contextDropList expand: false;
 		add: #installationStatusPresenter expand: false;
@@ -63,7 +51,8 @@ ReplayMacroEditor class >> defaultLayout [
 			add: #activeContextStatusPresenter;
 			add: #refreshActiveContextButton expand: false;
 			add: #installActiveContextButton expand: false;
-			yourself) expand: false;
+			yourself)
+		expand: false;
 		add: 'Conflicting shortcuts in known contexts:' expand: false;
 		add: #conflictList;
 		add: (SpBoxLayout newLeftToRight
@@ -72,7 +61,8 @@ ReplayMacroEditor class >> defaultLayout [
 			add: #runMacroButton expand: false;
 			add: #installMacroButton expand: false;
 			add: #uninstallMacroButton expand: false;
-			yourself) expand: false;
+			yourself)
+		expand: false;
 		yourself
 ]
 
@@ -85,20 +75,23 @@ ReplayMacroEditor class >> new [
 { #category : 'instance creation' }
 ReplayMacroEditor class >> on: aReplayMacro [
 
-	^ self basicNew
-		initialize;
-		macro: aReplayMacro;
-		yourself
+	| editor |
+	editor := self basicNew.
+	editor initializeModel: aReplayMacro library: nil.
+	editor initialize.
+	editor refreshFromMacro.
+	^ editor
 ]
 
 { #category : 'instance creation' }
 ReplayMacroEditor class >> on: aReplayMacro inLibrary: aReplayMacroLibrary [
 
-	^ self basicNew
-		initialize;
-		macroLibrary: aReplayMacroLibrary;
-		macro: aReplayMacro;
-		yourself
+	| editor |
+	editor := self basicNew.
+	editor initializeModel: aReplayMacro library: aReplayMacroLibrary.
+	editor initialize.
+	editor refreshFromMacro.
+	^ editor
 ]
 
 { #category : 'opening' }
@@ -233,6 +226,13 @@ ReplayMacroEditor >> editScenario [
 ]
 
 { #category : 'initialization' }
+ReplayMacroEditor >> initializeModel: aReplayMacro library: aReplayMacroLibrary [
+
+	macro := aReplayMacro.
+	macroLibrary := aReplayMacroLibrary
+]
+
+{ #category : 'initialization' }
 ReplayMacroEditor >> initializePresenters [
 
 	namePresenter := self newText.
@@ -245,15 +245,14 @@ ReplayMacroEditor >> initializePresenters [
 	shortcutTextPresenter := self newText.
 	shortcutTextPresenter
 		text: self macro shortcut text;
-		help: 'Type shortcut key characters; use modifier checkboxes below.';
+		help: 'Type shortcut key characters; select modifier keys below.';
 		whenTextChangedDo: [ :aString |
 			self macro shortcut text: aString.
 			self macroChanged ].
 
-	commandCheckBox := self modifierCheckBoxNamed: 'Command' flag: 64.
-	controlCheckBox := self modifierCheckBoxNamed: 'Control' flag: 16.
-	altCheckBox := self modifierCheckBoxNamed: 'Alt/Option' flag: 32.
-	shiftCheckBox := self modifierCheckBoxNamed: 'Shift' flag: 8.
+	modifierPresenter := self macro shortcut
+		modifierPresenterOn: self
+		whenChangedDo: [ self macroChanged ].
 
 	contextDropList := self newDropList.
 	contextDropList
@@ -276,15 +275,21 @@ ReplayMacroEditor >> initializePresenters [
 		label: 'Install active UI';
 		action: [ self installInActiveContext ];
 		yourself.
-
 	conflictList := self newTable.
 	conflictList
-		addColumn: ((SpStringTableColumn title: 'Context' evaluated: #contextDisplayName) width: 220; yourself);
-		addColumn: ((SpStringTableColumn title: 'Shortcut' evaluated: #shortcutString) width: 120; yourself);
-		addColumn: ((SpStringTableColumn title: 'Action' evaluated: #name) width: 120; yourself);
-		addColumn: ((SpStringTableColumn title: 'Description' evaluated: #description) width: 220; yourself);
+		addColumn: ((SpStringTableColumn title: 'Context' evaluated: #contextDisplayName)
+			width: 220;
+			yourself);
+		addColumn: ((SpStringTableColumn title: 'Shortcut' evaluated: #shortcutString)
+			width: 120;
+			yourself);
+		addColumn: ((SpStringTableColumn title: 'Action' evaluated: #name)
+			width: 120;
+			yourself);
+		addColumn: ((SpStringTableColumn title: 'Description' evaluated: #description)
+			width: 220;
+			yourself);
 		beResizable.
-
 	editScenarioButton := self newButton
 		label: 'Edit scenario';
 		action: [ self editScenario ];
@@ -397,19 +402,10 @@ ReplayMacroEditor >> macroLibrary: aReplayMacroLibrary [
 	macroLibrary := aReplayMacroLibrary
 ]
 
-{ #category : 'initialization' }
-ReplayMacroEditor >> modifierCheckBoxNamed: aString flag: anInteger [
+{ #category : 'accessing' }
+ReplayMacroEditor >> modifierPresenter [
 
-	^ self newCheckBox
-		label: aString;
-		state: (self macro shortcut hasFlags: anInteger);
-		whenActivatedDo: [
-			self macro shortcut addFlags: anInteger.
-			self macroChanged ];
-		whenDeactivatedDo: [
-			self macro shortcut removeFlags: anInteger.
-			self macroChanged ];
-		yourself
+	^ modifierPresenter
 ]
 
 { #category : 'accessing' }
@@ -473,14 +469,28 @@ ReplayMacroEditor >> refreshShortcut [
 ]
 
 { #category : 'replay' }
+ReplayMacroEditor >> registerReplayPresenter: aPresenter named: aString [
+
+	(#('Action command' 'Shortcut command') includes: aString) ifTrue: [
+		commandCheckBox := aPresenter ].
+	(#('Action control' 'Shortcut control') includes: aString) ifTrue: [
+		controlCheckBox := aPresenter ].
+	(#('Action alt option' 'Shortcut alt option') includes: aString) ifTrue: [
+		altCheckBox := aPresenter ].
+	(#('Action shift' 'Shortcut shift') includes: aString) ifTrue: [
+		shiftCheckBox := aPresenter ].
+	^ aPresenter
+]
+
+{ #category : 'replay' }
 ReplayMacroEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 
 	aPresenterName = 'Macro name' ifTrue: [ ^ namePresenter ].
 	aPresenterName = 'Shortcut keys' ifTrue: [ ^ shortcutTextPresenter ].
-	aPresenterName = 'Command modifier' ifTrue: [ ^ commandCheckBox ].
-	aPresenterName = 'Control modifier' ifTrue: [ ^ controlCheckBox ].
-	aPresenterName = 'Alt modifier' ifTrue: [ ^ altCheckBox ].
-	aPresenterName = 'Shift modifier' ifTrue: [ ^ shiftCheckBox ].
+	(#('Command modifier' 'Action command' 'Shortcut command') includes: aPresenterName) ifTrue: [ ^ commandCheckBox ].
+	(#('Control modifier' 'Action control' 'Shortcut control') includes: aPresenterName) ifTrue: [ ^ controlCheckBox ].
+	(#('Alt modifier' 'Action alt option' 'Shortcut alt option') includes: aPresenterName) ifTrue: [ ^ altCheckBox ].
+	(#('Shift modifier' 'Action shift' 'Shortcut shift') includes: aPresenterName) ifTrue: [ ^ shiftCheckBox ].
 	aPresenterName = 'Macro context' ifTrue: [ ^ contextDropList ].
 	aPresenterName = 'Installation status' ifTrue: [ ^ installationStatusPresenter ].
 	aPresenterName = 'Conflict status' ifTrue: [ ^ conflictStatusPresenter ].

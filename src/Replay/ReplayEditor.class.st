@@ -633,31 +633,30 @@ ReplayEditor >> toolbar [
 	^ self newToolbar
 		addStyle: 'stToolbar';
 		add: (self newToolbarButton
-				label: 'Save';
-				icon: (self iconNamed: #save);
-				help:
-					'Copy current scenario clipboard STON string.';
-				action: [ self saveScenario ]);
+			label: 'Copy';
+			icon: (self iconNamed: #smallCopy);
+			help: 'Copy the current scenario as a clipboard STON string.';
+			action: [ self saveScenario ]);
 		add: (self newToolbarButton
-				label: 'Import';
-				icon: (self iconNamed: #smallLoadProject);
-				help: 'Import serialized scenario from STON string.';
-				action: [ self importScenario ]);
+			label: 'Import';
+			icon: (self iconNamed: #smallLoadProject);
+			help: 'Import a scenario from a clipboard STON string.';
+			action: [ self importScenario ]);
 		add: (self newToolbarButton
-				label: 'Run';
-				icon: (self iconNamed: #go);
-				help: 'Execute current scenario.';
-				action: [ self runScenario ]);
+			label: 'Run';
+			icon: (self iconNamed: #go);
+			help: 'Execute current scenario.';
+			action: [ self runScenario ]);
 		add: (self newToolbarButton
-				label: 'Run step';
-				icon: (self iconNamed: #smallForward);
-				help: 'Execute currently selected step.';
-				action: [ self runStep ]);
+			label: 'Run step';
+			icon: (self iconNamed: #smallForward);
+			help: 'Execute currently selected step.';
+			action: [ self runStep ]);
 		add: (self newToolbarButton
-				label: 'Macro';
-				icon: (self iconNamed: #keymapBrowser);
-				help: 'Create or edit a macro backed by current scenario.';
-				action: [ self useScenarioAsMacro ]);
+			label: 'Macro';
+			icon: (self iconNamed: #scriptManager);
+			help: 'Create or edit a macro backed by current scenario.';
+			action: [ self useScenarioAsMacro ]);
 		yourself
 ]
 

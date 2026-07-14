@@ -42,6 +42,18 @@ TReplayActionWithFlags >> flagsPresenterOn: editor namesAndValues: pairs [
 	1. Display string of flag.
 	2. Integer encoding flag."
 
+	^ self
+		flagsPresenterOn: editor
+		namesAndValues: pairs
+		whenChangedDo: [ ]
+]
+
+{ #category : 'editing' }
+TReplayActionWithFlags >> flagsPresenterOn: editor namesAndValues: pairs whenChangedDo: aBlock [
+	"Pairs contain:
+	1. Display string of flag.
+	2. Integer encoding flag."
+
 	^ SpGridLayout build: [ :layout |
 		pairs pairsDo: [ :name :value |
 			| checkbox targetName |
@@ -49,8 +61,12 @@ TReplayActionWithFlags >> flagsPresenterOn: editor namesAndValues: pairs [
 			checkbox := editor newCheckBox
 				label: name;
 				state: (self hasFlags: value);
-				whenActivatedDo: [ self addFlags: value ];
-				whenDeactivatedDo: [ self removeFlags: value ];
+				whenActivatedDo: [
+					self addFlags: value.
+					aBlock value ];
+				whenDeactivatedDo: [
+					self removeFlags: value.
+					aBlock value ];
 				yourself.
 			editor registerReplayPresenter: checkbox named: 'Action ' , targetName.
 			editor registerReplayPresenter: checkbox named: self class displayName , ' ' , targetName.
