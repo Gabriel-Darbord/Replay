@@ -70,6 +70,18 @@ ReplayMacroLibraryEditor >> addMacro [
 ]
 
 { #category : 'actions' }
+ReplayMacroLibraryEditor >> addMacroForScenario: aReplayScenario [
+
+	| macro index |
+	macro := self library macroForScenario: aReplayScenario.
+	self refreshFromLibrary.
+	macroList ifNotNil: [
+		index := self library macros indexOf: macro.
+		index > 0 ifTrue: [ macroList selectIndex: index ] ].
+	^ macro
+]
+
+{ #category : 'actions' }
 ReplayMacroLibraryEditor >> clearInstalledReplayMacros [
 
 	ReplayMacro uninstallAllInstalledKeymaps.

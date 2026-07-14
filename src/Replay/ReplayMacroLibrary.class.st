@@ -20,6 +20,18 @@ ReplayMacroLibrary >> addMacro: aReplayMacro [
 ]
 
 { #category : 'adding' }
+ReplayMacroLibrary >> addMacroForScenario: aReplayScenario [
+
+	| macro scenarioTitle |
+	macro := self newMacro.
+	macro scenario: aReplayScenario.
+	scenarioTitle := aReplayScenario title.
+	(scenarioTitle isEmpty or: [ scenarioTitle = 'Unnamed Scenario' ]) ifFalse: [
+		macro name: scenarioTitle ].
+	^ self addMacro: macro
+]
+
+{ #category : 'adding' }
 ReplayMacroLibrary >> addNewMacro [
 
 	^ self addMacro: self newMacro
@@ -99,6 +111,14 @@ ReplayMacroLibrary >> internalConflictsForMacro: aReplayMacro [
 				internalConflictsBetween: aReplayMacro
 				and: otherMacro) ] ].
 	^ conflicts
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibrary >> macroForScenario: aReplayScenario [
+
+	^ self macros
+		detect: [ :macro | macro scenario == aReplayScenario ]
+		ifNone: [ self addMacroForScenario: aReplayScenario ]
 ]
 
 { #category : 'accessing' }

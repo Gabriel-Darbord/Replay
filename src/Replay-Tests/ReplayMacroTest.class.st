@@ -814,6 +814,19 @@ ReplayMacroTest >> testMacroLibraryAggregatesConflicts [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryCreatesMacroForScenario [
+
+	| library scenario macro |
+	library := ReplayMacroLibrary new.
+	scenario := ReplayScenario new title: 'Format method'; yourself.
+	macro := library macroForScenario: scenario.
+
+	self assert: library macros size equals: 1.
+	self assert: macro scenario identicalTo: scenario.
+	self assert: macro name equals: 'Format method'
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroLibraryDetectsInternalConflictAcrossCompositeEditorContext [
 
 	| smalltalkMacro textMacro library conflicts |
@@ -862,6 +875,21 @@ ReplayMacroTest >> testMacroLibraryDetectsInternalConflicts [
 	self assert: conflicts size equals: 1.
 	self assert: conflicts anyOne categoryName equals: #ReplayMacroContext.
 	self assert: conflicts anyOne name equals: #Second
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorAddsAndSelectsMacroForScenario [
+
+	| library editor scenario macro |
+	library := ReplayMacroLibrary new.
+	editor := ReplayMacroLibraryEditor on: library.
+	scenario := ReplayScenario new title: 'Recorded flow'; yourself.
+	macro := editor addMacroForScenario: scenario.
+
+	self assert: library macros size equals: 1.
+	self assert: macro scenario identicalTo: scenario.
+	self assert: editor selectedMacro identicalTo: macro.
+	self assert: editor macroList items size equals: 1
 ]
 
 { #category : 'tests' }
@@ -1176,6 +1204,19 @@ ReplayMacroTest >> testMacroLibraryReusesFirstAvailableMacroName [
 
 	self assert: second name equals: 'Macro 2'.
 	self assert: third name equals: 'Macro 1'
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryReusesMacroForSameScenario [
+
+	| library scenario first second |
+	library := ReplayMacroLibrary new.
+	scenario := ReplayScenario new.
+	first := library macroForScenario: scenario.
+	second := library macroForScenario: scenario.
+
+	self assert: first identicalTo: second.
+	self assert: library macros size equals: 1
 ]
 
 { #category : 'tests' }

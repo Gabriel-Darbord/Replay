@@ -112,6 +112,20 @@ ReplayEditorSemanticTargetTest >> testRegistersAndClearsDynamicReplayTargets [
 ]
 
 { #category : 'tests' }
+ReplayEditorSemanticTargetTest >> testScenarioEditorCreatesMacroForCurrentScenarioInRegistry [
+
+	| registry editor scenario macro |
+	registry := ReplayMacroRegistry new.
+	scenario := ReplayScenario new title: 'Scenario macro'; yourself.
+	editor := ReplayEditor on: scenario.
+	macro := editor macroForCurrentScenarioIn: registry.
+
+	self assert: macro scenario identicalTo: scenario.
+	self assert: macro name equals: 'Scenario macro'.
+	self assert: (registry library macros includes: macro)
+]
+
+{ #category : 'tests' }
 ReplayEditorSemanticTargetTest >> testScenarioFieldsAreRegistered [
 
 	| editor |

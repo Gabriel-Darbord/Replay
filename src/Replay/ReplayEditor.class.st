@@ -311,6 +311,18 @@ ReplayEditor >> isRecording [
 	^ recorder notNil
 ]
 
+{ #category : 'tools' }
+ReplayEditor >> macroForCurrentScenario [
+
+	^ self macroForCurrentScenarioIn: ReplayMacroRegistry default
+]
+
+{ #category : 'tools' }
+ReplayEditor >> macroForCurrentScenarioIn: aReplayMacroRegistry [
+
+	^ aReplayMacroRegistry library macroForScenario: self model scenario
+]
+
 { #category : 'accessing' }
 ReplayEditor >> model [
 
@@ -616,32 +628,37 @@ ReplayEditor >> toggleRecordingFromShortcutEvent: anEvent [
 
 { #category : 'layout' }
 ReplayEditor >> toolbar [
-	"I wish SpToolbarPresenter made buttons of equal size"
+	"I wish SpToolbarPresenter made buttons equal size"
 
 	^ self newToolbar
-		  addStyle: 'stToolbar';
-		  add: (self newToolbarButton
-				   label: 'Save';
-				   icon: (self iconNamed: #save);
-				   help:
-					   'Copy the current scenario to the clipboard as a STON string.';
-				   action: [ self saveScenario ]);
-		  add: (self newToolbarButton
-				   label: 'Import';
-				   icon: (self iconNamed: #smallLoadProject);
-				   help: 'Import a serialized scenario from a STON string.';
-				   action: [ self importScenario ]);
-		  add: (self newToolbarButton
-				   label: 'Run';
-				   icon: (self iconNamed: #go);
-				   help: 'Execute the current scenario.';
-				   action: [ self runScenario ]);
-		  add: (self newToolbarButton
-				   label: 'Run step';
-				   icon: (self iconNamed: #smallForward);
-				   help: 'Execute the currently selected step.';
-				   action: [ self runStep ]);
-		  yourself
+		addStyle: 'stToolbar';
+		add: (self newToolbarButton
+				label: 'Save';
+				icon: (self iconNamed: #save);
+				help:
+					'Copy current scenario clipboard STON string.';
+				action: [ self saveScenario ]);
+		add: (self newToolbarButton
+				label: 'Import';
+				icon: (self iconNamed: #smallLoadProject);
+				help: 'Import serialized scenario from STON string.';
+				action: [ self importScenario ]);
+		add: (self newToolbarButton
+				label: 'Run';
+				icon: (self iconNamed: #go);
+				help: 'Execute current scenario.';
+				action: [ self runScenario ]);
+		add: (self newToolbarButton
+				label: 'Run step';
+				icon: (self iconNamed: #smallForward);
+				help: 'Execute currently selected step.';
+				action: [ self runStep ]);
+		add: (self newToolbarButton
+				label: 'Macro';
+				icon: (self iconNamed: #keymapBrowser);
+				help: 'Create or edit a macro backed by current scenario.';
+				action: [ self useScenarioAsMacro ]);
+		yourself
 ]
 
 { #category : 'recording' }
@@ -657,4 +674,16 @@ ReplayEditor >> updateRecordingStatus [
 
 	recordingStatusPresenter ifNil: [ ^ self ].
 	recordingStatusPresenter label: self recordingStatusText
+]
+
+{ #category : 'tools' }
+ReplayEditor >> useScenarioAsMacro [
+
+	| registry editor macro |
+	registry := ReplayMacroRegistry default.
+	macro := self macroForCurrentScenarioIn: registry.
+	editor := ReplayMacroLibraryEditor onRegistry: registry.
+	editor addMacroForScenario: self model scenario.
+	editor open.
+	^ macro
 ]
