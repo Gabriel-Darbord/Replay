@@ -1249,6 +1249,19 @@ ReplayUIBackendTest >> testShortcutActionDelegatesToResolvedUIBackend [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testShortcutIgnoresNullCharacters [
+
+	| action target |
+	target := ReplayEventRecorderMorph new.
+	action := ReplayShortcut new
+		text: (String with: (Character value: 0));
+		flags: UserInputEvent cmdKeyMask;
+		yourself.
+	self shouldnt: [ action shortcutOn: target ] raise: Error.
+	self assert: target eventLabels isEmpty
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testSpecBackendKeepsNonLeftButtonClickOnMorphicFallback [
 
 	| clicked button backend action resolved |

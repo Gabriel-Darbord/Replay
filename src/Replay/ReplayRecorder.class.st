@@ -25,7 +25,8 @@ Class {
 		'stopShortcutText',
 		'stopShortcutFlags',
 		'stopBlock',
-		'prologueActions'
+		'prologueActions',
+		'pendingShortcutAction'
 	],
 	#category : 'Replay-Recording',
 	#package : 'Replay',
@@ -127,6 +128,24 @@ ReplayRecorder >> currentMilliseconds [
 	^ self timeSource value
 ]
 
+{ #category : 'events' }
+ReplayRecorder >> deleteDirectionFrom: anEvent [
+
+	| character code |
+	character := anEvent keyCharacter.
+	character ifNil: [ ^ nil ].
+	code := character asInteger.
+	code = 8 ifTrue: [ ^ #backward ].
+	code = 127 ifTrue: [ ^ #forward ].
+	^ nil
+]
+
+{ #category : 'recording' }
+ReplayRecorder >> discardPendingShortcut [
+
+	pendingShortcutAction := nil
+]
+
 { #category : 'event handling' }
 ReplayRecorder >> dragActionFor: aReplayUIReference endingAt: endPosition [
 	^ ReplayDrag new
@@ -139,9 +158,25 @@ ReplayRecorder >> dragActionFor: aReplayUIReference endingAt: endPosition [
 		yourself
 ]
 
+{ #category : 'recording' }
+ReplayRecorder >> flushPendingShortcut [
+
+	| action |
+	pendingShortcutAction ifNil: [ ^ self ].
+	action := pendingShortcutAction.
+	pendingShortcutAction := nil.
+	self recordAction: action
+]
+
 { #category : 'testing' }
 ReplayRecorder >> hasManagedTarget [
 	^ manager notNil and: [ manager managedUI notNil ]
+]
+
+{ #category : 'testing' }
+ReplayRecorder >> hasPendingShortcut [
+
+	^ pendingShortcutAction notNil
 ]
 
 { #category : 'accessing' }
@@ -173,6 +208,20 @@ ReplayRecorder >> ignoresShortcutText: aString flags: anInteger [
 	^ ignoredShortcutText = aString asLowercase and: [ ignoredShortcutFlags = anInteger ]
 ]
 
+{ #category : 'testing' }
+ReplayRecorder >> isNullShortcutText: aString [
+
+	^ aString isEmpty or: [
+		aString allSatisfy: [ :character | character asInteger = 0 ] ]
+]
+
+{ #category : 'testing' }
+ReplayRecorder >> isUnmodifiedDeleteKeyboardEvent: anEvent [
+
+	^ (self shortcutModifierFlagsFrom: anEvent) = 0
+		and: [ (self deleteDirectionFrom: anEvent) notNil ]
+]
+
 { #category : 'targeting' }
 ReplayRecorder >> keyboardFocusReference [
 
@@ -202,11 +251,13 @@ ReplayRecorder >> manager: aReplayUIManager [
 
 { #category : 'testing' }
 ReplayRecorder >> matchesStopShortcutEvent: anEvent [
+
 	| flags text |
 	anEvent isKeyDown ifFalse: [ ^ false ].
 	flags := self modifierFlagsFrom: anEvent.
 	flags = 0 ifTrue: [ ^ false ].
-	text := anEvent modifiedCharacter asString asLowercase.
+	text := self shortcutTextFrom: anEvent.
+	(self isNullShortcutText: text) ifTrue: [ ^ false ].
 	^ self matchesStopShortcutText: text flags: flags
 ]
 
@@ -302,24 +353,34 @@ ReplayRecorder >> recordDeleteTextOn: aReplayUIReference direction: directionSym
 
 { #category : 'event handling' }
 ReplayRecorder >> recordEvent: anEvent [
+
 	anEvent isMouse ifTrue: [
+		self flushPendingShortcut.
 		(self shouldIgnoreMouseEvent: anEvent) ifTrue: [ ^ self clearMouseGesture ].
 		anEvent isMouseDown ifTrue: [ ^ self recordMouseDown: anEvent ].
 		anEvent isMouseMove ifTrue: [ ^ self recordMouseMove: anEvent ].
 		anEvent isMouseUp ifTrue: [ ^ self recordMouseUp: anEvent ].
 		anEvent isMouseWheel ifTrue: [ ^ self recordMouseWheel: anEvent ] ].
-	anEvent isKeyboard ifTrue: [ ^ self recordKeyboardEvent: anEvent ]
+	anEvent isKeyboard ifTrue: [ ^ self recordKeyboardEvent: anEvent ].
+	self flushPendingShortcut
 ]
 
 { #category : 'event handling' }
 ReplayRecorder >> recordKeyboardEvent: anEvent [
+
 	| target |
 	(self matchesStopShortcutEvent: anEvent) ifTrue: [ ^ self requestStop ].
 	target := anEvent hand keyboardFocus.
 	(self managedIncludesMorph: target) ifFalse: [ ^ self ].
-	anEvent isKeystroke ifTrue: [ ^ self recordKeystroke: anEvent on: target ].
+	anEvent isKeystroke ifTrue: [
+		self hasPendingShortcut ifTrue: [ self discardPendingShortcut ].
+		^ self recordKeystroke: anEvent on: target ].
+	(anEvent isKeyDown and: [ self isUnmodifiedDeleteKeyboardEvent: anEvent ]) ifTrue: [
+		self flushPendingShortcut.
+		^ self recordDeleteTextOn: self keyboardFocusReference direction: (self deleteDirectionFrom: anEvent) ].
 	(anEvent isKeyDown and: [ (self shortcutModifierFlagsFrom: anEvent) ~= 0 ]) ifTrue: [
-		^ self recordShortcut: anEvent on: target ]
+		^ self recordShortcut: anEvent on: target ].
+	anEvent isKeyUp ifTrue: [ ^ self flushPendingShortcut ]
 ]
 
 { #category : 'event handling' }
@@ -409,23 +470,32 @@ ReplayRecorder >> recordMouseWheel: anEvent [
 
 { #category : 'event handling' }
 ReplayRecorder >> recordShortcut: anEvent on: targetMorph [
-	| flags text reference |
+
+	| flags text reference action |
 	flags := self modifierFlagsFrom: anEvent.
-	text := anEvent modifiedCharacter asString asLowercase.
+	text := self shortcutTextFrom: anEvent.
+	(self isNullShortcutText: text) ifTrue: [ ^ self ].
 	(self matchesStopShortcutText: text flags: flags) ifTrue: [ ^ self requestStop ].
 	(self ignoresShortcutText: text flags: flags) ifTrue: [ ^ self ].
 	reference := self keyboardFocusReference.
-	self recordAction: (ReplayShortcut new
+	action := ReplayShortcut new
 		reference: reference;
 		flags: flags;
 		text: text;
-		yourself)
+		yourself.
+	(self shouldDeferShortcutWithFlags: flags) ifTrue: [
+		self flushPendingShortcut.
+		pendingShortcutAction := action.
+		^ self ].
+	self flushPendingShortcut.
+	self recordAction: action
 ]
 
 { #category : 'recording' }
 ReplayRecorder >> recordedActions [
 
 	| recorded all |
+	self flushPendingShortcut.
 	recorded := self preserveTiming
 		ifTrue: [ self actions copy ]
 		ifFalse: [ self actionsWithoutRecordedTiming ].
@@ -480,6 +550,21 @@ ReplayRecorder >> shortcutModifierFlagsFrom: anEvent [
 	(anEvent optionKeyPressed or: [ anEvent altKeyPressed ]) ifTrue: [ modifiers := modifiers bitOr: UserInputEvent altKeyMask ].
 	anEvent commandKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent cmdKeyMask ].
 	^ modifiers
+]
+
+{ #category : 'events' }
+ReplayRecorder >> shortcutTextFrom: anEvent [
+
+	^ anEvent modifiedCharacter asString asLowercase
+]
+
+{ #category : 'testing' }
+ReplayRecorder >> shouldDeferShortcutWithFlags: flags [
+
+	| commandOrControlMask |
+	commandOrControlMask := UserInputEvent cmdKeyMask bitOr: UserInputEvent ctrlKeyMask.
+	^ ((flags bitAnd: UserInputEvent altKeyMask) ~= 0)
+		and: [ (flags bitAnd: commandOrControlMask) = 0 ]
 ]
 
 { #category : 'testing' }

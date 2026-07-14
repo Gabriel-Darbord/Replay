@@ -237,6 +237,74 @@ ReplayRecorderTest >> testRecorderCoalescesTypingWhenFocusedMorphPathChanges [
 ]
 
 { #category : 'tests' }
+ReplayRecorderTest >> testRecorderDiscardsPendingAltShortcutWhenKeystrokeProducesText [
+
+	| root target recorder hand previousFocus action |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self keyboardEventType: #keyDown character: (Character value: 0) buttons: UserInputEvent altKeyMask hand: hand).
+		recorder recordEvent: (self keyboardEventType: #keyDown character: $3 buttons: UserInputEvent altKeyMask hand: hand).
+		recorder recordEvent: (self keyboardEventType: #keystroke character: $# buttons: 0 hand: hand).
+		self assert: recorder actions size equals: 1.
+		action := recorder actions first.
+		self assert: action class equals: ReplayType.
+		self assert: action text equals: '#' ]
+
+		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderFlushesPendingAltShortcutWhenRecordingEnds [
+
+	| root target recorder hand previousFocus recorded action |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self keyboardEventType: #keyDown character: $x buttons: UserInputEvent altKeyMask hand: hand).
+		self assert: recorder actions isEmpty.
+		recorded := recorder recordedActions asArray.
+		self assert: recorded size equals: 1.
+		action := recorded first.
+		self assert: action class equals: ReplayShortcut.
+		self assert: action text equals: 'x'.
+		self assert: action flags equals: UserInputEvent altKeyMask ]
+
+		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderIgnoresModifierOnlyShortcutKeyDown [
+
+	| root target recorder hand previousFocus |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self keyboardEventType: #keyDown character: (Character value: 0) buttons: UserInputEvent cmdKeyMask hand: hand).
+		self assert: recorder actions isEmpty ]
+
+		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
 ReplayRecorderTest >> testRecorderIgnoresMouseEventsInsideIgnoredMorph [
 	| root target ignored recorder hand |
 	root := Morph new extent: 200 @ 100.
@@ -298,6 +366,29 @@ ReplayRecorderTest >> testRecorderRecordsDeleteTextForBackspace [
 	[
 		hand keyboardFocus: target.
 		recorder recordEvent: (self keyboardEventType: #keystroke character: (Character value: 8) buttons: 0 hand: hand).
+		action := recorder actions first.
+		self assert: action class equals: ReplayDeleteText.
+		self assert: action direction equals: #backward.
+		self assert: action count equals: 1.
+		self assert: action uiReference isKeyboardFocus ]
+
+		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderRecordsKeyDownBackspaceAsDeleteText [
+
+	| root target recorder hand previousFocus action |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self keyboardEventType: #keyDown character: (Character value: 8) buttons: 0 hand: hand).
 		action := recorder actions first.
 		self assert: action class equals: ReplayDeleteText.
 		self assert: action direction equals: #backward.

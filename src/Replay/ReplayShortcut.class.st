@@ -64,6 +64,12 @@ ReplayShortcut >> beForShortcut: aShortcut [
 	aShortcut configureReplayShortcut: self
 ]
 
+{ #category : 'testing' }
+ReplayShortcut >> isReplayableShortcutCharacter: aCharacter [
+
+	^ aCharacter asInteger ~= 0
+]
+
 { #category : 'converting' }
 ReplayShortcut >> keyCombinationForCharacter: aCharacter [
 
@@ -181,7 +187,8 @@ ReplayShortcut >> shortcutDescriptionPresenterOn: editor [
 ReplayShortcut >> shortcutOn: ui [
 
 	self text do: [ :character |
-		(self keyDown: character buttons: self flags) sentTo: ui ]
+		(self isReplayableShortcutCharacter: character) ifTrue: [
+			(self keyDown: character buttons: self flags) sentTo: ui ] ]
 
 	"What listens to keyUp? Doesn't seem required for shortcuts"
 	"self text do: [ :character |
