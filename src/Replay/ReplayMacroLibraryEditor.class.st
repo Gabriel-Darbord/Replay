@@ -113,8 +113,8 @@ ReplayMacroLibraryEditor >> defaultLayout [
 		add: installationSummaryPresenter expand: false;
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
-			add: startupPolicyPresenter;
 			add: startupPolicyButton expand: false;
+			add: startupPolicyPresenter expand: false;
 			yourself)
 		expand: false;
 		add: (SpBoxLayout newLeftToRight
@@ -375,6 +375,20 @@ ReplayMacroLibraryEditor >> startupPolicyButtonLabel [
 		ifFalse: [ 'Enable startup' ]
 ]
 
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> startupPolicyHelpText [
+
+	^ 'When enabled, Replay installs macros saved in the default macro file when the image starts. Disable it to keep saved macros inactive until you install them manually.'
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> startupPolicyIconName [
+
+	^ ReplayMacroRegistry startupInstallationEnabled
+		ifTrue: [ #smallOk ]
+		ifFalse: [ #smallCancel ]
+]
+
 { #category : 'accessing' }
 ReplayMacroLibraryEditor >> startupPolicyPresenter [
 
@@ -384,11 +398,9 @@ ReplayMacroLibraryEditor >> startupPolicyPresenter [
 { #category : 'updating' }
 ReplayMacroLibraryEditor >> startupPolicyText [
 
-	^ 'Startup install: '
-		, (ReplayMacroRegistry startupInstallationEnabled
-			ifTrue: [ 'enabled' ]
-			ifFalse: [ 'disabled' ])
-		, '.'
+	^ ReplayMacroRegistry startupInstallationEnabled
+		ifTrue: [ 'Enabled' ]
+		ifFalse: [ 'Disabled' ]
 ]
 
 { #category : 'actions' }
@@ -461,7 +473,12 @@ ReplayMacroLibraryEditor >> updateInstallationSummary [
 ReplayMacroLibraryEditor >> updateStartupPolicyStatus [
 
 	startupPolicyPresenter ifNotNil: [
-		startupPolicyPresenter label: self startupPolicyText ].
+		startupPolicyPresenter
+			label: self startupPolicyText;
+			help: self startupPolicyHelpText ].
 	startupPolicyButton ifNotNil: [
-		startupPolicyButton label: self startupPolicyButtonLabel ]
+		startupPolicyButton
+			label: self startupPolicyButtonLabel;
+			icon: (self iconNamed: self startupPolicyIconName);
+			help: self startupPolicyHelpText ]
 ]

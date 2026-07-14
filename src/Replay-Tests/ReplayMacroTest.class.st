@@ -1136,15 +1136,21 @@ ReplayMacroTest >> testMacroLibraryEditorShowsContextualStartupButton [
 	editor := ReplayMacroLibraryEditor new.
 
 	[
-		self assert: editor startupPolicyPresenter label equals: 'Startup install: disabled.'.
-		self deny: (editor startupPolicyPresenter label includesSubstring: 'Script:').
+		self assert: editor startupPolicyPresenter label equals: 'Disabled'.
 		self assert: editor startupPolicyButton label equals: 'Enable startup'.
+		self assert: editor startupPolicyIconName equals: #smallCancel.
+		self assert: editor startupPolicyPresenter help equals: editor startupPolicyHelpText.
+		self assert: editor startupPolicyButton help equals: editor startupPolicyHelpText.
+		self assert: (editor startupPolicyHelpText includesSubstring: 'default macro file').
+		self deny: (editor startupPolicyPresenter label includesSubstring: 'Script:').
 		editor toggleStartupInstallation.
 		self assert: ReplayMacroRegistry startupInstallationEnabled.
-		self assert: editor startupPolicyPresenter label equals: 'Startup install: enabled.'.
+		self assert: editor startupPolicyPresenter label equals: 'Enabled'.
 		self assert: editor startupPolicyButton label equals: 'Disable startup'.
+		self assert: editor startupPolicyIconName equals: #smallOk.
 		editor toggleStartupInstallation.
 		self deny: ReplayMacroRegistry startupInstallationEnabled.
+		self assert: editor startupPolicyPresenter label equals: 'Disabled'.
 		self assert: editor startupPolicyButton label equals: 'Enable startup' ]
 		ensure: [ ReplayMacroRegistry disableStartupInstallation ]
 ]
@@ -1157,14 +1163,15 @@ ReplayMacroTest >> testMacroLibraryEditorTogglesStartupInstallPolicy [
 	editor := ReplayMacroLibraryEditor new.
 
 	[
-		self assert: (editor startupPolicyPresenter label includesSubstring: 'disabled').
+		self assert: editor startupPolicyPresenter label equals: 'Disabled'.
 		editor enableStartupInstallation.
 		self assert: ReplayMacroRegistry startupInstallationEnabled.
-		self assert: (editor startupPolicyPresenter label includesSubstring: 'enabled').
+		self assert: editor startupPolicyPresenter label equals: 'Enabled'.
+		self assert: editor startupPolicyButton label equals: 'Disable startup'.
 		editor disableStartupInstallation.
 		self deny: ReplayMacroRegistry startupInstallationEnabled.
-		self assert: (editor startupPolicyPresenter label includesSubstring: 'disabled') ]
-
+		self assert: editor startupPolicyPresenter label equals: 'Disabled'.
+		self assert: editor startupPolicyButton label equals: 'Enable startup' ]
 		ensure: [ ReplayMacroRegistry disableStartupInstallation ]
 ]
 
