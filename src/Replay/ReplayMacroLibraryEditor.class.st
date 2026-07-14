@@ -1,5 +1,5 @@
 "
-I am Spec editor for a macro library, macro list, detail editor, startup policy, and installation controls.
+I am a Spec editor for macro libraries. I let users edit macros, choose shortcuts and contexts, manage installed keymaps, and control startup installation.
 "
 Class {
 	#name : 'ReplayMacroLibraryEditor',
@@ -12,6 +12,8 @@ Class {
 		'macroEditorPresenter',
 		'installationSummaryPresenter',
 		'startupPolicyPresenter',
+		'startupPolicyIconPresenter',
+		'startupPolicyStatusPresenter',
 		'startupPolicyButton'
 	],
 	#category : 'Replay-Macros',
@@ -113,8 +115,9 @@ ReplayMacroLibraryEditor >> defaultLayout [
 		add: installationSummaryPresenter expand: false;
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
+			vAlignCenter;
 			add: startupPolicyButton expand: false;
-			add: startupPolicyPresenter expand: false;
+			add: startupPolicyStatusPresenter expand: false;
 			yourself)
 		expand: false;
 		add: (SpBoxLayout newLeftToRight
@@ -175,7 +178,16 @@ ReplayMacroLibraryEditor >> initializePresenters [
 	macroList := SpEditableListPresenter new.
 	macroList items: self library macros.
 	installationSummaryPresenter := self newLabel.
+	startupPolicyIconPresenter := self newImage.
 	startupPolicyPresenter := self newLabel.
+	startupPolicyStatusPresenter := self newPresenter
+		layout: (SpBoxLayout newLeftToRight
+			spacing: 4;
+			vAlignCenter;
+			add: startupPolicyIconPresenter expand: false;
+			add: startupPolicyPresenter expand: false;
+			yourself);
+		yourself.
 	startupPolicyButton := self newButton
 		action: [ self toggleStartupInstallation ];
 		yourself.
@@ -313,6 +325,8 @@ ReplayMacroLibraryEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBl
 	aPresenterName = 'Macro editor' ifTrue: [ ^ macroEditorPresenter ifNil: [ macroEditorPane ] ].
 	aPresenterName = 'Installation summary' ifTrue: [ ^ installationSummaryPresenter ].
 	aPresenterName = 'Startup policy' ifTrue: [ ^ startupPolicyPresenter ].
+	aPresenterName = 'Startup policy icon' ifTrue: [ ^ startupPolicyIconPresenter ].
+	aPresenterName = 'Startup policy status' ifTrue: [ ^ startupPolicyStatusPresenter ].
 	(#('Startup policy button' 'Enable startup button' 'Disable startup button') includes: aPresenterName) ifTrue: [ ^ startupPolicyButton ].
 	macroEditorPresenter ifNotNil: [
 		^ macroEditorPresenter replayPresenterAt: aPresenterName ifAbsent: absentBlock ].
@@ -390,9 +404,21 @@ ReplayMacroLibraryEditor >> startupPolicyIconName [
 ]
 
 { #category : 'accessing' }
+ReplayMacroLibraryEditor >> startupPolicyIconPresenter [
+
+	^ startupPolicyIconPresenter
+]
+
+{ #category : 'accessing' }
 ReplayMacroLibraryEditor >> startupPolicyPresenter [
 
 	^ startupPolicyPresenter
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibraryEditor >> startupPolicyStatusPresenter [
+
+	^ startupPolicyStatusPresenter
 ]
 
 { #category : 'updating' }
@@ -476,9 +502,12 @@ ReplayMacroLibraryEditor >> updateStartupPolicyStatus [
 		startupPolicyPresenter
 			label: self startupPolicyText;
 			help: self startupPolicyHelpText ].
+	startupPolicyIconPresenter ifNotNil: [
+		startupPolicyIconPresenter
+			image: (self iconNamed: self startupPolicyIconName);
+			help: self startupPolicyHelpText ].
 	startupPolicyButton ifNotNil: [
 		startupPolicyButton
 			label: self startupPolicyButtonLabel;
-			icon: (self iconNamed: self startupPolicyIconName);
 			help: self startupPolicyHelpText ]
 ]
