@@ -1,5 +1,5 @@
 "
-I edit the character sequence for a ReplayShortcut with visible rows for printable and special key characters. I keep ReplayShortcut text as the serialized model while offering add, remove, and captured-shortcut adoption controls.
+I edit ReplayShortcut character sequences as visible rows. I keep ReplayShortcut text as the serialized model and provide controls to add, delete, and capture shortcut characters.
 "
 Class {
 	#name : 'ReplayShortcutKeysPresenter',
@@ -11,8 +11,10 @@ Class {
 		'characterTextPresenter',
 		'addKeyButton',
 		'addCharacterButton',
+		'keyListLabelPresenter',
 		'keyList',
 		'removeKeyButton',
+		'captureShortcutButton',
 		'captureMorphPresenter',
 		'captureMorph',
 		'useCapturedShortcutButton'
@@ -32,7 +34,9 @@ ReplayShortcutKeysPresenter class >> defaultLayout [
 			vAlignCenter;
 			add: 'Add key:' expand: false;
 			add: #keyDropList width: 160;
-			add: #addKeyButton expand: false;
+			add: #addKeyButton width: 40;
+			add: #captureShortcutButton expand: false;
+			add: #captureMorphPresenter width: 260;
 			yourself)
 		expand: false;
 		add: (SpBoxLayout newLeftToRight
@@ -40,19 +44,17 @@ ReplayShortcutKeysPresenter class >> defaultLayout [
 			vAlignCenter;
 			add: 'Add character:' expand: false;
 			add: #characterTextPresenter;
-			add: #addCharacterButton expand: false;
+			add: #addCharacterButton width: 40;
 			yourself)
 		expand: false;
-		add: #keyList height: 90;
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
 			vAlignCenter;
-			add: #removeKeyButton expand: false;
-			add: 'Capture shortcut:' expand: false;
-			add: #captureMorphPresenter width: 260;
-			add: #useCapturedShortcutButton expand: false;
+			add: #keyListLabelPresenter expand: false;
+			add: #removeKeyButton width: 40;
 			yourself)
 		expand: false;
+		add: #keyList height: 90;
 		yourself
 ]
 
@@ -131,6 +133,12 @@ ReplayShortcutKeysPresenter >> captureMorphPresenter [
 	^ captureMorphPresenter
 ]
 
+{ #category : 'accessing' }
+ReplayShortcutKeysPresenter >> captureShortcutButton [
+
+	^ captureShortcutButton
+]
+
 { #category : 'private' }
 ReplayShortcutKeysPresenter >> characterForKeySelector: aSymbol [
 
@@ -186,31 +194,44 @@ ReplayShortcutKeysPresenter >> initializePresenters [
 	keyDropList items ifNotEmpty: [ keyDropList selectItem: keyDropList items first ].
 
 	addKeyButton := self newButton
-		label: 'Add key';
+		icon: (self iconNamed: #add);
+		help: 'Add the selected special key to the shortcut sequence.';
 		action: [ self addSelectedKey ];
 		yourself.
 
 	characterTextPresenter := self newText.
 	characterTextPresenter help: 'Type printable character(s) to append to the shortcut sequence.'.
 	addCharacterButton := self newButton
-		label: 'Add character';
+		icon: (self iconNamed: #add);
+		help: 'Add the typed character(s) to the shortcut sequence.';
 		action: [ self addCharacterText ];
 		yourself.
 
+	keyListLabelPresenter := self newLabel.
+	keyListLabelPresenter label: 'Characters:'.
 	keyList := self newList.
 	keyList display: [ :character | self displayStringForCharacter: character ].
 
 	removeKeyButton := self newButton
-		label: 'Remove selected key';
+		icon: (self iconNamed: #delete);
+		help: 'Delete the selected character from the shortcut sequence.';
 		action: [ self removeSelectedCharacter ];
 		yourself.
 
-	captureMorph := KMCatcherMorph new.
+	captureMorph := ReplayShortcutCaptureMorph new.
 	captureMorph initialShortcut: self shortcut asKMShortcut.
 	captureMorphPresenter := self newMorph.
 	captureMorphPresenter morph: captureMorph.
+	captureShortcutButton := self newButton
+		icon: (self iconNamed: #record);
+		label: 'Set from next shortcut';
+		help: 'Click, then press a shortcut. The next shortcut replaces the current sequence and modifiers.';
+		action: [ self startShortcutCapture ];
+		yourself.
 	useCapturedShortcutButton := self newButton
+		icon: (self iconNamed: #smallOk);
 		label: 'Use captured shortcut';
+		help: 'Use the shortcut currently shown in the capture field.';
 		action: [ self useCapturedShortcut ];
 		yourself.
 
@@ -227,6 +248,12 @@ ReplayShortcutKeysPresenter >> keyDropList [
 ReplayShortcutKeysPresenter >> keyList [
 
 	^ keyList
+]
+
+{ #category : 'accessing' }
+ReplayShortcutKeysPresenter >> keyListLabelPresenter [
+
+	^ keyListLabelPresenter
 ]
 
 { #category : 'private' }
@@ -275,12 +302,14 @@ ReplayShortcutKeysPresenter >> refreshKeyList [
 ReplayShortcutKeysPresenter >> registerReplayPresentersOn: anEditor named: aPrefix [
 
 	anEditor registerReplayPresenter: self named: aPrefix , ' keys'.
+	anEditor registerReplayPresenter: keyListLabelPresenter named: aPrefix , ' key list label'.
 	anEditor registerReplayPresenter: keyList named: aPrefix , ' key list'.
 	anEditor registerReplayPresenter: keyDropList named: aPrefix , ' key chooser'.
 	anEditor registerReplayPresenter: addKeyButton named: aPrefix , ' add key button'.
 	anEditor registerReplayPresenter: characterTextPresenter named: aPrefix , ' character text'.
 	anEditor registerReplayPresenter: addCharacterButton named: aPrefix , ' add character button'.
 	anEditor registerReplayPresenter: removeKeyButton named: aPrefix , ' remove key button'.
+	anEditor registerReplayPresenter: captureShortcutButton named: aPrefix , ' capture shortcut button'.
 	anEditor registerReplayPresenter: useCapturedShortcutButton named: aPrefix , ' use captured shortcut button'
 ]
 
@@ -308,12 +337,14 @@ ReplayShortcutKeysPresenter >> removeSelectedCharacter [
 ReplayShortcutKeysPresenter >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 
 	aPresenterName = 'Shortcut keys' ifTrue: [ ^ self ].
+	aPresenterName = 'Shortcut key list label' ifTrue: [ ^ keyListLabelPresenter ].
 	aPresenterName = 'Shortcut key list' ifTrue: [ ^ keyList ].
 	aPresenterName = 'Shortcut key chooser' ifTrue: [ ^ keyDropList ].
 	aPresenterName = 'Shortcut add key button' ifTrue: [ ^ addKeyButton ].
 	aPresenterName = 'Shortcut character text' ifTrue: [ ^ characterTextPresenter ].
 	aPresenterName = 'Shortcut add character button' ifTrue: [ ^ addCharacterButton ].
 	aPresenterName = 'Shortcut remove key button' ifTrue: [ ^ removeKeyButton ].
+	aPresenterName = 'Shortcut capture shortcut button' ifTrue: [ ^ captureShortcutButton ].
 	aPresenterName = 'Shortcut use captured shortcut button' ifTrue: [ ^ useCapturedShortcutButton ].
 	^ absentBlock value
 ]
@@ -329,6 +360,15 @@ ReplayShortcutKeysPresenter >> setTextSilently: aString [
 ReplayShortcutKeysPresenter >> shortcut [
 
 	^ shortcut ifNil: [ shortcut := ReplayShortcut new ]
+]
+
+{ #category : 'actions' }
+ReplayShortcutKeysPresenter >> startShortcutCapture [
+
+	captureMorph ifNil: [ ^ self ].
+	captureMorph captureNextShortcutThenDo: [ self useCapturedShortcut ].
+	captureMorph activeHand ifNotNil: [ :hand |
+		hand newKeyboardFocus: captureMorph ]
 ]
 
 { #category : 'accessing' }
@@ -351,6 +391,7 @@ ReplayShortcutKeysPresenter >> useCapturedShortcut [
 	captureMorph ifNil: [ ^ self ].
 	self shortcut beForShortcut: captureMorph shortcut.
 	self refreshKeyList.
+	captureMorph initialShortcut: self shortcut asKMShortcut.
 	self notifyChanged
 ]
 

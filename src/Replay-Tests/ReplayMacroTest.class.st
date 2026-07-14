@@ -1784,6 +1784,36 @@ ReplayMacroTest >> testShortcutKeysPresenterAddsAndRemovesKeys [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testShortcutKeysPresenterCapturesNextShortcut [
+
+	| shortcut presenter event |
+	shortcut := ReplayShortcut new text: 'a'; yourself.
+	presenter := ReplayShortcutKeysPresenter on: shortcut.
+	event := ReplayShortcut new keyDown: $f buttons: 64.
+	presenter startShortcutCapture.
+	self assert: presenter captureMorph isCapturing.
+	presenter captureMorph keyStroke: event.
+	self assert: shortcut text equals: 'f'.
+	self assert: shortcut flags equals: 64.
+	self deny: presenter captureMorph isCapturing
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testShortcutKeysPresenterHasIconControlsAndListLabel [
+
+	| presenter |
+	presenter := ReplayShortcutKeysPresenter on: ReplayShortcut new.
+	self assert: presenter addKeyButton label equals: ''.
+	self deny: presenter addKeyButton icon isNil.
+	self assert: presenter addCharacterButton label equals: ''.
+	self deny: presenter addCharacterButton icon isNil.
+	self assert: presenter keyListLabelPresenter label equals: 'Characters:'.
+	self deny: presenter removeKeyButton icon isNil.
+	self assert: (presenter removeKeyButton help includesSubstring: 'Delete').
+	self assert: presenter captureShortcutButton label equals: 'Set from next shortcut'
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testShortcutKeysPresenterShowsSpecialCharacters [
 
 	| shortcut presenter display |
