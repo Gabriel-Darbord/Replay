@@ -250,9 +250,11 @@ ReplayMacroEditor >> initializePresenters [
 			self macro shortcut text: aString.
 			self macroChanged ].
 
-	modifierPresenter := self macro shortcut
-		modifierPresenterOn: self
-		whenChangedDo: [ self macroChanged ].
+	modifierPresenter := self newPresenter
+		layout: (self macro shortcut
+			modifierPresenterOn: self
+			whenChangedDo: [ self macroChanged ]);
+		yourself.
 
 	contextDropList := self newDropList.
 	contextDropList

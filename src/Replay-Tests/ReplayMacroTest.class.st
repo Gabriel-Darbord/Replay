@@ -943,6 +943,26 @@ ReplayMacroTest >> testMacroLibraryEditorBuilds [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorBuildsSpecAdapter [
+
+	| library macro editor result |
+	library := ReplayMacroLibrary new.
+	macro := ReplayMacro
+		named: 'Format method'
+		shortcut: ReplayShortcut new
+		scenario: ReplayScenario new.
+	library addMacro: macro.
+	editor := ReplayMacroLibraryEditor on: library.
+
+	result := [
+		editor build.
+		#built ]
+		on: Error
+		do: [ :error | error ].
+	self assert: result equals: #built
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroLibraryEditorClearsInstalledReplayKeymaps [
 
 	| snapshot library macro editor |
