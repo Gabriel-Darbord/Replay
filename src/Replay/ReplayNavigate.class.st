@@ -269,7 +269,7 @@ ReplayNavigate >> extentWidth: aNumber [
 { #category : 'initialization' }
 ReplayNavigate >> initialize [
 
-	skip := false
+	skip := true
 ]
 
 { #category : 'editing' }
@@ -403,7 +403,7 @@ ReplayNavigate >> runOn: runner [
 { #category : 'accessing' }
 ReplayNavigate >> skip [
 
-	^ skip ifNil: [ skip := false ]
+	^ skip ifNil: [ skip := true ]
 ]
 
 { #category : 'accessing' }

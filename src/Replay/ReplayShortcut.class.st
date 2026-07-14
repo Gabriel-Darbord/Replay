@@ -74,6 +74,7 @@ ReplayShortcut >> isReplayableShortcutCharacter: aCharacter [
 ReplayShortcut >> keyCombinationForCharacter: aCharacter [
 
 	| combination |
+	self flags = 0 ifTrue: [ ^ aCharacter asKeyCombination ].
 	combination := aCharacter asLowercase.
 	(self flags bitAnd: 64) ~= 0 ifTrue: [ combination := combination command ].
 	(self flags bitAnd: 16) ~= 0 ifTrue: [ combination := combination control ].
@@ -141,7 +142,7 @@ ReplayShortcut >> settingsPresenterOn: editor [
 				spacing: 10;
 				add: (self targetPresenterOn: editor) expand: false;
 				add: (self modifierPresenterOn: editor) expand: false;
-				add: (self textPresenterOn: editor labeled: 'Insert characters to use part shortcut:') expand: false;
+				add: (self shortcutKeysPresenterOn: editor) expand: false;
 				add: (self shortcutDescriptionPresenterOn: editor);
 				yourself);
 		yourself
@@ -187,6 +188,26 @@ ReplayShortcut >> shortcutDescriptionPresenterOn: editor [
 			 add: 'Select a shortcut in the list to use it:' expand: false;
 			 add: descriptionPresenter;
 			 yourself).
+	^ presenter
+]
+
+{ #category : 'editing' }
+ReplayShortcut >> shortcutKeysPresenterOn: editor [
+
+	^ self
+		shortcutKeysPresenterOn: editor
+		whenChangedDo: [ editor actions rebuildLayout ]
+]
+
+{ #category : 'editing' }
+ReplayShortcut >> shortcutKeysPresenterOn: editor whenChangedDo: aBlock [
+
+	| presenter |
+	presenter := ReplayShortcutKeysPresenter on: self whenChangedDo: aBlock.
+	presenter registerReplayPresentersOn: editor named: 'Action shortcut'.
+	presenter registerReplayPresentersOn: editor named: self class displayName.
+	editor registerReplayPresenter: presenter named: 'Action text'.
+	editor registerReplayPresenter: presenter named: self class displayName , ' text'.
 	^ presenter
 ]
 

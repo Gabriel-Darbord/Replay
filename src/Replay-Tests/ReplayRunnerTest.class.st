@@ -113,6 +113,13 @@ ReplayRunnerTest >> testNavigatePlacementAppliesPositionAndExtent [
 ]
 
 { #category : 'tests' }
+ReplayRunnerTest >> testNavigateSkipsByDefault [
+
+	self assert: ReplayNavigate new skip.
+	self assert: ReplayStep new navigation skip
+]
+
+{ #category : 'tests' }
 ReplayRunnerTest >> testNextActionAfterStopDoesNothing [
 
 	| scenario step runner |

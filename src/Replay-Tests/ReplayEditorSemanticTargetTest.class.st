@@ -189,6 +189,21 @@ ReplayEditorSemanticTargetTest >> testSharedActionFieldTargetsAreRegistered [
 ]
 
 { #category : 'tests' }
+ReplayEditorSemanticTargetTest >> testShortcutActionRegistersVisibleKeyEditors [
+
+	| editor action presenter |
+	editor := self newEditor.
+	action := ReplayShortcut new
+		text: (String with: (Character arrowLeft));
+		yourself.
+	presenter := action shortcutKeysPresenterOn: editor.
+	self assert: presenter class equals: ReplayShortcutKeysPresenter.
+	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) identicalTo: presenter.
+	self assert: (editor replayPresenterAt: 'Action shortcut key list' ifAbsent: [ nil ]) identicalTo: presenter keyList.
+	self assert: (editor replayPresenterAt: 'Shortcut key list' ifAbsent: [ nil ]) identicalTo: presenter keyList
+]
+
+{ #category : 'tests' }
 ReplayEditorSemanticTargetTest >> testSpecificActionFieldTargetsAreRegistered [
 
 	| editor |

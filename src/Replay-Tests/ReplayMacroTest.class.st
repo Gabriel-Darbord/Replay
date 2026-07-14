@@ -695,6 +695,24 @@ ReplayMacroTest >> testMacroEditorUsesMacroContexts [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroEditorUsesShortcutKeysPresenter [
+
+	| macro editor |
+	macro := ReplayMacro
+		named: 'Branch macro'
+		shortcut: (ReplayShortcut new
+			text: (String with: (Character arrowRight));
+			addFlags: 64;
+			yourself)
+		scenario: ReplayScenario new.
+	editor := ReplayMacroEditor on: macro.
+	self assert: editor shortcutTextPresenter class equals: ReplayShortcutKeysPresenter.
+	self assert: editor shortcutTextPresenter text equals: macro shortcut text.
+	self assert: editor shortcutTextPresenter keyList items asArray equals: { (Character arrowRight) }.
+	self assert: (editor replayPresenterAt: 'Shortcut key list' ifAbsent: [ nil ]) identicalTo: editor shortcutTextPresenter keyList
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroIdentitySurvivesSaveLoadEditInstallReloadWithoutDuplicateKeymaps [
 
 	| file firstRegistry firstMacro secondRegistry loadedMacro thirdRegistry reloadedMacro category ownKeymaps |
@@ -1739,6 +1757,57 @@ ReplayMacroTest >> testShortcutConflictUsesUserFacingKnownContextNames [
 		keymap: (self findKeymapInCategoryNamed: #RubTextEditor).
 
 	self assert: conflict contextDisplayName equals: 'Text editors'
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testShortcutKeysPresenterAddsAndRemovesKeys [
+
+	| shortcut presenter changes leftChoice |
+	changes := 0.
+	shortcut := ReplayShortcut new.
+	presenter := ReplayShortcutKeysPresenter
+		on: shortcut
+		whenChangedDo: [ changes := changes + 1 ].
+	leftChoice := presenter keyDropList items detect: [ :association | association key = #left ].
+	presenter keyDropList selectItem: leftChoice.
+	presenter addSelectedKey.
+	self assert: shortcut text equals: (String with: (Character arrowLeft)).
+	self assert: changes equals: 1.
+	presenter characterTextPresenter text: 'k'.
+	presenter addCharacterText.
+	self assert: shortcut text equals: (String with: (Character arrowLeft) with: $k).
+	self assert: changes equals: 2.
+	presenter keyList selectIndex: 1.
+	presenter removeSelectedCharacter.
+	self assert: shortcut text equals: 'k'.
+	self assert: changes equals: 3
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testShortcutKeysPresenterShowsSpecialCharacters [
+
+	| shortcut presenter display |
+	shortcut := ReplayShortcut new
+		text: (String with: (Character arrowLeft) with: $k);
+		yourself.
+	presenter := ReplayShortcutKeysPresenter on: shortcut.
+	display := presenter displayStringForCharacter: presenter keyList items first.
+	self assert: presenter keyList items asArray equals: { (Character arrowLeft). $k }.
+	self assert: (display includesSubstring: 'Left Arrow').
+	self assert: (display includesSubstring: 'Character arrowLeft')
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testShortcutKeysPresenterUsesCapturedShortcut [
+
+	| shortcut presenter event |
+	shortcut := ReplayShortcut new.
+	presenter := ReplayShortcutKeysPresenter on: shortcut.
+	event := ReplayShortcut new keyDown: $f buttons: 64.
+	presenter captureMorph keystrokes: (OrderedCollection with: event).
+	presenter useCapturedShortcut.
+	self assert: shortcut text equals: 'f'.
+	self assert: shortcut flags equals: 64
 ]
 
 { #category : 'support' }

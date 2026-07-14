@@ -240,12 +240,10 @@ ReplayMacroEditor >> initializePresenters [
 			self macro name: aString.
 			self macroChanged ].
 
-	shortcutTextPresenter := self newText.
-	shortcutTextPresenter
-		text: self macro shortcut text;
-		help: 'Type shortcut key characters; select modifier keys below.';
-		whenTextChangedDo: [ :aString |
-			self macro shortcut text: aString.
+	shortcutTextPresenter := ReplayShortcutKeysPresenter
+		on: self macro shortcut
+		whenChangedDo: [
+			self refreshShortcut.
 			self macroChanged ].
 
 	modifierPresenter := self newPresenter
@@ -464,16 +462,11 @@ ReplayMacroEditor >> refreshSelectedContext [
 { #category : 'updating' }
 ReplayMacroEditor >> refreshShortcut [
 
-	shortcutTextPresenter ifNotNil: [
-		shortcutTextPresenter text: self macro shortcut text ].
-	commandCheckBox ifNotNil: [
-		commandCheckBox state: (self macro shortcut hasFlags: 64) ].
-	controlCheckBox ifNotNil: [
-		controlCheckBox state: (self macro shortcut hasFlags: 16) ].
-	altCheckBox ifNotNil: [
-		altCheckBox state: (self macro shortcut hasFlags: 32) ].
-	shiftCheckBox ifNotNil: [
-		shiftCheckBox state: (self macro shortcut hasFlags: 8) ]
+	shortcutTextPresenter ifNotNil: [ shortcutTextPresenter setTextSilently: self macro shortcut text ].
+	commandCheckBox ifNotNil: [ commandCheckBox state: (self macro shortcut hasFlags: 64) ].
+	controlCheckBox ifNotNil: [ controlCheckBox state: (self macro shortcut hasFlags: 16) ].
+	altCheckBox ifNotNil: [ altCheckBox state: (self macro shortcut hasFlags: 32) ].
+	shiftCheckBox ifNotNil: [ shiftCheckBox state: (self macro shortcut hasFlags: 8) ]
 ]
 
 { #category : 'replay' }
@@ -499,6 +492,9 @@ ReplayMacroEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 	(#('Control modifier' 'Action control' 'Shortcut control') includes: aPresenterName) ifTrue: [ ^ controlCheckBox ].
 	(#('Alt modifier' 'Action alt option' 'Shortcut alt option') includes: aPresenterName) ifTrue: [ ^ altCheckBox ].
 	(#('Shift modifier' 'Action shift' 'Shortcut shift') includes: aPresenterName) ifTrue: [ ^ shiftCheckBox ].
+	shortcutTextPresenter ifNotNil: [
+		(aPresenterName beginsWith: 'Shortcut ') ifTrue: [
+			^ shortcutTextPresenter replayPresenterAt: aPresenterName ifAbsent: absentBlock ] ].
 	aPresenterName = 'Macro context' ifTrue: [ ^ contextDropList ].
 	aPresenterName = 'Installation status' ifTrue: [ ^ installationStatusPresenter ].
 	aPresenterName = 'Conflict status' ifTrue: [ ^ conflictStatusPresenter ].
