@@ -45,11 +45,13 @@ ReplayShortcutKeysPresenter class >> defaultLayout [
 		expand: false;
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
-			vAlignCenter;
-			add: #keyList;
+			vAlignStart;
+			add: (SpBoxLayout newTopToBottom
+				add: #keyList height: 90;
+				yourself);
 			add: #removeKeyButton width: 40;
 			yourself)
-		height: 90;
+		expand: false;
 		yourself
 ]
 
