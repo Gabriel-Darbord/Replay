@@ -261,6 +261,29 @@ ReplayRecorderTest >> testRecorderDiscardsPendingAltShortcutWhenKeystrokeProduce
 ]
 
 { #category : 'tests' }
+ReplayRecorderTest >> testRecorderDiscardsPendingEnterKeyPressWhenKeystrokeProducesText [
+
+	| root target recorder hand previousFocus action |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self keyboardEventType: #keyDown character: Character cr buttons: 0 hand: hand).
+		recorder recordEvent: (self keyboardEventType: #keystroke character: Character cr buttons: 0 hand: hand).
+		self assert: recorder actions size equals: 1.
+		action := recorder actions first.
+		self assert: action class equals: ReplayType.
+		self assert: action text equals: Character cr asString ]
+
+		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
 ReplayRecorderTest >> testRecorderFlushesPendingAltShortcutWhenRecordingEnds [
 
 	| root target recorder hand previousFocus recorded action |
@@ -323,6 +346,39 @@ ReplayRecorderTest >> testRecorderIgnoresMouseEventsInsideIgnoredMorph [
 ]
 
 { #category : 'tests' }
+ReplayRecorderTest >> testRecorderIgnoresMouseEventsInsideSpecPopover [
+
+	| root popover target recorder hand |
+	root := Morph new extent: 200 @ 100.
+	popover := SpPopoverMorph new bounds: (20 @ 10 extent: 80 @ 50).
+	target := Morph new bounds: (5 @ 5 extent: 30 @ 20).
+	popover addMorph: target.
+	root addMorph: popover.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	[
+		recorder recordEvent: (self mouseButtonEventType: #mouseDown position: 30 @ 20 which: MouseEvent redButton buttons: MouseEvent redButton hand: hand).
+		recorder recordEvent: (self mouseButtonEventType: #mouseUp position: 30 @ 20 which: MouseEvent redButton buttons: 0 hand: hand).
+		self assert: recorder actions isEmpty ]
+		ensure: [ recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderIgnoresMouseUpWithoutRecordedMouseDown [
+
+	| root target recorder hand |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	[
+		recorder recordEvent: (self mouseButtonEventType: #mouseUp position: 25 @ 15 which: MouseEvent redButton buttons: 0 hand: hand).
+		self assert: recorder actions isEmpty ]
+		ensure: [ recorder manager close ]
+]
+
+{ #category : 'tests' }
 ReplayRecorderTest >> testRecorderInsertsDelayBetweenActionsWhenTimingIsPreserved [
 	| times recorder actions |
 	times := OrderedCollection withAll: #(1000 2500).
@@ -370,6 +426,31 @@ ReplayRecorderTest >> testRecorderRecordsDeleteTextForBackspace [
 		self assert: action class equals: ReplayDeleteText.
 		self assert: action direction equals: #backward.
 		self assert: action count equals: 1.
+		self assert: action uiReference isKeyboardFocus ]
+
+		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderRecordsEnterKeyDownAsPressKeyWhenKeyUpArrives [
+
+	| root target recorder hand previousFocus action |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self keyboardEventType: #keyDown character: Character cr buttons: 0 hand: hand).
+		self assert: recorder actions isEmpty.
+		recorder recordEvent: (self keyboardEventType: #keyUp character: Character cr buttons: 0 hand: hand).
+		action := recorder actions first.
+		self assert: action class equals: ReplayPressKey.
+		self assert: action keySelector equals: #enter.
+		self assert: action flags equals: 0.
 		self assert: action uiReference isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
