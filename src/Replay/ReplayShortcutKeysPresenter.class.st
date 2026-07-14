@@ -14,7 +14,8 @@ Class {
 		'keyList',
 		'removeKeyButton',
 		'captureShortcutButton',
-		'captureListener'
+		'captureListener',
+		'clearKeysButton'
 	],
 	#category : 'Replay-Editing',
 	#package : 'Replay',
@@ -25,34 +26,35 @@ Class {
 ReplayShortcutKeysPresenter class >> defaultLayout [
 
 	^ SpBoxLayout newTopToBottom
-		spacing: 6;
-		add: (SpBoxLayout newLeftToRight
-			spacing: 8;
-			vAlignCenter;
-			add: 'Add key:' expand: false;
-			add: #keyDropList width: 160;
-			add: #addKeyButton width: 40;
-			add: #captureShortcutButton expand: false;
-			yourself)
-		expand: false;
-		add: (SpBoxLayout newLeftToRight
-			spacing: 8;
-			vAlignCenter;
-			add: 'Add character:' expand: false;
-			add: #characterTextPresenter;
-			add: #addCharacterButton width: 40;
-			yourself)
-		expand: false;
-		add: (SpBoxLayout newLeftToRight
-			spacing: 8;
-			vAlignStart;
-			add: (SpBoxLayout newTopToBottom
-				add: #keyList height: 90;
-				yourself);
-			add: #removeKeyButton width: 40;
-			yourself)
-		expand: false;
-		yourself
+		  spacing: 6;
+		  add: (SpBoxLayout newLeftToRight
+				   spacing: 8;
+				   vAlignCenter;
+				   add: 'Add key:' expand: false;
+				   add: #keyDropList width: 110;
+				   add: #addKeyButton width: 40;
+				   add: 'Add character:' expand: false;
+				   add: #characterTextPresenter width: 170;
+				   add: #addCharacterButton width: 40;
+				   add: #captureShortcutButton width: 190;
+				   yourself)
+		  expand: false;
+		  add: (SpBoxLayout newLeftToRight
+				   spacing: 8;
+				   vAlignStart;
+				   add: (SpBoxLayout newTopToBottom
+						    add: #keyList height: 81;
+						    yourself);
+				   add: (SpBoxLayout newTopToBottom
+						    spacing: 4;
+						    vAlignStart;
+						    add: #removeKeyButton height: 37;
+						    add: #clearKeysButton height: 37;
+						    yourself)
+				   width: 40;
+				   yourself)
+		  expand: false;
+		  yourself
 ]
 
 { #category : 'accessing' }
@@ -156,6 +158,21 @@ ReplayShortcutKeysPresenter >> characterTextPresenter [
 	^ characterTextPresenter
 ]
 
+{ #category : 'actions' }
+ReplayShortcutKeysPresenter >> clearCharacters [
+
+	self text ifEmpty: [ ^ self ].
+	self shortcut text: ''.
+	self refreshKeyList.
+	self notifyChanged
+]
+
+{ #category : 'accessing' }
+ReplayShortcutKeysPresenter >> clearKeysButton [
+
+	^ clearKeysButton
+]
+
 { #category : 'private' }
 ReplayShortcutKeysPresenter >> displayStringForCharacter: aCharacter [
 
@@ -183,13 +200,11 @@ ReplayShortcutKeysPresenter >> initializePresenters [
 		items: self class keyChoices;
 		display: [ :association | association value ].
 	keyDropList items ifNotEmpty: [ keyDropList selectItem: keyDropList items first ].
-
 	addKeyButton := self newButton
 		icon: (self iconNamed: #add);
 		help: 'Add the selected special key to the shortcut sequence.';
 		action: [ self addSelectedKey ];
 		yourself.
-
 	characterTextPresenter := self newText.
 	characterTextPresenter help: 'Type printable character(s) to append to the shortcut sequence.'.
 	addCharacterButton := self newButton
@@ -197,23 +212,26 @@ ReplayShortcutKeysPresenter >> initializePresenters [
 		help: 'Add the typed character(s) to the shortcut sequence.';
 		action: [ self addCharacterText ];
 		yourself.
-
-	keyList := self newList.
-	keyList display: [ :character | self displayStringForCharacter: character ].
-
+	keyList := self newTable.
+	keyList
+		addColumn: (SpStringTableColumn title: 'Characters' evaluated: [ :character | self displayStringForCharacter: character ]);
+		beResizable.
 	removeKeyButton := self newButton
-		icon: (self iconNamed: #trash);
+		icon: (self iconNamed: #remove);
 		help: 'Delete the selected character from the shortcut sequence.';
 		action: [ self removeSelectedCharacter ];
 		yourself.
-
+	clearKeysButton := self newButton
+		icon: (self iconNamed: #delete);
+		help: 'Delete every character from the shortcut sequence.';
+		action: [ self clearCharacters ];
+		yourself.
 	captureShortcutButton := self newButton
-		icon: (self iconNamed: #record);
-		label: 'Set from next shortcut';
-		help: 'Click, then press a shortcut. The next shortcut replaces the current sequence and modifiers.';
+		label: 'Capture shortcut';
+		help: 'Click, then press a shortcut to replace the current sequence and modifiers. Click again to cancel listening.';
 		action: [ self startShortcutCapture ];
 		yourself.
-
+	self updateCaptureShortcutButtonLabel.
 	self refreshKeyList
 ]
 
@@ -281,6 +299,7 @@ ReplayShortcutKeysPresenter >> registerReplayPresentersOn: anEditor named: aPref
 	anEditor registerReplayPresenter: characterTextPresenter named: aPrefix , ' character text'.
 	anEditor registerReplayPresenter: addCharacterButton named: aPrefix , ' add character button'.
 	anEditor registerReplayPresenter: removeKeyButton named: aPrefix , ' remove key button'.
+	anEditor registerReplayPresenter: clearKeysButton named: aPrefix , ' clear keys button'.
 	anEditor registerReplayPresenter: captureShortcutButton named: aPrefix , ' capture shortcut button'
 ]
 
@@ -314,6 +333,7 @@ ReplayShortcutKeysPresenter >> replayPresenterAt: aPresenterName ifAbsent: absen
 	aPresenterName = 'Shortcut character text' ifTrue: [ ^ characterTextPresenter ].
 	aPresenterName = 'Shortcut add character button' ifTrue: [ ^ addCharacterButton ].
 	aPresenterName = 'Shortcut remove key button' ifTrue: [ ^ removeKeyButton ].
+	aPresenterName = 'Shortcut clear keys button' ifTrue: [ ^ clearKeysButton ].
 	aPresenterName = 'Shortcut capture shortcut button' ifTrue: [ ^ captureShortcutButton ].
 	^ absentBlock value
 ]
@@ -334,12 +354,28 @@ ReplayShortcutKeysPresenter >> shortcut [
 { #category : 'actions' }
 ReplayShortcutKeysPresenter >> startShortcutCapture [
 
-	captureListener ifNotNil: [ captureListener stop ].
+	| hand |
+	captureListener ifNotNil: [
+		self stopShortcutCapture.
+		^ self ].
+	hand := World activeHand.
+	hand ifNil: [ ^ self ].
 	captureListener := ReplayShortcutCaptureListener
-		onHand: World activeHand
+		onHand: hand
 		do: [ :capturedShortcut |
 			self useShortcut: capturedShortcut.
-			captureListener := nil ]
+			captureListener := nil.
+			self updateCaptureShortcutButtonLabel ].
+	self updateCaptureShortcutButtonLabel
+]
+
+{ #category : 'actions' }
+ReplayShortcutKeysPresenter >> stopShortcutCapture [
+
+	captureListener ifNotNil: [
+		captureListener stop.
+		captureListener := nil ].
+	self updateCaptureShortcutButtonLabel
 ]
 
 { #category : 'accessing' }
@@ -354,6 +390,15 @@ ReplayShortcutKeysPresenter >> text: aString [
 	self shortcut text: aString.
 	self refreshKeyList.
 	self notifyChanged
+]
+
+{ #category : 'updating' }
+ReplayShortcutKeysPresenter >> updateCaptureShortcutButtonLabel [
+
+	captureShortcutButton ifNil: [ ^ self ].
+	captureShortcutButton label: (captureListener
+		ifNil: [ 'Capture shortcut' ]
+		ifNotNil: [ 'Listening...' ])
 ]
 
 { #category : 'actions' }

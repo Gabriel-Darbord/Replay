@@ -184,6 +184,36 @@ ReplayMacroTest >> testInstalledTextEditorMacroRunsThroughMorphDispatcher [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroContextAvailableContextsKeepIndividualFallbackContexts [
+
+	| contexts everywhere simpleList |
+	contexts := ReplayMacroContext availableContexts.
+	everywhere := contexts detect: [ :context | context identifier = #anywhere ].
+	simpleList := contexts detect: [ :context | context identifier = #SimpleHierarchicalList ] ifNone: [ nil ].
+	self assert: everywhere displayName equals: 'Everywhere'.
+	(KMRepository default categories includesKey: #SimpleHierarchicalList) ifTrue: [
+		self assert: simpleList notNil.
+		self assert: simpleList categoryNames asArray equals: { #SimpleHierarchicalList } ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroContextDefaultContextsExposeAnyContext [
+
+	| contexts anyContext textContext |
+	contexts := ReplayMacroContext defaultContexts.
+	anyContext := contexts detect: [ :context | context identifier = #anywhere ].
+	textContext := contexts detect: [ :context | context identifier = #textEditors ].
+	self assert: anyContext displayName equals: 'Everywhere'.
+	self assert: (anyContext categoryNames includes: #RubTextEditor).
+	self assert: (anyContext categoryNames includes: #MorphCtrlNavigation).
+	self assert: (anyContext categoryNames includes: #WindowShortcuts).
+	self deny: (anyContext categoryNames anySatisfy: [ :categoryName |
+		categoryName asString beginsWith: 'Replay' ]).
+	self assert: textContext displayName equals: 'Text editors'.
+	self assert: textContext categoryNames asArray equals: { #RubTextEditor }
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroContextDefaultContextsExposeUserFacingChoices [
 
 	| contexts textContext codeContext morphicContext windowContext |
@@ -299,7 +329,7 @@ ReplayMacroTest >> testMacroDetectsFindConflictInTextEditorContext [
 { #category : 'tests' }
 ReplayMacroTest >> testMacroEditorActiveContextStatusNamesFocusedConflict [
 
-	| morph macro editor status |
+	| morph macro editor status help |
 	morph := Morph new.
 	morph kmDispatcher reset.
 	morph attachKeymapCategory: #RubTextEditor.
@@ -312,9 +342,86 @@ ReplayMacroTest >> testMacroEditorActiveContextStatusNamesFocusedConflict [
 		scenario: ReplayScenario new.
 	editor := ReplayMacroEditor on: macro.
 	status := editor activeContextStatusTextForMorph: morph.
+	help := editor activeContextHelpTextForMorph: morph.
 
+	self assert: (status includesSubstring: 'Current keyboard focus contexts').
 	self assert: (status includesSubstring: 'Text editor').
-	self assert: (status includesSubstring: 'conflict')
+	self assert: (status includesSubstring: 'conflict').
+	self assert: (help includesSubstring: 'not from the scenario').
+	self assert: (help includesSubstring: 'Text editor')
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorAddsAndRemovesInstallContexts [
+
+	| macro editor textContext morphicContext |
+	macro := ReplayMacro named: 'Context macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	editor := ReplayMacroEditor on: macro.
+	textContext := editor contextDropList items detect: [ :context | context identifier = #textEditors ].
+	morphicContext := editor contextDropList items detect: [ :context | context identifier = #morphicNavigation ].
+	editor contextDropList selectItem: textContext.
+	editor addSelectedContext.
+	self assert: macro contextNames asArray equals: { #RubTextEditor }.
+	self assert: editor contextList items asArray equals: { #RubTextEditor }.
+	editor contextDropList selectItem: morphicContext.
+	editor addSelectedContext.
+	self assert: (macro contextNames includes: #MorphCtrlNavigation).
+	self assert: editor contextClearButton notNil.
+	editor contextList selectItem: #RubTextEditor.
+	editor removeSelectedContext.
+	self deny: (macro contextNames includes: #RubTextEditor).
+	self assert: editor contextList items asArray equals: { #MorphCtrlNavigation }.
+	editor clearContexts.
+	self assert: macro contextNames isEmpty.
+	self assert: editor contextList items isEmpty
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorAddsAnywhereInstallContext [
+
+	| macro editor anyContext |
+	macro := ReplayMacro named: 'Everywhere macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	editor := ReplayMacroEditor on: macro.
+	anyContext := editor contextDropList items detect: [ :context | context identifier = #anywhere ].
+	editor contextDropList selectItem: anyContext.
+	editor addSelectedContext.
+	self assert: (macro contextNames includes: #RubTextEditor).
+	self assert: (macro contextNames includes: #MorphCtrlNavigation).
+	self assert: (macro contextNames includes: #WindowShortcuts).
+	self assert: (editor contextList items includes: #RubTextEditor).
+	self deny: (macro contextNames anySatisfy: [ :categoryName |
+		categoryName asString beginsWith: 'Replay' ])
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorBottomButtonsUseActionIcons [
+
+	| snapshot macro editor |
+	snapshot := ReplayMacro installedKeymapEntries copy.
+	ReplayMacro uninstallAllInstalledKeymaps.
+	macro := ReplayMacro
+		         named: 'Button icon macro'
+		         shortcut: (ReplayShortcut new
+				          text: 'b';
+				          addFlags: 16;
+				          yourself)
+		         scenario: ReplayScenario new.
+	macro
+		identifier: 'button-icon-macro-test';
+		contextNames: { #RubTextEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	[
+		self assert: editor editScenarioButton icon equals: (editor iconNamed: #edit).
+		self assert: editor runMacroButton icon equals: (editor iconNamed: #go).
+		self assert: editor macroInstallationButton icon equals: (editor iconNamed: #accept).
+		editor installMacro.
+		self assert: editor macroInstallationButton icon equals: (editor iconNamed: #cancel).
+		editor uninstallMacro.
+		self assert: editor macroInstallationButton icon equals: (editor iconNamed: #accept) ] ensure: [
+			macro uninstall.
+			ReplayMacro uninstallAllInstalledKeymaps.
+			snapshot do: [ :association | association key addKeymapEntry: association value ] ]
 ]
 
 { #category : 'tests' }
@@ -328,16 +435,21 @@ ReplayMacroTest >> testMacroEditorBuildsAndRefreshesConflicts [
 		contextNames: { #RubSmalltalkEditor };
 		yourself.
 	editor := ReplayMacroEditor on: macro.
-
 	self assert: editor conflictList notNil.
 	self assert: editor contextDropList notNil.
+	self assert: editor contextAddButton notNil.
+	self assert: editor contextList notNil.
+	self assert: editor contextRemoveButton notNil.
+	self assert: editor contextList items asArray equals: { #RubSmalltalkEditor }.
 	self assert: editor conflictStatusPresenter notNil.
+	self assert: editor conflictWarningIconPresenter notNil.
 	self assert: editor shortcutTextPresenter notNil.
 	self assert: editor commandCheckBox notNil.
 	self assert: editor controlCheckBox notNil.
 	self assert: editor altCheckBox notNil.
 	self assert: editor shiftCheckBox notNil.
 	self assert: editor conflictList items notEmpty.
+	self assert: editor conflictWarningIconPresenter isVisible.
 	self assert: (editor conflictStatusPresenter label includesSubstring: 'conflict')
 ]
 
@@ -380,6 +492,113 @@ ReplayMacroTest >> testMacroEditorConflictStatusNamesConflictingContexts [
 	editor := ReplayMacroEditor on: macro.
 
 	self assert: (editor conflictStatusPresenter label includesSubstring: 'Text editor')
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorDisablesInstallUntilBindingAndContext [
+
+	| macro editor |
+	macro := ReplayMacro named: 'Editor install requirements macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	editor := ReplayMacroEditor on: macro.
+
+	self deny: editor macroInstallationButton isEnabled.
+	self assert: (editor macroInstallationButton help includesSubstring: 'key binding').
+	self assert: editor keyBindingRequirementIconPresenter image equals: (editor iconNamed: #cancel).
+	self assert: editor contextRequirementIconPresenter image equals: (editor iconNamed: #cancel).
+
+	macro shortcut text: 'r'.
+	editor macroChanged.
+	self deny: editor macroInstallationButton isEnabled.
+	self assert: (editor macroInstallationButton help includesSubstring: 'install context').
+	self assert: editor keyBindingRequirementIconPresenter image equals: (editor iconNamed: #accept).
+	self assert: editor contextRequirementIconPresenter image equals: (editor iconNamed: #cancel).
+
+	macro contextNames: { #RubTextEditor }.
+	editor macroChanged.
+	self assert: editor macroInstallationButton isEnabled.
+	self assert: (editor macroInstallationButton help includesSubstring: 'Install macro').
+	self assert: editor keyBindingRequirementIconPresenter image equals: (editor iconNamed: #accept).
+	self assert: editor contextRequirementIconPresenter image equals: (editor iconNamed: #accept)
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorInstallActiveContextClearsUnmatchedSelectedContext [
+
+	| morph macro editor selectedContext |
+	morph := Morph new.
+	morph kmDispatcher reset.
+	morph attachKeymapCategory: #RubTextEditor.
+	morph attachKeymapCategory: #MorphCtrlNavigation.
+	macro := ReplayMacro named: 'Active context macro' shortcut: (ReplayShortcut new text: 'g'; addFlags: 16; yourself) scenario: ReplayScenario new.
+	macro identifier: 'editor-active-context-clear-selection-test'.
+	editor := ReplayMacroEditor on: macro.
+	self assert: editor macroInstallationButton label equals: 'Install macro'.
+	self assert: editor installActiveContextButton label equals: 'Install focused contexts'.
+	self assert: (editor installActiveContextButton help includesSubstring: 'current Pharo keyboard focus').
+	selectedContext := editor contextDropList items first.
+	editor contextDropList selectItem: selectedContext.
+	self assert: editor contextDropList selectedItem equals: selectedContext.
+
+	[
+		editor installInActiveContextForMorph: morph.
+		self assert: editor contextDropList selectedItem isNil.
+		self assert: (editor contextList items includes: #RubTextEditor).
+		self assert: (editor contextList items includes: #MorphCtrlNavigation).
+		self assert: (editor installationStatusPresenter label includesSubstring: 'Installed in:') ]
+
+		ensure: [
+			macro uninstall.
+			morph delete ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorInstallDoesNotInstallWithoutBinding [
+
+	| snapshot macro editor |
+	snapshot := ReplayMacro installedKeymapEntries copy.
+	ReplayMacro uninstallAllInstalledKeymaps.
+	macro := ReplayMacro named: 'Editor no binding macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	macro contextNames: { #RubTextEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	[
+		editor installMacro.
+		self deny: (macro installedInContextNamed: #RubTextEditor).
+		self deny: editor macroInstallationButton isEnabled ] ensure: [
+			macro uninstall.
+			ReplayMacro uninstallAllInstalledKeymaps.
+			snapshot do: [ :association | association key addKeymapEntry: association value ] ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorInstallationButtonWidthFitsUninstallLabel [
+
+	| snapshot macro editor buttonMorph |
+	snapshot := ReplayMacro installedKeymapEntries copy.
+	ReplayMacro uninstallAllInstalledKeymaps.
+	macro := ReplayMacro
+		         named: 'Wide install button macro'
+		         shortcut: (ReplayShortcut new
+				          text: 'w';
+				          addFlags: 16;
+				          yourself)
+		         scenario: ReplayScenario new.
+	macro
+		identifier: 'wide-install-button-test';
+		contextNames: { #RubTextEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	[
+		editor build.
+		editor installMacro.
+		buttonMorph := nil.
+		editor macroInstallationButton withAdapterDo: [ :adapter | buttonMorph := adapter widget ].
+		self assert: editor macroInstallationButton label equals: 'Uninstall macro'.
+		self assert: buttonMorph extent x >= 125.
+		self assert: buttonMorph extent x <= 140 ] ensure: [
+			macro uninstall.
+			ReplayMacro uninstallAllInstalledKeymaps.
+			snapshot do: [ :association | association key addKeymapEntry: association value ] ]
 ]
 
 { #category : 'tests' }
@@ -440,13 +659,7 @@ ReplayMacroTest >> testMacroEditorInstallsTextFieldActiveContextForTextEditorDis
 ReplayMacroTest >> testMacroEditorMovesInstalledMacroWhenContextChanges [
 
 	| macro editor codeContext |
-	macro := ReplayMacro
-		named: 'Context macro'
-		shortcut: (ReplayShortcut new
-			text: 'f';
-			addFlags: 16;
-			yourself)
-		scenario: ReplayScenario new.
+	macro := ReplayMacro named: 'Context macro' shortcut: (ReplayShortcut new text: 'f'; addFlags: 16; yourself) scenario: ReplayScenario new.
 	macro
 		identifier: 'editor-context-move-test';
 		contextNames: { #RubTextEditor }.
@@ -457,6 +670,10 @@ ReplayMacroTest >> testMacroEditorMovesInstalledMacroWhenContextChanges [
 		self assert: (macro installedInContextNamed: #RubTextEditor).
 		codeContext := editor contextDropList items detect: [ :context | context identifier = #smalltalkEditors ].
 		editor contextDropList selectItem: codeContext.
+		editor addSelectedContext.
+		self assert: (macro installedInContextNamed: #RubSmalltalkEditor).
+		editor contextList selectItem: #RubTextEditor.
+		editor removeSelectedContext.
 		self deny: (macro installedInContextNamed: #RubTextEditor).
 		self assert: (macro installedInContextNamed: #RubSmalltalkEditor) ]
 
@@ -479,6 +696,21 @@ ReplayMacroTest >> testMacroEditorReusesShortcutModifierTargets [
 	self assert: (editor replayPresenterAt: 'Action command' ifAbsent: [ nil ]) == editor commandCheckBox.
 	self assert: (editor replayPresenterAt: 'Command modifier' ifAbsent: [ nil ]) == editor commandCheckBox.
 	self assert: (editor replayPresenterAt: 'Shortcut alt option' ifAbsent: [ nil ]) == editor altCheckBox
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorSelectsNextContextAfterRemoval [
+
+	| macro editor |
+	macro := ReplayMacro named: 'Context selection macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	macro contextNames: { #RubTextEditor. #WindowShortcuts. #MorphCtrlNavigation }.
+	editor := ReplayMacroEditor on: macro.
+
+	editor contextList selectIndex: 2.
+	editor removeSelectedContext.
+
+	self assert: editor contextList items asArray equals: { #RubTextEditor. #MorphCtrlNavigation }.
+	self assert: editor contextList selectedItem equals: #MorphCtrlNavigation
 ]
 
 { #category : 'tests' }
@@ -507,26 +739,21 @@ ReplayMacroTest >> testMacroEditorShowsConflictsInAllKnownContexts [
 ReplayMacroTest >> testMacroEditorShowsContextualInstallationButton [
 
 	| macro editor |
-	macro := ReplayMacro
-		named: 'Find macro'
-		shortcut: (ReplayShortcut new
-			text: 'f';
-			addFlags: 16;
-			yourself)
-		scenario: ReplayScenario new.
+	macro := ReplayMacro named: 'Find macro' shortcut: (ReplayShortcut new text: 'f'; addFlags: 16; yourself) scenario: ReplayScenario new.
 	macro
 		identifier: 'editor-contextual-install-button-test';
 		contextNames: { #RubTextEditor }.
 	editor := ReplayMacroEditor on: macro.
 
 	[
-		self assert: editor macroInstallationButton label equals: 'Install'.
+		self assert: editor macroInstallationButton label equals: 'Install macro'.
 		editor toggleMacroInstallation.
 		self assert: (macro installedInContextNamed: #RubTextEditor).
-		self assert: editor macroInstallationButton label equals: 'Uninstall'.
+		self assert: editor macroInstallationButton label equals: 'Uninstall macro'.
 		editor toggleMacroInstallation.
 		self deny: (macro installedInContextNamed: #RubTextEditor).
-		self assert: editor macroInstallationButton label equals: 'Install' ]
+		self assert: editor macroInstallationButton label equals: 'Install macro' ]
+
 		ensure: [ macro uninstall ]
 ]
 
@@ -558,13 +785,33 @@ ReplayMacroTest >> testMacroEditorShowsLibraryInternalConflicts [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroEditorShowsNoConflictsWithoutInstallContexts [
+
+	| keymap macro editor category |
+	category := KMRepository default categoryForName: #RubSmalltalkEditor.
+	keymap := category allEntries keymaps anyOne.
+	macro := ReplayMacro new
+		         shortcut: (ReplayShortcut fromKeymap: keymap);
+		         contextNames: #(  );
+		         yourself.
+	editor := ReplayMacroEditor on: macro.
+
+	self assert: editor contextList items isEmpty.
+	self assert: editor conflictList items isEmpty.
+	self assert: (editor conflictStatusIconNameFor: editor conflicts) equals: #accept.
+	self assert: editor conflictWarningIconPresenter isVisible.
+	self assert: editor conflictWarningIconPresenter image equals: (editor iconNamed: #accept)
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroEditorShowsNoContextStatusInitially [
 
 	| editor |
 	editor := ReplayMacroEditor new.
 
 	self assert: editor conflictList items isEmpty.
-	self assert: editor conflictStatusPresenter label equals: 'Enter shortcut keys to check known contexts.'
+	self assert: editor conflictStatusPresenter label equals: ''.
+	self assert: (editor conflictStatusPresenter help includesSubstring: 'install contexts')
 ]
 
 { #category : 'tests' }
@@ -600,6 +847,80 @@ ReplayMacroTest >> testMacroEditorShowsStoredShortcut [
 	self deny: editor controlCheckBox state.
 	self deny: editor altCheckBox state.
 	self deny: editor shiftCheckBox state
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorSummarizesInstalledContextsWithFullHelp [
+
+	| macro editor |
+	macro := ReplayMacro
+		named: 'Many context macro'
+		shortcut: (ReplayShortcut new
+			text: 'm';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'editor-installed-context-summary-test';
+		contextNames: { #RubTextEditor. #MorphCtrlNavigation. #WindowShortcuts }.
+	editor := ReplayMacroEditor on: macro.
+
+	[
+		macro install.
+		editor updateInstallationStatus.
+		self assert: (editor installationStatusPresenter label includesSubstring: '+1 more').
+		self assert: (editor installationStatusPresenter help includesSubstring: 'Text editor').
+		self assert: (editor installationStatusPresenter help includesSubstring: 'Morphic navigation').
+		self assert: (editor installationStatusPresenter help includesSubstring: 'Windows').
+		self deny: (editor installationStatusPresenter help includesSubstring: '+1 more') ]
+		ensure: [ macro uninstall ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorSummarizesManyActiveContexts [
+
+	| editor summary fullSummary |
+	editor := ReplayMacroEditor on: ReplayMacro new.
+	summary := editor activeContextSummaryForCategoryNames: #(MorphCtrlNavigation MorphFocusNavigation RubTextEditor).
+	fullSummary := editor activeContextFullSummaryForCategoryNames: #(MorphCtrlNavigation MorphFocusNavigation RubTextEditor).
+
+	self assert: (summary includesSubstring: '+1 more').
+	self assert: (fullSummary includesSubstring: 'Morph focus navigation').
+	self assert: (fullSummary includesSubstring: 'Text editor').
+	self deny: (fullSummary includesSubstring: '+1 more')
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorUpdatesInstallationStatusHelpAfterInstall [
+
+	| snapshot macro editor |
+	snapshot := ReplayMacro installedKeymapEntries copy.
+	ReplayMacro uninstallAllInstalledKeymaps.
+	macro := ReplayMacro
+		named: 'Help macro'
+		shortcut: (ReplayShortcut new
+			text: 'h';
+			addFlags: 16;
+			yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'editor-help-update-test';
+		contextNames: { #RubTextEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	[
+		self assert: editor installationStatusPresenter help equals: 'No installed contexts.'.
+		editor installMacro.
+		self assert: (editor installationStatusPresenter label includesSubstring: 'Installed in:').
+		self assert: (editor installationStatusPresenter help includesSubstring: 'Installed in:').
+		self assert: (editor installationStatusPresenter help includesSubstring: 'Text editor').
+		editor uninstallMacro.
+		self assert: editor installationStatusPresenter label equals: 'Not installed.'.
+		self assert: editor installationStatusPresenter help equals: 'No installed contexts.' ]
+		ensure: [
+			macro uninstall.
+			ReplayMacro uninstallAllInstalledKeymaps.
+			snapshot do: [ :association | association key addKeymapEntry: association value ] ]
 ]
 
 { #category : 'tests' }
@@ -684,6 +1005,27 @@ ReplayMacroTest >> testMacroEditorUpdatesShortcutText [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroEditorUsesAcceptIconWithoutConflicts [
+
+	| macro editor |
+	macro := ReplayMacro
+		         named: 'No conflict macro'
+		         shortcut: (ReplayShortcut new
+				          text: 'z';
+				          addFlags: 16;
+				          yourself)
+		         scenario: ReplayScenario new.
+	macro contextNames: { #RubTextEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	self assert: editor conflictList items isEmpty.
+	self assert: (editor conflictStatusIconNameFor: editor conflicts) equals: #accept.
+	self assert: editor conflictWarningIconPresenter isVisible.
+	self assert: editor conflictWarningIconPresenter image equals: (editor iconNamed: #accept).
+	self assert: (editor conflictWarningIconPresenter help includesSubstring: 'No shortcut conflicts')
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroEditorUsesMacroContexts [
 
 	| editor textContext |
@@ -695,21 +1037,52 @@ ReplayMacroTest >> testMacroEditorUsesMacroContexts [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroEditorUsesQuestionIconWithoutBinding [
+
+	| macro editor |
+	macro := ReplayMacro named: 'No binding macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	macro contextNames: { #RubTextEditor }.
+	editor := ReplayMacroEditor on: macro.
+
+	self assert: (editor conflictStatusIconNameFor: editor conflicts) equals: #smallQuestion.
+	self assert: editor conflictWarningIconPresenter isVisible.
+	self assert: editor conflictWarningIconPresenter image equals: (editor iconNamed: #smallQuestion).
+	self assert: (editor conflictWarningIconPresenter help includesSubstring: 'Enter a key binding')
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroEditorUsesShortcutKeysPresenter [
 
 	| macro editor |
-	macro := ReplayMacro
-		named: 'Branch macro'
-		shortcut: (ReplayShortcut new
-			text: (String with: (Character arrowRight));
-			addFlags: 64;
-			yourself)
-		scenario: ReplayScenario new.
+	macro := ReplayMacro named: 'Branch macro' shortcut: (ReplayShortcut new text: (String with: (Character arrowRight)); addFlags: 64; yourself) scenario: ReplayScenario new.
 	editor := ReplayMacroEditor on: macro.
+	self assert: editor keyBindingLabelPresenter label equals: 'Key binding:'.
+	self assert: (editor keyBindingLabelPresenter help includesSubstring: 'trigger').
 	self assert: editor shortcutTextPresenter class equals: ReplayShortcutKeysPresenter.
 	self assert: editor shortcutTextPresenter text equals: macro shortcut text.
 	self assert: editor shortcutTextPresenter keyList items asArray equals: { (Character arrowRight) }.
+	self assert: (editor replayPresenterAt: 'Key binding' ifAbsent: [ nil ]) identicalTo: editor shortcutTextPresenter.
+	self assert: (editor replayPresenterAt: 'Shortcut keys' ifAbsent: [ nil ]) identicalTo: editor shortcutTextPresenter.
 	self assert: (editor replayPresenterAt: 'Shortcut key list' ifAbsent: [ nil ]) identicalTo: editor shortcutTextPresenter keyList
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroEditorUsesWarningIconWithConflicts [
+
+	| keymap macro editor category |
+	category := KMRepository default categoryForName: #RubSmalltalkEditor.
+	keymap := category allEntries keymaps anyOne.
+	macro := ReplayMacro new
+		         shortcut: (ReplayShortcut fromKeymap: keymap);
+		         contextNames: { #RubSmalltalkEditor };
+		         yourself.
+	editor := ReplayMacroEditor on: macro.
+
+	self assert: editor conflictList items notEmpty.
+	self assert: (editor conflictStatusIconNameFor: editor conflicts) equals: #warning.
+	self assert: editor conflictWarningIconPresenter isVisible.
+	self assert: editor conflictWarningIconPresenter image equals: (editor iconNamed: #warning).
+	self assert: (editor conflictWarningIconPresenter help includesSubstring: 'shortcut conflicts')
 ]
 
 { #category : 'tests' }
@@ -823,6 +1196,35 @@ ReplayMacroTest >> testMacroInstallReplacesOwnKeymapInCategory [
 	self assert: ownKeymaps size equals: 1.
 	self assert: ownKeymaps anyOne identicalTo: secondKeymap.
 	self assert: secondKeymap shortcut asString equals: 'Cmd + D'
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroInstallRequiresKeyBindingAndContexts [
+
+	| snapshot macro |
+	snapshot := ReplayMacro installedKeymapEntries copy.
+	ReplayMacro uninstallAllInstalledKeymaps.
+	macro := ReplayMacro named: 'Install requirements macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+
+	[
+		macro contextNames: { #RubTextEditor }.
+		self deny: macro canInstall.
+		self assert: macro install isEmpty.
+		self deny: (macro installedInContextNamed: #RubTextEditor).
+
+		macro shortcut text: 'r'.
+		macro contextNames: #(  ).
+		self deny: macro canInstall.
+		self assert: macro install isEmpty.
+		self deny: (macro installedInContextNamed: #RubTextEditor).
+
+		macro contextNames: { #RubTextEditor }.
+		self assert: macro canInstall.
+		self deny: macro install isEmpty.
+		self assert: (macro installedInContextNamed: #RubTextEditor) ] ensure: [
+			macro uninstall.
+			ReplayMacro uninstallAllInstalledKeymaps.
+			snapshot do: [ :association | association key addKeymapEntry: association value ] ]
 ]
 
 { #category : 'tests' }
@@ -984,7 +1386,12 @@ ReplayMacroTest >> testMacroLibraryEditorBuilds [
 	self assert: editor macroList isNotNil.
 	self assert: editor macroEditorPane isNotNil.
 	self assert: editor toolbar isNotNil.
-	self assert: editor macroList items size equals: 1
+	self assert: editor macroList items size equals: 1.
+	self assert: editor installedMacroSummaryText equals: '0 / 1 macros'.
+	self assert: editor installedKeymapSummaryText equals: '0 keymaps'.
+	self deny: editor installationSummaryPresenter help equals: editor installedKeymapSummaryPresenter help.
+	self assert: (editor installationSummaryPresenter help includesSubstring: 'Installed macros').
+	self assert: (editor installedKeymapSummaryPresenter help includesSubstring: 'Replay keymaps')
 ]
 
 { #category : 'tests' }
@@ -1042,6 +1449,27 @@ ReplayMacroTest >> testMacroLibraryEditorClearsInstalledReplayKeymaps [
 		ensure: [
 			ReplayMacro uninstallAllInstalledKeymaps.
 			snapshot do: [ :association | association key addKeymapEntry: association value ] ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorImportsSingleMacroFromSTON [
+
+	| library editor macro imported |
+	library := ReplayMacroLibrary new.
+	editor := ReplayMacroLibraryEditor on: library.
+	macro := ReplayMacro
+		named: 'Imported macro'
+		shortcut: (ReplayShortcut new text: 'r'; addFlags: 16; yourself)
+		scenario: ReplayScenario new.
+	macro
+		identifier: 'single-macro-import-test';
+		contextNames: { #RubTextEditor }.
+	imported := editor importMacroFromString: (STON toString: macro).
+	self assert: library macros size equals: 1.
+	self assert: imported name equals: 'Imported macro'.
+	self assert: imported shortcut text equals: 'r'.
+	self assert: imported contextNames asArray equals: { #RubTextEditor }.
+	self assert: editor selectedMacro identicalTo: imported
 ]
 
 { #category : 'tests' }
@@ -1108,6 +1536,22 @@ ReplayMacroTest >> testMacroLibraryEditorOpensWithUnmappedShortcutCharacter [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorPluralizesSummaryLabels [
+
+	| editor library macro |
+	library := ReplayMacroLibrary new.
+	editor := ReplayMacroLibraryEditor on: library.
+	self assert: editor installedMacroSummaryText equals: '0 / 0 macros'.
+	self assert: (editor pluralSuffixFor: 0) equals: 's'.
+	self assert: (editor pluralSuffixFor: 1) equals: ''.
+	self assert: (editor pluralSuffixFor: 2) equals: 's'.
+	macro := ReplayMacro named: 'Only macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	library addMacro: macro.
+	editor refreshFromLibrary.
+	self assert: editor installedMacroSummaryText equals: '0 / 1 macros'
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroLibraryEditorRemoveSelectedMacroUninstallsIt [
 
 	| library macro editor |
@@ -1126,7 +1570,7 @@ ReplayMacroTest >> testMacroLibraryEditorRemoveSelectedMacroUninstallsIt [
 		editor macroList selectItem: macro.
 		editor removeSelectedMacro.
 		self deny: (macro installedInContextNamed: #RubTextEditor).
-		self assert: editor installationSummaryPresenter label equals: 'Installed macros: 0 / 0. Replay keymaps in image: 0.' ]
+		self assert: editor installationSummaryPresenter label equals: '0 / 0 macros' ]
 		ensure: [ macro uninstall ]
 ]
 
@@ -1162,6 +1606,23 @@ ReplayMacroTest >> testMacroLibraryEditorRemovesUnselectedMacro [
 	self assert: library macros size equals: 1.
 	self assert: library macros first identicalTo: second.
 	self assert: editor selectedMacro identicalTo: second
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorRenamesDuplicateImportedMacroIdentifier [
+
+	| library editor first second imported |
+	library := ReplayMacroLibrary new.
+	editor := ReplayMacroLibraryEditor on: library.
+	first := ReplayMacro named: 'First macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	first identifier: 'duplicate-import-id-test'.
+	library addMacro: first.
+	second := ReplayMacro named: 'Second macro' shortcut: ReplayShortcut new scenario: ReplayScenario new.
+	second identifier: 'duplicate-import-id-test'.
+	imported := editor importMacroFromString: (STON toString: second).
+	self assert: library macros size equals: 2.
+	self deny: imported identifier equals: first identifier.
+	self assert: imported name equals: 'Second macro'
 ]
 
 { #category : 'tests' }
@@ -1659,19 +2120,17 @@ ReplayMacroTest >> testMacroUpdateInstalledKeymapAfterRename [
 
 	| category macro keymap |
 	category := KMRepository default categoryForName: #ReplayMacroRenameInstallTest.
-	macro := ReplayMacro
-		named: 'Before rename'
-		shortcut: (ReplayShortcut fromShortcut: $s command)
-		scenario: ReplayScenario new.
-	macro identifier: 'rename-install-test'.
+	macro := ReplayMacro named: 'Before rename' shortcut: (ReplayShortcut fromShortcut: $s command) scenario: ReplayScenario new.
+	macro
+		identifier: 'rename-install-test';
+		contextNames: { category name }.
 	[
 		macro installInCategory: category.
 		macro name: 'After rename'.
 		macro updateInstalledKeymaps.
 		keymap := category allEntries keymaps detect: [ :each | macro isOwnKeymap: each ].
 		self assert: keymap description equals: 'Replay macro: After rename'.
-		self assert: (category allEntries keymaps count: [ :each | macro isOwnKeymap: each ]) equals: 1 ]
-		ensure: [ macro uninstall ]
+		self assert: (category allEntries keymaps count: [ :each | macro isOwnKeymap: each ]) equals: 1 ] ensure: [ macro uninstall ]
 ]
 
 { #category : 'tests' }
@@ -1679,18 +2138,44 @@ ReplayMacroTest >> testMacroUpdateInstalledKeymapAfterShortcutChange [
 
 	| category macro keymap |
 	category := KMRepository default categoryForName: #ReplayMacroUpdateInstallTest.
-	macro := ReplayMacro
-		named: 'Save macro'
-		shortcut: (ReplayShortcut fromShortcut: $s command)
-		scenario: ReplayScenario new.
-	macro identifier: 'update-install-test'.
+	macro := ReplayMacro named: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command) scenario: ReplayScenario new.
+	macro
+		identifier: 'update-install-test';
+		contextNames: { category name }.
 	[
 		macro installInCategory: category.
 		macro shortcut: (ReplayShortcut fromShortcut: $d command).
 		macro updateInstalledKeymaps.
 		keymap := category allEntries keymaps detect: [ :each | macro isOwnKeymap: each ].
-		self assert: keymap shortcut asString equals: 'Cmd + D' ]
-		ensure: [ macro uninstall ]
+		self assert: keymap shortcut asString equals: 'Cmd + D' ] ensure: [ macro uninstall ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroUpdateInstalledKeymapsUninstallsWhenBindingRemoved [
+
+	| snapshot macro |
+	snapshot := ReplayMacro installedKeymapEntries copy.
+	ReplayMacro uninstallAllInstalledKeymaps.
+	macro := ReplayMacro
+		         named: 'Invalidate installed macro'
+		         shortcut: (ReplayShortcut new
+				          text: 'i';
+				          addFlags: 16;
+				          yourself)
+		         scenario: ReplayScenario new.
+	macro
+		identifier: 'macro-invalid-install-test';
+		contextNames: { #RubTextEditor }.
+
+	[
+		macro install.
+		self assert: (macro installedInContextNamed: #RubTextEditor).
+		macro shortcut text: ''.
+		macro updateInstalledKeymaps.
+		self deny: (macro installedInContextNamed: #RubTextEditor) ] ensure: [
+			macro uninstall.
+			ReplayMacro uninstallAllInstalledKeymaps.
+			snapshot do: [ :association | association key addKeymapEntry: association value ] ]
 ]
 
 { #category : 'tests' }
@@ -1840,7 +2325,12 @@ ReplayMacroTest >> testShortcutKeysPresenterAddsAndRemovesKeys [
 	presenter keyList selectIndex: 1.
 	presenter removeSelectedCharacter.
 	self assert: shortcut text equals: 'k'.
-	self assert: changes equals: 3
+	self assert: changes equals: 3.
+	self assert: presenter clearKeysButton notNil.
+	presenter clearCharacters.
+	self assert: shortcut text equals: ''.
+	self assert: presenter keyList items isEmpty.
+	self assert: changes equals: 4
 ]
 
 { #category : 'tests' }
@@ -1850,13 +2340,16 @@ ReplayMacroTest >> testShortcutKeysPresenterCapturesNextShortcut [
 	shortcut := ReplayShortcut new text: 'z'; yourself.
 	presenter := ReplayShortcutKeysPresenter on: shortcut.
 	event := ReplayShortcut new keyDown: $a buttons: 64.
+	self assert: presenter captureShortcutButton label equals: 'Capture shortcut'.
 	presenter startShortcutCapture.
+	self assert: presenter captureShortcutButton label equals: 'Listening...'.
 	listener := presenter captureListener.
 	self assert: listener isActive.
 	listener handleListenEvent: event.
 	self assert: shortcut text equals: 'a'.
 	self assert: shortcut flags equals: 64.
-	self assert: presenter captureListener isNil
+	self assert: presenter captureListener isNil.
+	self assert: presenter captureShortcutButton label equals: 'Capture shortcut'
 ]
 
 { #category : 'tests' }
@@ -1870,7 +2363,7 @@ ReplayMacroTest >> testShortcutKeysPresenterHasIconControls [
 	self deny: presenter addCharacterButton icon isNil.
 	self deny: presenter removeKeyButton icon isNil.
 	self assert: (presenter removeKeyButton help includesSubstring: 'Delete').
-	self assert: presenter captureShortcutButton label equals: 'Set from next shortcut'
+	self assert: presenter captureShortcutButton label equals: 'Capture shortcut'
 ]
 
 { #category : 'tests' }

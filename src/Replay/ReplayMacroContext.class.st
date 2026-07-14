@@ -16,18 +16,28 @@ Class {
 }
 
 { #category : 'defaults' }
+ReplayMacroContext class >> anywhereContext [
+
+	^ self
+		identifier: #anywhere
+		displayName: 'Everywhere'
+		categoryNames: self installableCategoryNames
+		conflictCategoryNames: self installableCategoryNames
+]
+
+{ #category : 'defaults' }
 ReplayMacroContext class >> availableContexts [
 
 	| contexts knownCategoryNames fallbackContexts |
 	contexts := self defaultContexts copy.
-	knownCategoryNames := (contexts flatCollect: [ :context | context categoryNames ]) asSet.
+	knownCategoryNames := ((contexts reject: [ :context | context isComposite ])
+		flatCollect: [ :context | context categoryNames ]) asSet.
 	fallbackContexts := KMRepository default categories values
 		select: [ :category |
-			category allEntries keymaps notEmpty
-				and: [ (knownCategoryNames includes: category name) not ] ]
+			category allEntries keymaps notEmpty and: [
+				(knownCategoryNames includes: category name) not ] ]
 		thenCollect: [ :category | self forCategory: category ].
-	contexts addAll: (fallbackContexts sorted: [ :first :second |
-		first displayName < second displayName ]).
+	contexts addAll: (fallbackContexts sorted: [ :first :second | first displayName <= second displayName ]).
 	^ contexts
 ]
 
@@ -94,23 +104,12 @@ ReplayMacroContext class >> conflictCategoryNamesForCategoryNames: aCollection [
 ReplayMacroContext class >> defaultContexts [
 
 	^ {
-		self
-			identifier: #textEditors
-			displayName: 'Text editors'
-			categoryNames: { #RubTextEditor }.
-		self
-			identifier: #smalltalkEditors
-			displayName: 'Smalltalk code editors'
-			categoryNames: { #RubSmalltalkEditor }
-			conflictCategoryNames: { #RubSmalltalkEditor. #RubTextEditor }.
-		self
-			identifier: #morphicNavigation
-			displayName: 'Morphic navigation'
-			categoryNames: { #MorphCtrlNavigation }.
-		self
-			identifier: #windows
-			displayName: 'Windows'
-			categoryNames: { #WindowShortcuts } } asOrderedCollection
+		self anywhereContext.
+		self identifier: #textEditors displayName: 'Text editors' categoryNames: { #RubTextEditor }.
+		self identifier: #smalltalkEditors displayName: 'Smalltalk code editors' categoryNames: { #RubSmalltalkEditor } conflictCategoryNames: { #RubSmalltalkEditor. #RubTextEditor }.
+		self identifier: #morphicNavigation displayName: 'Morphic navigation' categoryNames: { #MorphCtrlNavigation }.
+		self identifier: #windows displayName: 'Windows' categoryNames: { #WindowShortcuts } }
+		asOrderedCollection
 ]
 
 { #category : 'instance creation' }
@@ -152,6 +151,18 @@ ReplayMacroContext class >> identifier: aSymbol displayName: aString categoryNam
 		categoryNames: categoryCollection;
 		conflictCategoryNames: conflictCollection;
 		yourself
+]
+
+{ #category : 'defaults' }
+ReplayMacroContext class >> installableCategoryNames [
+
+	| names |
+	names := KMRepository default categories values
+		select: [ :category |
+			category allEntries keymaps notEmpty and: [
+				(category name asString beginsWith: 'Replay') not ] ]
+		thenCollect: [ :category | category name ].
+	^ (names asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
 ]
 
 { #category : 'detecting' }
@@ -226,6 +237,12 @@ ReplayMacroContext >> identifier [
 ReplayMacroContext >> identifier: aSymbol [
 
 	identifier := aSymbol
+]
+
+{ #category : 'testing' }
+ReplayMacroContext >> isComposite [
+
+	^ self identifier = #anywhere
 ]
 
 { #category : 'testing' }

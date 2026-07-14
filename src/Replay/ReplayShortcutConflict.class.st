@@ -27,7 +27,7 @@ ReplayShortcutConflict class >> displayNameForCategoryName: aSymbol [
 
 	| knownContext technical readable |
 	knownContext := ReplayMacroContext defaultContexts
-		detect: [ :context | context categoryNames includes: aSymbol ]
+		detect: [ :context | context isComposite not and: [ context categoryNames includes: aSymbol ] ]
 		ifNone: [ nil ].
 	knownContext ifNotNil: [ ^ knownContext displayName ].
 	technical := aSymbol asString.

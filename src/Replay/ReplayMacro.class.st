@@ -95,6 +95,12 @@ ReplayMacro >> addContextNamed: aSymbol [
 	(self contextNames includes: aSymbol) ifFalse: [ self contextNames add: aSymbol ]
 ]
 
+{ #category : 'testing' }
+ReplayMacro >> canInstall [
+
+	^ self hasKeyBinding and: [ self hasInstallContexts ]
+]
+
 { #category : 'conflicts' }
 ReplayMacro >> conflictCategories [
 
@@ -156,6 +162,18 @@ ReplayMacro >> contextNames: aCollection [
 	contextNames := aCollection asOrderedCollection
 ]
 
+{ #category : 'testing' }
+ReplayMacro >> hasInstallContexts [
+
+	^ self contextNames notEmpty
+]
+
+{ #category : 'testing' }
+ReplayMacro >> hasKeyBinding [
+
+	^ self shortcut text notEmpty
+]
+
 { #category : 'accessing' }
 ReplayMacro >> identifier [
 
@@ -171,14 +189,15 @@ ReplayMacro >> identifier: aString [
 { #category : 'keymapping' }
 ReplayMacro >> install [
 
-	^ self contextNames collect: [ :contextName |
-		self installInContextNamed: contextName ]
+	self canInstall ifFalse: [ ^ #(  ) ].
+	^ self contextNames collect: [ :contextName | self installInContextNamed: contextName ]
 ]
 
 { #category : 'keymapping' }
 ReplayMacro >> installInCategory: aKMCategory [
 
 	| keymap |
+	self hasKeyBinding ifFalse: [ ^ nil ].
 	self removeOwnKeymapsFromCategory: aKMCategory.
 	self removeLegacyConflictingKeymapsFromCategory: aKMCategory.
 	keymap := self keymap.
@@ -348,9 +367,10 @@ ReplayMacro >> updateInstalledKeymaps [
 	| installedCategories targetCategories |
 	installedCategories := self installedCategories asOrderedCollection.
 	installedCategories ifNotEmpty: [
-		targetCategories := self contextNames
-			ifEmpty: [ installedCategories ]
-			ifNotEmpty: [ self contextCategories ].
-		installedCategories do: [ :category | self uninstallFromCategory: category ].
-		targetCategories do: [ :category | self installInCategory: category ] ]
+			self canInstall ifFalse: [
+					installedCategories do: [ :category | self uninstallFromCategory: category ].
+					^ self ].
+			targetCategories := self contextCategories.
+			installedCategories do: [ :category | self uninstallFromCategory: category ].
+			targetCategories do: [ :category | self installInCategory: category ] ]
 ]

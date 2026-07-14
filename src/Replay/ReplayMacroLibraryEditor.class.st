@@ -14,7 +14,10 @@ Class {
 		'startupPolicyPresenter',
 		'startupPolicyIconPresenter',
 		'startupPolicyStatusPresenter',
-		'startupPolicyButton'
+		'startupPolicyButton',
+		'installedMacroIconPresenter',
+		'installedKeymapIconPresenter',
+		'installedKeymapSummaryPresenter'
 	],
 	#category : 'Replay-Macros',
 	#package : 'Replay',
@@ -60,6 +63,17 @@ ReplayMacroLibraryEditor class >> openDefault [
 	^ (self onRegistry: ReplayMacroRegistry default) open
 ]
 
+{ #category : 'tools' }
+ReplayMacroLibraryEditor >> addImportedMacro: aReplayMacro [
+
+	self ensureImportedMacroHasUniqueIdentifier: aReplayMacro.
+	self library addMacro: aReplayMacro.
+	self refreshFromLibrary.
+	macroList ifNotNil: [
+		macroList selectIndex: (self library macros indexOf: aReplayMacro) ].
+	^ aReplayMacro
+]
+
 { #category : 'actions' }
 ReplayMacroLibraryEditor >> addMacro [
 
@@ -101,6 +115,17 @@ ReplayMacroLibraryEditor >> connectPresenters [
 ]
 
 { #category : 'tools' }
+ReplayMacroLibraryEditor >> copySelectedMacro [
+
+	self selectedMacro
+		ifNil: [ self uiManager inform: 'Select a macro to copy.' ]
+		ifNotNil: [ :macro |
+			Clipboard
+				clipboardText: (STON toString: macro)
+				informing: 'Macro copied to clipboard!' ]
+]
+
+{ #category : 'tools' }
 ReplayMacroLibraryEditor >> currentRegistry [
 
 	^ registry ifNil: [ registry := ReplayMacroRegistry new library: self library; yourself ]
@@ -112,20 +137,38 @@ ReplayMacroLibraryEditor >> defaultLayout [
 	^ SpBoxLayout newTopToBottom
 		spacing: 8;
 		add: self toolbar expand: false;
-		add: installationSummaryPresenter expand: false;
 		add: (SpBoxLayout newLeftToRight
-			spacing: 8;
+			spacing: 20;
 			vAlignCenter;
-			add: startupPolicyButton expand: false;
-			add: startupPolicyStatusPresenter expand: false;
+			add: (SpBoxLayout newLeftToRight
+				spacing: 6;
+				vAlignCenter;
+				add: installedMacroIconPresenter expand: false;
+				add: installationSummaryPresenter width: 130;
+				yourself) expand: false;
+			add: (SpBoxLayout newLeftToRight
+				spacing: 6;
+				vAlignCenter;
+				add: installedKeymapIconPresenter expand: false;
+				add: installedKeymapSummaryPresenter width: 120;
+				yourself) expand: false;
+			add: (SpBoxLayout newLeftToRight
+				spacing: 8;
+				vAlignCenter;
+				add: startupPolicyButton width: 145;
+				add: startupPolicyStatusPresenter width: 120;
+				yourself) expand: false;
 			yourself)
 		expand: false;
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
 			add: macroList withConstraints: [ :c | c width: 300 ];
-			add: (SpBoxLayout newLeftToRight
-				add: macroEditorPane
-				withConstraints: [ :c | c padding: 10 ];
+			add: (SpScrollableLayout new
+				vAlignStart;
+				hAlignStart;
+				child: (SpBoxLayout newLeftToRight
+					add: macroEditorPane withConstraints: [ :c | c padding: 10 ];
+					yourself);
 				yourself);
 			yourself);
 		yourself
@@ -163,6 +206,16 @@ ReplayMacroLibraryEditor >> enableStartupInstallation [
 ]
 
 { #category : 'tools' }
+ReplayMacroLibraryEditor >> ensureImportedMacroHasUniqueIdentifier: aReplayMacro [
+
+	| importedIdentifier identifierExists |
+	importedIdentifier := aReplayMacro identifier.
+	identifierExists := self library macros anySatisfy: [ :macro |
+		macro identifier = importedIdentifier ].
+	identifierExists ifTrue: [ aReplayMacro identifier: UUID new asString ]
+]
+
+{ #category : 'tools' }
 ReplayMacroLibraryEditor >> importLibrary [
 
 	(self uiManager
@@ -172,12 +225,35 @@ ReplayMacroLibraryEditor >> importLibrary [
 		self library: (STON fromString: string) ]
 ]
 
+{ #category : 'tools' }
+ReplayMacroLibraryEditor >> importMacro [
+
+	(self uiManager
+		request: 'Paste the STON string of one macro to add it to this library.'
+		initialAnswer: ''
+		title: 'Import Macro') ifNotEmpty: [ :string |
+			self importMacroFromString: string ]
+]
+
+{ #category : 'tools' }
+ReplayMacroLibraryEditor >> importMacroFromString: aString [
+
+	| importedMacro |
+	importedMacro := STON fromString: aString.
+	(importedMacro isKindOf: ReplayMacro) ifFalse: [
+		self error: 'Expected a ReplayMacro STON string.' ].
+	^ self addImportedMacro: importedMacro
+]
+
 { #category : 'initialization' }
 ReplayMacroLibraryEditor >> initializePresenters [
 
 	macroList := SpEditableListPresenter new.
 	macroList items: self library macros.
+	installedMacroIconPresenter := self newImage.
 	installationSummaryPresenter := self newLabel.
+	installedKeymapIconPresenter := self newImage.
+	installedKeymapSummaryPresenter := self newLabel.
 	startupPolicyIconPresenter := self newImage.
 	startupPolicyPresenter := self newLabel.
 	startupPolicyStatusPresenter := self newPresenter
@@ -201,7 +277,7 @@ ReplayMacroLibraryEditor >> initializePresenters [
 ReplayMacroLibraryEditor >> initializeWindow: aWindow [
 
 	aWindow title: 'Macro Library Editor'.
-	aWindow initialExtent: 1000 @ 600
+	aWindow initialExtent: 1200 @ 720
 ]
 
 { #category : 'actions' }
@@ -210,6 +286,12 @@ ReplayMacroLibraryEditor >> installAllMacros [
 	self library install.
 	self refreshMacroEditorStatus.
 	self updateInstallationSummary
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> installationSummaryHelpText [
+
+	^ 'Installed macros are the macros currently registered as keyboard shortcuts. Replay keymaps are keymap entries currently installed in the image.'
 ]
 
 { #category : 'accessing' }
@@ -221,13 +303,44 @@ ReplayMacroLibraryEditor >> installationSummaryPresenter [
 { #category : 'updating' }
 ReplayMacroLibraryEditor >> installationSummaryText [
 
-	^ 'Installed macros: '
-		, self library installedMacroCount asString
+	^ self installedMacroSummaryText , '. ' , self installedKeymapSummaryText
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> installedKeymapSummaryHelpText [
+
+	^ 'Replay keymaps are keyboard shortcut entries currently installed in the image.'
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibraryEditor >> installedKeymapSummaryPresenter [
+
+	^ installedKeymapSummaryPresenter
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> installedKeymapSummaryText [
+
+	| keymapCount |
+	keymapCount := ReplayMacro installedKeymapCount.
+	^ keymapCount asString
+		, ' keymap'
+		, (self pluralSuffixFor: keymapCount)
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> installedMacroSummaryHelpText [
+
+	^ 'Installed macros are macros from this library that are currently registered as keyboard shortcuts.'
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> installedMacroSummaryText [
+
+	^ self library installedMacroCount asString
 		, ' / '
 		, self library macros size asString
-		, '. Replay keymaps in image: '
-		, ReplayMacro installedKeymapCount asString
-		, '.'
+		, ' macros'
 ]
 
 { #category : 'accessing' }
@@ -266,6 +379,14 @@ ReplayMacroLibraryEditor >> macroEditorPresenter [
 ReplayMacroLibraryEditor >> macroList [
 
 	^ macroList
+]
+
+{ #category : 'formatting' }
+ReplayMacroLibraryEditor >> pluralSuffixFor: aNumber [
+
+	^ aNumber = 1
+		ifTrue: [ '' ]
+		ifFalse: [ 's' ]
 ]
 
 { #category : 'updating' }
@@ -443,19 +564,29 @@ ReplayMacroLibraryEditor >> toolbar [
 	^ self newToolbar
 		addStyle: 'stToolbar';
 		add: (self newToolbarButton
-			label: 'Copy';
+			label: 'Copy library';
 			icon: (self iconNamed: #smallCopy);
-			help: 'Copy the current macro library as a clipboard STON string.';
+			help: 'Copy current macro library to the clipboard as a STON string.';
 			action: [ self saveLibrary ]);
 		add: (self newToolbarButton
-			label: 'Import';
+			label: 'Import library';
 			icon: (self iconNamed: #smallLoadProject);
-			help: 'Import a macro library from a clipboard STON string.';
+			help: 'Replace current macro library from a clipboard STON string.';
 			action: [ self importLibrary ]);
+		add: (self newToolbarButton
+			label: 'Copy macro';
+			icon: (self iconNamed: #scriptManager);
+			help: 'Copy the selected macro to the clipboard as a STON string.';
+			action: [ self copySelectedMacro ]);
+		add: (self newToolbarButton
+			label: 'Import macro';
+			icon: (self iconNamed: #smallLoadProject);
+			help: 'Add one macro from a clipboard STON string.';
+			action: [ self importMacro ]);
 		add: (self newToolbarButton
 			label: 'Save file';
 			icon: (self iconNamed: #save);
-			help: 'Save the current macro library to the default Replay macro file.';
+			help: 'Save current macro library to the default Replay macro file.';
 			action: [ self saveDefaultFile ]);
 		add: (self newToolbarButton
 			label: 'Load file';
@@ -475,7 +606,7 @@ ReplayMacroLibraryEditor >> toolbar [
 		add: (self newToolbarButton
 			label: 'Clear all installs';
 			icon: (self iconNamed: #smallCancel);
-			help: 'Remove every installed Replay macro keymap, including stale entries not present in this library.';
+			help: 'Remove every installed Replay macro keymap, including stale entries not present in the library.';
 			action: [ self clearInstalledReplayMacros ]);
 		yourself
 ]
@@ -491,8 +622,25 @@ ReplayMacroLibraryEditor >> uninstallAllMacros [
 { #category : 'updating' }
 ReplayMacroLibraryEditor >> updateInstallationSummary [
 
+	| macroHelpText keymapHelpText |
+	macroHelpText := self installedMacroSummaryHelpText.
+	keymapHelpText := self installedKeymapSummaryHelpText.
+	installedMacroIconPresenter ifNotNil: [
+		installedMacroIconPresenter
+			image: (self iconNamed: #scriptManager);
+			help: macroHelpText ].
 	installationSummaryPresenter ifNotNil: [
-		installationSummaryPresenter label: self installationSummaryText ]
+		installationSummaryPresenter
+			label: self installedMacroSummaryText;
+			help: macroHelpText ].
+	installedKeymapIconPresenter ifNotNil: [
+		installedKeymapIconPresenter
+			image: (self iconNamed: #objects);
+			help: keymapHelpText ].
+	installedKeymapSummaryPresenter ifNotNil: [
+		installedKeymapSummaryPresenter
+			label: self installedKeymapSummaryText;
+			help: keymapHelpText ]
 ]
 
 { #category : 'updating' }

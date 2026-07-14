@@ -239,6 +239,12 @@ ReplayRecorder >> ignoresShortcutText: aString flags: anInteger [
 ]
 
 { #category : 'testing' }
+ReplayRecorder >> isModifierOnlyShortcutEvent: anEvent [
+
+	^ (self modifierFlagsFrom: anEvent) ~= 0 and: [ anEvent keyValue = 0 ]
+]
+
+{ #category : 'testing' }
 ReplayRecorder >> isNullShortcutText: aString [
 
 	^ aString isEmpty or: [
@@ -616,13 +622,14 @@ ReplayRecorder >> scrollDirectionFrom: anEvent [
 ReplayRecorder >> shortcutFromEvent: anEvent [
 
 	| text |
+	(self isModifierOnlyShortcutEvent: anEvent) ifTrue: [ ^ nil ].
 	text := self shortcutTextFrom: anEvent.
 	(self isNullShortcutText: text) ifTrue: [ ^ nil ].
 	^ ReplayShortcut new
-		reference: self keyboardFocusReference;
-		flags: (self modifierFlagsFrom: anEvent);
-		text: text;
-		yourself
+		  reference: self keyboardFocusReference;
+		  flags: (self modifierFlagsFrom: anEvent);
+		  text: text;
+		  yourself
 ]
 
 { #category : 'events' }

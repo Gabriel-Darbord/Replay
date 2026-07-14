@@ -188,6 +188,23 @@ ReplayRecorderTest >> testRecorderCanRecordActionsWithoutTiming [
 ]
 
 { #category : 'tests' }
+ReplayRecorderTest >> testRecorderCapturesControlShortcutWithKeyValue [
+
+	| event recorder shortcut |
+	recorder := ReplayRecorder new.
+	event := KeyboardEvent new
+		         setType: #keyDown
+		         buttons: UserInputEvent ctrlKeyMask
+		         position: 0 @ 0
+		         keyValue: 12
+		         hand: nil
+		         stamp: 0.
+	shortcut := recorder shortcutFromEvent: event.
+	self assert: shortcut text equals: 'l'.
+	self assert: shortcut flags equals: UserInputEvent ctrlKeyMask
+]
+
+{ #category : 'tests' }
 ReplayRecorderTest >> testRecorderCoalescesTypedCharactersForFocusedTarget [
 	| root target recorder hand previousFocus action |
 	root := Morph new extent: 200 @ 100.
@@ -306,6 +323,21 @@ ReplayRecorderTest >> testRecorderFlushesPendingAltShortcutWhenRecordingEnds [
 		self assert: action flags equals: UserInputEvent altKeyMask ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderIgnoresModifierOnlyShortcutEvent [
+
+	| event recorder |
+	recorder := ReplayRecorder new.
+	event := KeyboardEvent new
+		         setType: #keyDown
+		         buttons: UserInputEvent ctrlKeyMask
+		         position: 0 @ 0
+		         keyValue: 0
+		         hand: nil
+		         stamp: 0.
+	self assert: (recorder shortcutFromEvent: event) isNil
 ]
 
 { #category : 'tests' }
