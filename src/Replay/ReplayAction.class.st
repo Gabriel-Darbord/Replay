@@ -1,6 +1,5 @@
 "
-I am responsible for executing a specific configurable task.
-An action is part of a `ReplayStep`.
+I am the abstract root of executable Replay scenario actions. Subclasses carry editable action state and know how to run themselves in a ReplayRunner.
 "
 Class {
 	#name : 'ReplayAction',
@@ -25,7 +24,7 @@ ReplayAction class >> actionsForMenu [
 { #category : 'editing' }
 ReplayAction class >> actionsThatOpenUI [
 
-	^ ReplayOpenUI selectActions: [ :action | true ]
+	^ self selectActions: [ :action | action new isUIOpener ]
 ]
 
 { #category : 'accessing' }
@@ -69,6 +68,14 @@ ReplayAction >> controlsRunnerContinuation [
 	"Answer whether this action will explicitly continue the runner later."
 
 	^ false
+]
+
+{ #category : 'recording' }
+ReplayAction >> copyWithoutRecordedTiming [
+	| copy |
+	copy := self copy.
+	copy removeRecordedTiming.
+	^ copy
 ]
 
 { #category : 'editing' }
@@ -149,8 +156,18 @@ ReplayAction >> printOn: stream [
 	stream nextPutAll: self class displayName
 ]
 
+{ #category : 'recording' }
+ReplayAction >> removeRecordedTiming [
+	"Subclasses with duration-bearing state can clear it here when recorded timing is stripped."
+]
+
 { #category : 'running' }
 ReplayAction >> runOn: aReplayRunner [
 
 	self subclassResponsibility
+]
+
+{ #category : 'recording' }
+ReplayAction >> shouldRecordWhenTimingStripped [
+	^ true
 ]

@@ -1,0 +1,16 @@
+SmalltalkCISpec {
+  #loading : [
+    SCIMetacelloLoadSpec {
+      #baseline : 'Replay',
+      #directory : 'src',
+      #load : [ 'tests' ],
+      #platforms : [ #pharo ]
+    }
+  ],
+  #testing : {
+    #packages : [
+      'Replay-Tests',
+      'Replay-Demo-Tests'
+    ]
+  }
+}

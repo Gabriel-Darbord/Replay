@@ -1,5 +1,5 @@
 "
-Open a browser on a class.
+I open a system browser focused on a configured class name.
 "
 Class {
 	#name : 'ReplayBrowseClass',
@@ -20,16 +20,22 @@ ReplayBrowseClass >> settingsPresenterOn: editor [
 
 	| presenter |
 	(presenter := editor newList)
-		help: 'Select the class to browse';
+		help: 'Select class browse';
 		items: self class environment allClasses;
 		whenSelectedDo: [ :aClass |
 			self targetClass: aClass.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: presenter named: 'Browse class target'.
 	target
 		ifNil: [ presenter selectFirst ]
-		ifNotNil: [
-		presenter selectItem: self targetClass scrollToSelection: true ].
-	^ presenter
+		ifNotNil: [ presenter selectItem: self targetClass scrollToSelection: true ].
+	^ editor newPresenter
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: presenter;
+				add: (self placementPresenterOn: editor) expand: false;
+				yourself);
+		yourself
 ]
 
 { #category : 'accessing' }

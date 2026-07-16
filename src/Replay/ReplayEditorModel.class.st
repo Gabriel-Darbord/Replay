@@ -1,5 +1,5 @@
 "
-Model for the `ReplayEditor`.
+I hold the mutable scenario editing state used by ReplayEditor, including the current scenario, selected step, and selected action.
 "
 Class {
 	#name : 'ReplayEditorModel',
@@ -9,8 +9,9 @@ Class {
 		'currentStep',
 		'currentAction'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Editing',
+	#package : 'Replay',
+	#tag : 'Editing'
 }
 
 { #category : 'adding' }

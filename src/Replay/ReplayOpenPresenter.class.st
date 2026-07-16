@@ -1,5 +1,5 @@
 "
-Open a presenter using a script.
+I evaluate a script that creates a Spec presenter and opens it as Replay managed UI.
 "
 Class {
 	#name : 'ReplayOpenPresenter',
@@ -76,11 +76,14 @@ ReplayOpenPresenter >> printOn: stream [
 ReplayOpenPresenter >> settingsPresenterOn: editor [
 
 	^ editor newPresenter
-		  layout: (self
-				   scriptPresenterOn: editor
-				   labeled:
-					   'Write the script that creates and returns the Spec presenter:');
-		  yourself
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self
+						scriptPresenterOn: editor
+						labeled: 'Write the script that creates and returns the Spec presenter:');
+				add: (self placementPresenterOn: editor) expand: false;
+				yourself);
+		yourself
 ]
 
 { #category : 'accessing' }

@@ -1,5 +1,5 @@
 "
-Type some text using the keyboard.
+I type configured text into a resolved UI target by sending keystroke events for each character.
 "
 Class {
 	#name : 'ReplayType',
@@ -21,19 +21,22 @@ ReplayType >> runOn: runner onUI: ui [
 	self typeOn: ui
 ]
 
+{ #category : 'running' }
+ReplayType >> runOn: runner resolvedUI: resolvedUI [
+
+	resolvedUI runType: self
+]
+
 { #category : 'editing' }
 ReplayType >> settingsPresenterOn: editor [
 
 	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (self pathPresenterOn: editor) expand: false;
-				   add:
-					   (self
-						    textPresenterOn: editor
-						    labeled: 'Write the text to type:');
-				   yourself);
-		  yourself
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self targetPresenterOn: editor) expand: false;
+				add: (self textPresenterOn: editor labeled: 'Write text to type:');
+				yourself);
+		yourself
 ]
 
 { #category : 'running' }

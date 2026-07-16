@@ -1,5 +1,5 @@
 "
-Open a browser on a method.
+I open a system browser focused on a configured method reference.
 "
 Class {
 	#name : 'ReplayBrowseMethod',
@@ -22,14 +22,22 @@ ReplayBrowseMethod >> settingsPresenterOn: editor [
 	(presenter := SpClassMethodBrowser new)
 		owner: editor;
 		classes: self class environment allClasses.
+	editor registerReplayPresenter: presenter named: 'Browse method browser'.
 
 	methodList := presenter instVarNamed: #methodListPresenter.
+	editor registerReplayPresenter: methodList named: 'Browse method target'.
 	self targetMethod: methodList items first.
 
 	methodList whenSelectedDo: [ :aMethod |
 		self targetMethod: aMethod.
 		editor actions rebuildLayout ].
-	^ presenter
+	^ editor newPresenter
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: presenter;
+				add: (self placementPresenterOn: editor) expand: false;
+				yourself);
+		yourself
 ]
 
 { #category : 'accessing' }

@@ -1,6 +1,5 @@
 "
-I wrap another UI element to make it interactive for editing scenarios.
-This allows scenario developers to manually select the elements with which they want to interact.
+I am a transparent overlay morph wrapped around a managed Morphic child while editing scenarios. I record the child path and expose highlighting and action-creation menus.
 "
 Class {
 	#name : 'ReplayWrapperMorph',
@@ -9,8 +8,9 @@ Class {
 		'index',
 		'wrappedMorph'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Morphs',
+	#package : 'Replay',
+	#tag : 'Morphs'
 }
 
 { #category : 'accessing' }

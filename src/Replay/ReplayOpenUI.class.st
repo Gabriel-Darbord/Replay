@@ -1,5 +1,5 @@
 "
-I am responsible for opening a UI.
+I am the abstract base for actions that create or attach a UI manager for a scenario.
 "
 Class {
 	#name : 'ReplayOpenUI',
@@ -33,13 +33,86 @@ ReplayOpenUI >> bounds: aRectangle [
 	bounds := aRectangle
 ]
 
-{ #category : 'accessing' }
+{ #category : 'editing' }
+ReplayOpenUI >> boundsBottom: aNumber [
+
+	| current |
+	current := self boundsForEditing.
+	self bounds: (current topLeft corner: current right @ aNumber asNumber)
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> boundsForEditing [
+
+	^ self bounds ifNil: [ 100 @ 100 extent: self extentForEditing ]
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> boundsLeft: aNumber [
+
+	| current |
+	current := self boundsForEditing.
+	self bounds: (aNumber asNumber @ current top corner: current bottomRight)
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> boundsPresenterOn: editor [
+
+	| current |
+	current := self boundsForEditing.
+	^ SpBoxLayout newTopToBottom
+		add: 'Bounds:' expand: false;
+		add: (SpBoxLayout newLeftToRight
+				spacing: 8;
+				add: 'Left' expand: false;
+				add: (self numberPresenterOn: editor named: 'bounds left' value: current left update: [ :number |
+						self boundsLeft: number ]);
+				add: 'Top' expand: false;
+				add: (self numberPresenterOn: editor named: 'bounds top' value: current top update: [ :number |
+						self boundsTop: number ]);
+				yourself)
+		expand: false;
+		add: (SpBoxLayout newLeftToRight
+				spacing: 8;
+				add: 'Right' expand: false;
+				add: (self numberPresenterOn: editor named: 'bounds right' value: current right update: [ :number |
+						self boundsRight: number ]);
+				add: 'Bottom' expand: false;
+				add: (self numberPresenterOn: editor named: 'bounds bottom' value: current bottom update: [ :number |
+						self boundsBottom: number ]);
+				yourself)
+		expand: false;
+		yourself
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> boundsRight: aNumber [
+
+	| current |
+	current := self boundsForEditing.
+	self bounds: (current topLeft corner: aNumber asNumber @ current bottom)
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> boundsTop: aNumber [
+
+	| current |
+	current := self boundsForEditing.
+	self bounds: (current left @ aNumber asNumber corner: current bottomRight)
+]
+
+{ #category : 'editing' }
 ReplayOpenUI >> clearPlacement [
 	"Forget explicit size and placement requests."
 
 	extent := nil.
-	bounds := nil.
-	^ self
+	bounds := nil
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> defaultExtent [
+
+	^ 800 @ 600
 ]
 
 { #category : 'accessing' }
@@ -56,10 +129,87 @@ ReplayOpenUI >> extent: aPoint [
 	extent := aPoint
 ]
 
+{ #category : 'editing' }
+ReplayOpenUI >> extentForEditing [
+
+	^ self extent ifNil: [ self defaultExtent ]
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> extentHeight: aNumber [
+
+	| current |
+	current := self extentForEditing.
+	self extent: current x @ aNumber asNumber
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> extentPresenterOn: editor [
+
+	| current |
+	current := self extentForEditing.
+	^ SpBoxLayout newTopToBottom
+		add: 'Extent:' expand: false;
+		add: (SpBoxLayout newLeftToRight
+				spacing: 8;
+				add: 'Width' expand: false;
+				add: (self numberPresenterOn: editor named: 'extent width' value: current x update: [ :number |
+						self extentWidth: number ]);
+				add: 'Height' expand: false;
+				add: (self numberPresenterOn: editor named: 'extent height' value: current y update: [ :number |
+						self extentHeight: number ]);
+				yourself)
+		expand: false;
+		yourself
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> extentWidth: aNumber [
+
+	| current |
+	current := self extentForEditing.
+	self extent: aNumber asNumber @ current y
+]
+
 { #category : 'testing' }
 ReplayOpenUI >> isUIOpener [
 
 	^ true
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> numberPresenterOn: editor named: targetName value: value update: updateBlock [
+
+	| input |
+	(input := editor newNumberInput)
+		numberType: Float;
+		number: value;
+		whenNumberChangedDo: [ :number |
+			updateBlock value: number.
+			editor actions rebuildLayout ].
+	editor registerReplayPresenter: input named: 'Action ' , targetName.
+	editor registerReplayPresenter: input named: self class displayName , ' ' , targetName.
+	^ input
+]
+
+{ #category : 'editing' }
+ReplayOpenUI >> placementPresenterOn: editor [
+
+	| clearButton |
+	clearButton := editor newButton
+		label: 'Clear placement';
+		action: [
+			self clearPlacement.
+			editor actions rebuildLayout ];
+		yourself.
+	editor registerReplayPresenter: clearButton named: 'Action clear placement'.
+	editor registerReplayPresenter: clearButton named: self class displayName , ' clear placement'.
+	^ SpBoxLayout newTopToBottom
+		spacing: 10;
+		add: (self extentPresenterOn: editor) expand: false;
+		add: (self boundsPresenterOn: editor) expand: false;
+		add: clearButton expand: false;
+		yourself
 ]
 
 { #category : 'running' }

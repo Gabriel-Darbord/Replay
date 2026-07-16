@@ -1,13 +1,14 @@
 "
-Applies to actions that use a string as text.
+I add text storage and editing UI to actions that carry plain string input.
 "
 Trait {
 	#name : 'TReplayActionWithText',
 	#instVars : [
 		'text'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Traits',
+	#package : 'Replay',
+	#tag : 'Traits'
 }
 
 { #category : 'accessing - text' }
@@ -39,9 +40,11 @@ TReplayActionWithText >> textPresenterOn: editor labeled: label [
 		whenTextChangedDo: [ :aString |
 			self text: aString.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: textPresenter named: 'Action text'.
+	editor registerReplayPresenter: textPresenter named: self class displayName , ' text'.
 
 	^ SpBoxLayout newTopToBottom
-		  add: label expand: false;
-		  add: textPresenter;
-		  yourself
+		 add: label expand: false;
+		 add: textPresenter;
+		 yourself
 ]

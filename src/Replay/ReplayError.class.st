@@ -1,3 +1,6 @@
+"
+I am the base exception raised by Replay when a scenario or action cannot run as requested.
+"
 Class {
 	#name : 'ReplayError',
 	#superclass : 'Error',

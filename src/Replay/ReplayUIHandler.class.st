@@ -1,11 +1,12 @@
 "
-I am responsible for interacting with UI.
+I am the abstract base for actions that resolve a target UI element before running.
 "
 Class {
 	#name : 'ReplayUIHandler',
 	#superclass : 'ReplayUIAction',
 	#instVars : [
-		'path'
+		'path',
+		'reference'
 	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
@@ -31,6 +32,11 @@ ReplayUIHandler class >> shouldBeMenuItem [
 ]
 
 { #category : 'testing' }
+ReplayUIHandler >> allowsWorldTarget [
+	^ true
+]
+
+{ #category : 'testing' }
 ReplayUIHandler >> controlsRunnerContinuation [
 
 	^ true
@@ -38,13 +44,20 @@ ReplayUIHandler >> controlsRunnerContinuation [
 
 { #category : 'enumerating' }
 ReplayUIHandler >> findElementIn: aMorph thenDo: aBlock [
-	"Asynchronously wait for the Morph to be built and then find the target element."
+	"Compatibility path for editor highlights that resolve against an explicit Morph."
 
-	^ ReplayUIPathResolver
-		  findPath: (path ifNil: [ #(  ) ])
-		  in: aMorph
-		  thenDo: aBlock
-		  onMissing: [ :error | error signal ]
+	^ (ReplayMorphicResolver on: (ReplayMorphicBackend on: aMorph))
+		resolve: self uiReference
+		thenDo: [ :resolved | aBlock value: resolved morph ]
+		onMissing: [ :error | error signal ]
+]
+
+{ #category : 'testing' }
+ReplayUIHandler >> hasSpecificTarget [
+
+	path ifNotNil: [ ^ true ].
+	reference ifNil: [ ^ false ].
+	^ reference isWorld not
 ]
 
 { #category : 'editing' }
@@ -82,6 +95,27 @@ ReplayUIHandler >> isUIHandler [
 	^ true
 ]
 
+{ #category : 'error handling' }
+ReplayUIHandler >> missingManagerFor: runner [
+
+	ReplayMissingUIError new
+		messageText: 'No Replay UI is available for target ', self uiReference printString, '.';
+		tag: runner;
+		signal
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> missingTargetPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newLeftToRight
+				spacing: 10;
+				add: (self iconNamed: #error) expand: false;
+				add: 'Missing target. Use UI edition view to select one.' expand: false;
+				yourself);
+		yourself
+]
+
 { #category : 'accessing' }
 ReplayUIHandler >> path [
 
@@ -90,123 +124,43 @@ ReplayUIHandler >> path [
 
 { #category : 'accessing' }
 ReplayUIHandler >> path: aCollection [
-	"Path through the owner chain, each element is a child index"
+	"Path through owner chain, each element child index"
 
-	path := aCollection
+	path := aCollection.
+	reference := nil
 ]
 
-{ #category : 'editing' }
-ReplayUIHandler >> pathOkPresenterOn: editor [
-	"When the path is set"
+{ #category : 'accessing' }
+ReplayUIHandler >> reference [
 
-	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   spacing: 10;
-				   add: (self iconNamed: #smallOk) expand: false;
-				   add: 'Target set.' expand: false;
-				   yourself);
-		  yourself
+	^ reference
 ]
 
-{ #category : 'editing' }
-ReplayUIHandler >> pathOrWorldPresenterOn: editor [
-	"Add a button that allows unsetting the path to target the current World."
+{ #category : 'accessing' }
+ReplayUIHandler >> reference: aReplayUIReference [
 
-	| layout pathStatePresenter targetWorldButton |
-	layout := SpBoxLayout newLeftToRight.
-	pathStatePresenter := self pathStatePresenterOn: editor.
-	(targetWorldButton := editor newButton)
-		icon: (self iconNamed: #edit);
-		label: 'Target World';
-		action: [
-			path ifNotNil: [
-					| newPresenter |
-					self targetWorld.
-					layout
-						replace: pathStatePresenter
-						with: (newPresenter := self pathUnsetPresenterOn: editor).
-					editor actionEditor view rebuildLayout.
-					pathStatePresenter := newPresenter ] ].
-
-	^ editor newPresenter
-		  layout: (layout
-				   vAlignStart;
-				   spacing: 10;
-				   add: targetWorldButton expand: false;
-				   add: pathStatePresenter;
-				   yourself);
-		  yourself
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathPresenterOn: editor [
-	"Hook to let actions decide which presenter to use for representing and editing the path."
-
-	^ self pathOrWorldPresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathRequiredPresenterOn: editor [
-	"When the path is not set, indicate it is necessary and explain how to set it."
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   spacing: 10;
-				   add: (self iconNamed: #error) expand: false;
-				   add: 'Missing target. Use the UI edition view to select one.'
-				   expand: false;
-				   yourself);
-		  yourself
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathSetPresenterOn: editor [
-	"Hook to let actions decide which presenter to use when the path is set."
-
-	^ self pathOkPresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathStatePresenterOn: editor [
-	"Use a different presenter whether the path is set or not."
-
-	^ path
-		  ifNil: [ self pathUnsetPresenterOn: editor ]
-		  ifNotNil: [ self pathSetPresenterOn: editor ]
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathUnsetPresenterOn: editor [
-	"Hook to let actions decide which presenter to use when the path is *NOT* set."
-
-	^ self pathWorldPresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> pathWorldPresenterOn: editor [
-	"When the path is not set, inform that the World is targeted."
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   spacing: 10;
-				   add: (self iconNamed: #smallInfo) expand: false;
-				   add:
-					   'Targeting current World. Use the UI edition view to change target.'
-				   expand: false;
-				   yourself);
-		  yourself
+	reference := aReplayUIReference.
+	path := nil
 ]
 
 { #category : 'running' }
 ReplayUIHandler >> runOn: runner [
-	"Has control of runner continuation."
+	"Has control over runner continuation."
 
-	path ifNil: [ ^ self runWithoutPathOn: runner ].
-
-	self findElementIn: runner manager managedUI thenDo: [ :ui |
-		self runOn: runner onUI: ui.
-		"Let Morphic process effects from this action before continuing."
-		self currentWorld defer: [ runner nextAction ] ]
+	| uiReference manager |
+	uiReference := self uiReference.
+	uiReference isWorld ifTrue: [ ^ self runWithoutPathOn: runner ].
+	manager := runner manager.
+	manager ifNil: [ ^ self missingManagerFor: runner ].
+	manager
+		resolve: uiReference
+		forAction: self
+		thenDo: [ :resolved |
+			runner isStopped ifFalse: [
+				self runOn: runner resolvedUI: resolved.
+				"Let UI process action effects before continuing."
+				runner defer: [ runner isStopped ifFalse: [ runner nextAction ] ] ] ]
+		onMissing: [ :error | runner isStopped ifFalse: [ error signal ] ]
 ]
 
 { #category : 'running' }
@@ -216,21 +170,149 @@ ReplayUIHandler >> runOn: runner onUI: ui [
 ]
 
 { #category : 'running' }
+ReplayUIHandler >> runOn: runner resolvedUI: resolvedUI [
+
+	^ self runOn: runner onUI: (resolvedUI morphRequiredFor: self class displayName)
+]
+
+{ #category : 'running' }
 ReplayUIHandler >> runWithoutPathOn: runner [
-	"When path is nil, the default behavior is to target the current World.
-	Has control of runner continuation."
+	"When path nil, default behavior targets current World. Has control runner continuation."
 
 	self runOn: runner onUI: self currentWorld.
+	runner defer: [ runner nextAction ]
+]
 
-	"Await UI process before continuing"
-	self currentWorld defer: [ runner nextAction ]
+{ #category : 'editing' }
+ReplayUIHandler >> semanticTargetPresenterOn: editor [
+
+	| targetNamePresenter |
+	(targetNamePresenter := editor newText)
+		text: self targetName;
+		whenTextChangedDo: [ :aString |
+			self targetName: aString.
+			editor actions rebuildLayout ].
+	editor registerReplayPresenter: targetNamePresenter named: 'Action target name'.
+	editor registerReplayPresenter: targetNamePresenter named: self class displayName , ' target name'.
+
+	^ SpBoxLayout newTopToBottom
+		spacing: 4;
+		add: 'Semantic target name:' expand: false;
+		add: targetNamePresenter expand: false;
+		yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetControlsPresenterOn: editor [
+
+	| layout |
+	layout := SpBoxLayout newLeftToRight
+		vAlignStart;
+		spacing: 10;
+		yourself.
+	self allowsWorldTarget ifTrue: [
+		layout add: (self targetWorldButtonPresenterOn: editor) expand: false ].
+	layout add: (self targetStatePresenterOn: editor) expand: false.
+
+	^ editor newPresenter
+		layout: layout;
+		yourself
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> targetName [
+
+	^ (reference notNil and: [ reference isNamed ])
+		ifTrue: [ reference value ]
+		ifFalse: [ '' ]
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> targetName: aString [
+
+	| trimmed |
+	trimmed := aString
+		ifNil: [ '' ]
+		ifNotNil: [ aString trimBoth ].
+	trimmed
+		ifEmpty: [
+			reference ifNotNil: [
+				reference isNamed ifTrue: [ reference := nil ] ] ]
+		ifNotEmpty: [ self targetNamed: trimmed ]
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> targetNamed: aString [
+
+	self reference: (ReplayUIReference named: aString)
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetNamedPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newLeftToRight
+				spacing: 10;
+				add: (self iconNamed: #smallOk) expand: false;
+				add: ('Semantic target: ' , self targetName) expand: false;
+				yourself);
+		yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetPathPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newLeftToRight
+				spacing: 10;
+				add: (self iconNamed: #smallOk) expand: false;
+				add: 'Target set.' expand: false;
+				yourself);
+		yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: (self targetControlsPresenterOn: editor) expand: false;
+				add: (self semanticTargetPresenterOn: editor) expand: false;
+				yourself);
+		yourself
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetStatePresenterOn: editor [
+
+	(reference notNil and: [ reference isNamed ])
+		ifTrue: [ ^ self targetNamedPresenterOn: editor ].
+	(path notNil or: [ reference notNil and: [ reference isMorphicPath ] ])
+		ifTrue: [ ^ self targetPathPresenterOn: editor ].
+	^ self allowsWorldTarget
+		ifTrue: [ self worldTargetPresenterOn: editor ]
+		ifFalse: [ self missingTargetPresenterOn: editor ]
 ]
 
 { #category : 'accessing' }
 ReplayUIHandler >> targetWorld [
-	"Target the current World when the path is unset"
+	"Target current World when path unset"
 
-	path := nil
+	path := nil.
+	reference := nil
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> targetWorldButtonPresenterOn: editor [
+
+	^ editor newButton
+		icon: (self iconNamed: #edit);
+		label: 'Target World';
+		action: [
+			self targetWorld.
+			editor actionEditor view rebuildLayout ];
+		yourself
 ]
 
 { #category : 'editing' }
@@ -259,4 +341,25 @@ ReplayUIHandler >> uiEditionPresenterOn: editor [
 
 	^ editor newMorph morph:
 		  (builder uiForAction: self inStep: editor model currentStep)
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> uiReference [
+
+	reference ifNotNil: [ ^ reference ].
+	^ path
+		ifNil: [ ReplayUIReference world ]
+		ifNotNil: [ ReplayUIReference morphicPath: path ]
+]
+
+{ #category : 'editing' }
+ReplayUIHandler >> worldTargetPresenterOn: editor [
+
+	^ editor newPresenter
+		layout: (SpBoxLayout newLeftToRight
+				spacing: 10;
+				add: (self iconNamed: #smallInfo) expand: false;
+				add: 'Targeting current World. Use UI edition view to change target.' expand: false;
+				yourself);
+		yourself
 ]

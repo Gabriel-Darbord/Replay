@@ -1,5 +1,5 @@
 "
-Applies to actions that use a string containing a script.
+I add script storage, editing UI, and debugging support to actions that execute Smalltalk source.
 "
 Trait {
 	#name : 'TReplayActionWithScript',
@@ -8,8 +8,9 @@ Trait {
 	],
 	#traits : 'TReplayActionWithDebugging',
 	#classTraits : 'TReplayActionWithDebugging classTrait',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Traits',
+	#package : 'Replay',
+	#tag : 'Traits'
 }
 
 { #category : 'debugging' }
@@ -47,9 +48,18 @@ TReplayActionWithScript >> scriptPresenterOn: editor labeled: label [
 		whenTextChangedDo: [ :aString |
 			self script: aString.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: codePresenter named: 'Action script'.
+	editor registerReplayPresenter: codePresenter named: self scriptTargetName.
 
 	^ SpBoxLayout newTopToBottom
-		  add: label expand: false;
-		  add: codePresenter;
-		  yourself
+		 add: label expand: false;
+		 add: codePresenter;
+		 yourself
+]
+
+{ #category : 'editing' }
+TReplayActionWithScript >> scriptTargetName [
+
+	self class displayName = 'Script' ifTrue: [ ^ 'Script source' ].
+	^ self class displayName , ' script'
 ]

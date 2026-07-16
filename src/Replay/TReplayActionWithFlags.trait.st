@@ -1,13 +1,14 @@
 "
-Applies to actions that use a bitwise-encoded integer to represent flags.
+I add bitwise flag storage and checkbox editing UI to actions that encode buttons or modifiers as integer masks.
 "
 Trait {
 	#name : 'TReplayActionWithFlags',
 	#instVars : [
 		'flags'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Traits',
+	#package : 'Replay',
+	#tag : 'Traits'
 }
 
 { #category : 'adding' }
@@ -15,6 +16,12 @@ TReplayActionWithFlags >> addFlags: anInteger [
 
 	self flags: (self flags bitOr: anInteger).
 	^ anInteger
+]
+
+{ #category : 'editing' }
+TReplayActionWithFlags >> flagTargetNameFor: aString [
+
+	^ (aString asString copyReplaceAll: '/' with: ' ') asLowercase
 ]
 
 { #category : 'accessing' }
@@ -32,16 +39,38 @@ TReplayActionWithFlags >> flags: anInteger [
 { #category : 'editing' }
 TReplayActionWithFlags >> flagsPresenterOn: editor namesAndValues: pairs [
 	"Pairs contain:
-	1. Display string of the flag.
-	2. Integer encoding the flag."
+	1. Display string of flag.
+	2. Integer encoding flag."
+
+	^ self
+		flagsPresenterOn: editor
+		namesAndValues: pairs
+		whenChangedDo: [ ]
+]
+
+{ #category : 'editing' }
+TReplayActionWithFlags >> flagsPresenterOn: editor namesAndValues: pairs whenChangedDo: aBlock [
+	"Pairs contain:
+	1. Display string of flag.
+	2. Integer encoding flag."
 
 	^ SpGridLayout build: [ :layout |
-		  pairs pairsDo: [ :name :value |
-			  layout add: (editor newCheckBox
-					   label: name;
-					   state: (self hasFlags: value);
-					   whenActivatedDo: [ self addFlags: value ];
-					   whenDeactivatedDo: [ self removeFlags: value ]) ] ]
+		pairs pairsDo: [ :name :value |
+			| checkbox targetName |
+			targetName := self flagTargetNameFor: name.
+			checkbox := editor newCheckBox
+				label: name;
+				state: (self hasFlags: value);
+				whenActivatedDo: [
+					self addFlags: value.
+					aBlock value ];
+				whenDeactivatedDo: [
+					self removeFlags: value.
+					aBlock value ];
+				yourself.
+			editor registerReplayPresenter: checkbox named: 'Action ' , targetName.
+			editor registerReplayPresenter: checkbox named: self class displayName , ' ' , targetName.
+			layout add: checkbox ] ]
 ]
 
 { #category : 'testing' }

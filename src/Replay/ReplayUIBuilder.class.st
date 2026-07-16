@@ -1,6 +1,5 @@
 "
-Used by the `TutorialEditor` to build the managed UI for a specific action.
-**Not** used for running tutorials.
+I build a managed UI preview up to a selected step or action for editor tooling and action debugging.
 "
 Class {
 	#name : 'ReplayUIBuilder',
@@ -10,19 +9,17 @@ Class {
 		'endActionIndex',
 		'callback'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Editing',
+	#package : 'Replay',
+	#tag : 'Editing'
 }
 
 { #category : 'managing UI' }
 ReplayUIBuilder >> buildUI [
-	"Asynchronously rebuild the UI, executing the callback when done"
+	"Asynchronously rebuild UI, executing the callback when done."
 
-	self manager:
-		((self currentStep actions at: actionIndex) uiManagerOn: self).
-
-	self currentWorld defer: [ self nextAction ].
-
+	self manager: ((self currentStep actions at: actionIndex) uiManagerOn: self).
+	self defer: [ self nextAction ].
 	^ self manager ui
 ]
 

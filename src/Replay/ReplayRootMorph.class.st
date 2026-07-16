@@ -1,5 +1,5 @@
 "
-I am the root morph for a Replay-managed UI and notify the manager when my extent changes.
+I am the root morph used to host Replay-managed UI and overlay content.
 "
 Class {
 	#name : 'ReplayRootMorph',

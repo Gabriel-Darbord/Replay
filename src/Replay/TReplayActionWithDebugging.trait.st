@@ -1,10 +1,11 @@
 "
-Applies to actions that can be debugged.
+I add common debugging helpers for Replay actions that can open a debugger on their simulated work.
 "
 Trait {
 	#name : 'TReplayActionWithDebugging',
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Traits',
+	#package : 'Replay',
+	#tag : 'Traits'
 }
 
 { #category : 'debugging' }

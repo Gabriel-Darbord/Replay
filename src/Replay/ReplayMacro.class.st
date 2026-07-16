@@ -1,0 +1,358 @@
+"
+I represent a named keyboard macro: shortcut, scenario, target contexts, and persistent identity.
+"
+Class {
+	#name : 'ReplayMacro',
+	#superclass : 'Object',
+	#instVars : [
+		'identifier',
+		'name',
+		'shortcut',
+		'scenario',
+		'contextNames'
+	],
+	#category : 'Replay-Macros',
+	#package : 'Replay',
+	#tag : 'Macros'
+}
+
+{ #category : 'keymapping' }
+ReplayMacro class >> installedKeymapCount [
+
+	^ self installedKeymapEntries size
+]
+
+{ #category : 'keymapping' }
+ReplayMacro class >> installedKeymapEntries [
+
+	| entries |
+	entries := OrderedCollection new.
+	KMRepository default categories values do: [ :category |
+		category allEntries keymaps do: [ :keymap |
+			(self isReplayKeymap: keymap) ifTrue: [ entries add: category -> keymap ] ] ].
+	^ entries
+]
+
+{ #category : 'keymapping' }
+ReplayMacro class >> installedKeymaps [
+
+	^ self installedKeymapEntries collect: [ :association | association value ]
+]
+
+{ #category : 'keymapping' }
+ReplayMacro class >> isReplayKeymap: aKMKeymap [
+
+	^ aKMKeymap description beginsWith: self keymapDescriptionPrefix
+]
+
+{ #category : 'keymapping' }
+ReplayMacro class >> keymapDescriptionPrefix [
+
+	^ 'Replay macro: '
+]
+
+{ #category : 'keymapping' }
+ReplayMacro class >> keymapNamePrefix [
+
+	^ 'ReplayMacro-'
+]
+
+{ #category : 'instance creation' }
+ReplayMacro class >> named: aString shortcut: aReplayShortcut scenario: aReplayScenario [
+
+	^ self new
+		name: aString;
+		shortcut: aReplayShortcut;
+		scenario: aReplayScenario;
+		yourself
+]
+
+{ #category : 'keymapping' }
+ReplayMacro class >> uninstallAllInstalledKeymaps [
+
+	KMRepository default categories values do: [ :category |
+		category allEntries keymaps
+			select: [ :keymap | self isReplayKeymap: keymap ]
+			thenDo: [ :keymap | category removeKeymapEntry: keymap ] ]
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> addContextNamed: aSymbol [
+
+	(self contextNames includes: aSymbol) ifFalse: [ self contextNames add: aSymbol ]
+]
+
+{ #category : 'testing' }
+ReplayMacro >> canInstall [
+
+	^ self hasKeyBinding and: [ self hasInstallContexts ]
+]
+
+{ #category : 'conflicts' }
+ReplayMacro >> conflictCategories [
+
+	^ self conflictCategoryNames collect: [ :contextName |
+		KMRepository default categoryForName: contextName ]
+]
+
+{ #category : 'conflicts' }
+ReplayMacro >> conflictCategoryNames [
+
+	^ ReplayMacroContext conflictCategoryNamesForCategoryNames: self contextNames
+]
+
+{ #category : 'conflicts' }
+ReplayMacro >> conflicts [
+
+	^ self conflictsInCategories: self conflictCategories
+]
+
+{ #category : 'conflicts' }
+ReplayMacro >> conflictsInCategories: aCollectionOfKMCategories [
+
+	^ aCollectionOfKMCategories flatCollect: [ :category |
+		self conflictsInCategory: category ]
+]
+
+{ #category : 'conflicts' }
+ReplayMacro >> conflictsInCategory: aKMCategory [
+
+	^ (aKMCategory allEntries keymaps
+		reject: [ :keymap | self isOwnKeymap: keymap ])
+		select: [ :keymap | self shortcut matchesKeymap: keymap ]
+		thenCollect: [ :keymap |
+			ReplayShortcutConflict category: aKMCategory keymap: keymap ]
+]
+
+{ #category : 'conflicts' }
+ReplayMacro >> conflictsInContextNamed: aSymbol [
+
+	^ self conflictsInCategory: (KMRepository default categoryForName: aSymbol)
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> contextCategories [
+
+	^ self contextNames collect: [ :contextName |
+		KMRepository default categoryForName: contextName ]
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> contextNames [
+
+	^ contextNames ifNil: [ contextNames := OrderedCollection new ]
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> contextNames: aCollection [
+
+	contextNames := aCollection asOrderedCollection
+]
+
+{ #category : 'testing' }
+ReplayMacro >> hasInstallContexts [
+
+	^ self contextNames notEmpty
+]
+
+{ #category : 'testing' }
+ReplayMacro >> hasKeyBinding [
+
+	^ self shortcut text notEmpty
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> identifier [
+
+	^ identifier ifNil: [ identifier := UUID new asString ]
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> identifier: aString [
+
+	identifier := aString
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> install [
+
+	self canInstall ifFalse: [ ^ #(  ) ].
+	^ self contextNames collect: [ :contextName | self installInContextNamed: contextName ]
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> installInCategory: aKMCategory [
+
+	| keymap |
+	self hasKeyBinding ifFalse: [ ^ nil ].
+	self removeOwnKeymapsFromCategory: aKMCategory.
+	keymap := self keymap.
+	aKMCategory addKeymapEntry: keymap.
+	^ keymap
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> installInContextNamed: aSymbol [
+
+	^ self installInCategory: (KMRepository default categoryForName: aSymbol)
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> installedCategories [
+
+	^ KMRepository default categories values select: [ :category |
+	self installedInCategory: category ]
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> installedContextNames [
+
+	^ self installedCategories collect: [ :category | category name ]
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> installedInCategory: aKMCategory [
+
+	^ aKMCategory allEntries keymaps anySatisfy: [ :keymap |
+	self isOwnKeymap: keymap ]
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> installedInContextNamed: aSymbol [
+
+	^ self installedInCategory: (KMRepository default categoryForName: aSymbol)
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> installedKeymaps [
+
+	^ self installedCategories flatCollect: [ :category | category allEntries keymaps select: [ :keymap | self isOwnKeymap: keymap ] ]
+]
+
+{ #category : 'conflicts' }
+ReplayMacro >> isOwnKeymap: aKMKeymap [
+
+	^ aKMKeymap name = self keymapName
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> keymap [
+
+	^ KMKeymap
+		named: self keymapName
+		shortcut: self shortcut asKMShortcut
+		action: [ self run ]
+		description: self keymapDescription
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> keymapDescription [
+
+	^ self class keymapDescriptionPrefix , self name
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> keymapName [
+
+	^ (self class keymapNamePrefix , self identifier) asSymbol
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> name [
+
+	^ name ifNil: [ 'Unnamed Macro' ]
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> name: aString [
+
+	name := aString
+]
+
+{ #category : 'printing' }
+ReplayMacro >> printOn: stream [
+
+	stream nextPutAll: self name.
+	self shortcut text isEmpty ifTrue: [ ^ self ].
+	stream
+		nextPutAll: ' (';
+		nextPutAll: self shortcut displayString;
+		nextPut: $)
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> removeOwnKeymapsFromCategory: aKMCategory [
+
+	aKMCategory allEntries keymaps
+		select: [ :keymap | self isOwnKeymap: keymap ]
+		thenDo: [ :keymap | aKMCategory removeKeymapEntry: keymap ]
+]
+
+{ #category : 'running' }
+ReplayMacro >> run [
+
+	^ self scenario run
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> scenario [
+
+	^ scenario ifNil: [ scenario := ReplayScenario new ]
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> scenario: aReplayScenario [
+
+	scenario := aReplayScenario
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> shortcut [
+
+	^ shortcut ifNil: [ shortcut := ReplayShortcut new ]
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> shortcut: aReplayShortcut [
+
+	shortcut := aReplayShortcut
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> shortcutFromKeymap: aKMKeymap [
+
+	self shortcut: (ReplayShortcut fromKeymap: aKMKeymap)
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> uninstall [
+
+	self installedCategories do: [ :category |
+		self uninstallFromCategory: category ]
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> uninstallFromCategory: aKMCategory [
+
+	self removeOwnKeymapsFromCategory: aKMCategory
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> uninstallFromContextNamed: aSymbol [
+
+	self uninstallFromCategory: (KMRepository default categoryForName: aSymbol)
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> updateInstalledKeymaps [
+
+	| installedCategories targetCategories |
+	installedCategories := self installedCategories asOrderedCollection.
+	installedCategories ifNotEmpty: [
+			self canInstall ifFalse: [
+					installedCategories do: [ :category | self uninstallFromCategory: category ].
+					^ self ].
+			targetCategories := self contextCategories.
+			installedCategories do: [ :category | self uninstallFromCategory: category ].
+			targetCategories do: [ :category | self installInCategory: category ] ]
+]

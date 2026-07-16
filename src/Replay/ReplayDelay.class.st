@@ -1,5 +1,5 @@
 "
-A scenario action that pauses runner continuation for a configured number of seconds.
+I pause runner continuation for a configured number of seconds. I am intended for explicit demo pacing, not for waiting on UI layout.
 "
 Class {
 	#name : 'ReplayDelay',
@@ -51,10 +51,10 @@ ReplayDelay >> printOn: stream [
 
 { #category : 'running' }
 ReplayDelay >> runOn: runner [
-	"Pause the scenario and then continue on the UI process."
+	"Pause scenario and continue on UI process."
 
 	[ (Delay forSeconds: self seconds) wait.
-	self currentWorld defer: [ runner nextAction ] ] fork
+	runner defer: [ runner nextAction ] ] fork
 ]
 
 { #category : 'accessing' }
@@ -80,9 +80,16 @@ ReplayDelay >> secondsPresenterOn: editor labeled: label [
 		whenNumberChangedDo: [ :aNumber |
 				self seconds: aNumber.
 				editor actions rebuildLayout ].
+	editor registerReplayPresenter: textPresenter named: 'Action seconds'.
+	editor registerReplayPresenter: textPresenter named: 'Delay seconds'.
 
 	^ SpBoxLayout newTopToBottom
-		  add: label expand: false;
-		  add: textPresenter expand: false;
-		  yourself
+		 add: label expand: false;
+		 add: textPresenter expand: false;
+		 yourself
+]
+
+{ #category : 'recording' }
+ReplayDelay >> shouldRecordWhenTimingStripped [
+	^ false
 ]

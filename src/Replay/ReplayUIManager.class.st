@@ -1,6 +1,5 @@
 "
-I am responsible for managing a UI.
-To accomplish this, I create a root element that contains the UI and an overlay to display elements on top of it.
+I own the active Replay UI session: managed UI, backend, overlays, interaction policy, and recording wrappers.
 "
 Class {
 	#name : 'ReplayUIManager',
@@ -12,10 +11,13 @@ Class {
 		'managedPresenter',
 		'backend',
 		'editor',
-		'clickBlock'
+		'clickBlock',
+		'ownsUI',
+		'interactionPolicy'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Core',
+	#package : 'Replay',
+	#tag : 'Core'
 }
 
 { #category : 'utilities' }
@@ -63,7 +65,125 @@ ReplayUIManager class >> buildMorphFromSpec: aSpecPresenter [
 { #category : 'managing UI' }
 ReplayUIManager >> addOverlay: ui [
 
-	overlay addMorph: ui
+	overlay ifNotNil: [
+		overlay addMorph: ui.
+		self layoutAnnotations ]
+]
+
+{ #category : 'interaction policy' }
+ReplayUIManager >> allowUserInteraction [
+
+	self interactionPolicy: #passThrough
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> annotationLabelMargin [
+
+	^ 20
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> annotationLayoutBounds [
+
+	| world |
+	overlay ifNil: [ ^ 0 @ 0 corner: 0 @ 0 ].
+	world := overlay world.
+	world ifNil: [ ^ overlay bounds ].
+	^ world visibleClearArea
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> annotationLayoutBoundsFor: anAnnotation [
+
+	| layoutBounds targetBounds |
+	layoutBounds := self annotationLayoutBounds.
+	targetBounds := anAnnotation targetBoundsInWorld.
+	(layoutBounds containsRect: targetBounds) ifTrue: [ ^ layoutBounds ].
+	overlay ifNil: [ ^ layoutBounds merge: targetBounds ].
+	overlay world ifNil: [ ^ layoutBounds merge: targetBounds ].
+	^ layoutBounds merge: overlay boundsInWorld
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> annotationTargetBounds [
+
+	^ self annotationsWithLabels collect: [ :annotation |
+		annotation targetBoundsInWorld ]
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> annotationsWithLabels [
+
+	overlay ifNil: [ ^ #() ].
+	^ overlay submorphs select: [ :each |
+		(each isKindOf: ReplayAnnotation) and: [ each hasLabel ] ]
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> attachTo: aMorph [
+	"Attach Replay to an existing Morph without taking ownership of its window."
+
+	^ self attachTo: aMorph usingBackend: (ReplayMorphicBackend on: aMorph)
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> attachTo: aMorph usingBackend: aReplayUIBackend [
+	"Attach Replay to a Morph that already belongs to another UI."
+
+	| owner |
+	owner := aMorph owner ifNil: [
+		ReplayError new
+			messageText: 'Cannot attach Replay Morph without an owner.';
+			tag: aMorph;
+			signal ].
+	ownsUI := false.
+	self allowUserInteraction.
+	backend := aReplayUIBackend.
+	managed := aMorph.
+	root := owner.
+	overlay := self newAttachedOverlay.
+	overlay bounds: managed bounds.
+	root addMorphFront: overlay.
+	self syncManagedLayout.
+	^ self
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> attachToPresenter: aSpecPresenter [
+	"Attach Replay to an already rendered Spec presenter."
+
+	| adapter morph |
+	adapter := aSpecPresenter adapter ifNil: [
+		ReplayError new
+			messageText: 'Cannot attach Replay to a Spec presenter without an adapter.';
+			tag: aSpecPresenter;
+			signal ].
+	morph := adapter widget ifNil: [
+		ReplayError new
+			messageText: 'Cannot attach Replay to a Spec presenter without a rendered widget.';
+			tag: aSpecPresenter;
+			signal ].
+	^ self attachTo: morph usingBackend: (ReplaySpecBackend presenter: aSpecPresenter morph: morph)
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> automaticLabelCandidatesFor: anAnnotation [
+
+	| target extent margin centeredX centeredY |
+	target := anAnnotation targetBoundsInWorld.
+	extent := anAnnotation label extent.
+	margin := self annotationLabelMargin.
+	centeredX := target center x - (extent x / 2).
+	centeredY := target center y - (extent y / 2).
+	^ {
+		(target right + margin @ centeredY extent: extent).
+		(target left - extent x - margin @ centeredY extent: extent).
+		(centeredX @ (target bottom + margin) extent: extent).
+		(centeredX @ (target top - extent y - margin) extent: extent).
+		(target right + margin @ (target bottom + margin) extent: extent).
+		(target right + margin @ (target top - extent y - margin) extent: extent).
+		(target left - extent x - margin @ (target bottom + margin) extent: extent).
+		(target left - extent x - margin @ (target top - extent y - margin) extent: extent) }
 ]
 
 { #category : 'accessing' }
@@ -78,10 +198,58 @@ ReplayUIManager >> backend: aReplayUIBackend [
 	backend := aReplayUIBackend
 ]
 
+{ #category : 'annotation layout' }
+ReplayUIManager >> bestLabelBoundsFor: anAnnotation avoiding: placedBounds [
+
+	| layoutBounds targetBounds bestBounds bestScore candidates |
+	layoutBounds := self annotationLayoutBoundsFor: anAnnotation.
+	targetBounds := anAnnotation targetBoundsInWorld.
+	self fitLabelOf: anAnnotation within: layoutBounds.
+	candidates := self labelCandidatesFor: anAnnotation.
+	candidates withIndexDo: [ :rawBounds :index |
+			| candidateBounds score |
+			candidateBounds := self clampRectangle: rawBounds within: layoutBounds.
+			score := self
+				         scoreLabelBounds: candidateBounds
+				         rawBounds: rawBounds
+				         target: targetBounds
+				         avoiding: placedBounds
+				         preference: index.
+			(bestScore isNil or: [ score < bestScore ]) ifTrue: [
+					bestScore := score.
+					bestBounds := candidateBounds ] ].
+	^ bestBounds
+]
+
+{ #category : 'interaction policy' }
+ReplayUIManager >> blockUserInteraction [
+
+	self interactionPolicy: #blocked
+]
+
+{ #category : 'testing' }
+ReplayUIManager >> blocksUserInteraction [
+
+	^ self interactionPolicy = #blocked
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> clampRectangle: aRectangle within: containerBounds [
+
+	| x y |
+	containerBounds width >= aRectangle width
+		ifTrue: [ x := (aRectangle left max: containerBounds left) min: containerBounds right - aRectangle width ]
+		ifFalse: [ x := containerBounds left ].
+	containerBounds height >= aRectangle height
+		ifTrue: [ y := (aRectangle top max: containerBounds top) min: containerBounds bottom - aRectangle height ]
+		ifFalse: [ y := containerBounds top ].
+	^ x @ y extent: aRectangle extent
+]
+
 { #category : 'managing UI' }
 ReplayUIManager >> clearOverlay [
 
-	overlay removeAllMorphs
+	overlay ifNotNil: [ overlay removeAllMorphs ]
 ]
 
 { #category : 'accessing' }
@@ -95,9 +263,29 @@ ReplayUIManager >> clickBlock: aBlock [
 { #category : 'managing UI' }
 ReplayUIManager >> close [
 
-	root window
-		ifNotNil: [ :window | window close ]
-		ifNil: [ root delete ]
+	self ownsUI
+		ifTrue: [
+			root ifNil: [ ^ self ].
+			root window
+				ifNotNil: [ :window | window close ]
+				ifNil: [ root delete ] ]
+		ifFalse: [
+			overlay ifNotNil: [ overlay delete ].
+			overlay := nil ]
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> defer: aBlock [
+
+	backend
+		ifNil: [ ReplayUIBackend new defer: aBlock ]
+		ifNotNil: [ backend defer: aBlock ]
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> distanceFrom: firstPoint to: secondPoint [
+
+	^ (firstPoint x - secondPoint x) abs + (firstPoint y - secondPoint y) abs
 ]
 
 { #category : 'accessing' }
@@ -138,12 +326,94 @@ ReplayUIManager >> exposeParentMorph: wrapper [
 	wrapper allMorphsDo: [ :m | m delete ]
 ]
 
+{ #category : 'annotation layout' }
+ReplayUIManager >> fitLabelOf: anAnnotation within: layoutBounds [
+
+	| maxWidth |
+	anAnnotation label ifNil: [ ^ self ].
+	maxWidth := layoutBounds width - (self annotationLabelMargin * 2).
+	maxWidth := maxWidth max: 80.
+	anAnnotation label fitWidth: maxWidth
+]
+
 { #category : 'managing UI' }
 ReplayUIManager >> hideOverlay [
 	"Elements are behind their predecessors, so the overlay is hidden by making it the last element"
 
 	root submorphs first == managed ifTrue: [ ^ self ].
 	root addMorphFront: managed
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> initialAnnotationAvoidBounds [
+
+	^ self annotationTargetBounds asOrderedCollection
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> installBlockingHandlersOn: aMorph [
+
+	#( mouseDown mouseMove mouseStillDown mouseUp mouseEnter mouseLeave mouseEnterDragging mouseLeaveDragging doubleClick ) do: [ :event |
+		aMorph on: event send: #yourself to: aMorph ]
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> interactionPolicy [
+
+	^ interactionPolicy ifNil: [ self ownsUI ifTrue: [ #blocked ] ifFalse: [ #passThrough ] ]
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> interactionPolicy: aSymbol [
+
+	interactionPolicy := aSymbol asSymbol
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> labelBoundsFor: anAnnotation placement: placementSymbol [
+
+	| target extent margin centeredX centeredY |
+	target := anAnnotation targetBoundsInWorld.
+	extent := anAnnotation label extent.
+	margin := self annotationLabelMargin.
+	centeredX := target center x - (extent x / 2).
+	centeredY := target center y - (extent y / 2).
+	placementSymbol = #right ifTrue: [ ^ target right + margin @ centeredY extent: extent ].
+	placementSymbol = #left ifTrue: [ ^ target left - extent x - margin @ centeredY extent: extent ].
+	placementSymbol = #below ifTrue: [ ^ centeredX @ (target bottom + margin) extent: extent ].
+	placementSymbol = #above ifTrue: [ ^ centeredX @ (target top - extent y - margin) extent: extent ].
+	placementSymbol = #belowRight ifTrue: [ ^ target right + margin @ (target bottom + margin) extent: extent ].
+	placementSymbol = #aboveRight ifTrue: [ ^ target right + margin @ (target top - extent y - margin) extent: extent ].
+	placementSymbol = #belowLeft ifTrue: [ ^ target left - extent x - margin @ (target bottom + margin) extent: extent ].
+	placementSymbol = #aboveLeft ifTrue: [ ^ target left - extent x - margin @ (target top - extent y - margin) extent: extent ].
+	^ (self automaticLabelCandidatesFor: anAnnotation) first
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> labelCandidatesFor: anAnnotation [
+
+	| preferred fallbackCandidates |
+	anAnnotation placement = #automatic ifTrue: [
+		^ self automaticLabelCandidatesFor: anAnnotation ].
+	preferred := self labelBoundsFor: anAnnotation placement: anAnnotation placement.
+	fallbackCandidates := self automaticLabelCandidatesFor: anAnnotation.
+	^ { preferred } , (fallbackCandidates reject: [ :candidate |
+		candidate origin = preferred origin and: [ candidate extent = preferred extent ] ])
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> layoutAnnotations [
+
+	| placedBounds |
+	placedBounds := self initialAnnotationAvoidBounds.
+	self annotationsWithLabels do: [ :annotation |
+		| bestBounds |
+		annotation ensureLabelInWorld.
+		annotation label isInWorld ifTrue: [
+			bestBounds := self bestLabelBoundsFor: annotation avoiding: placedBounds.
+			annotation placeLabelAt: bestBounds origin.
+			annotation step.
+			placedBounds add: annotation label bounds ] ]
 ]
 
 { #category : 'managing UI' }
@@ -157,8 +427,10 @@ ReplayUIManager >> manage: aMorph [
 
 { #category : 'managing UI' }
 ReplayUIManager >> manage: aMorph usingBackend: aReplayUIBackend [
-	"Set the UI backend and manage the morph in a full-window layout."
+	"Set UI backend to manage morph in full-window layout."
 
+	ownsUI := true.
+	self blockUserInteraction.
 	backend := aReplayUIBackend.
 	root := ReplayRootMorph new
 		manager: self;
@@ -168,16 +440,10 @@ ReplayUIManager >> manage: aMorph usingBackend: aReplayUIBackend [
 		vResizing: #spaceFill;
 		yourself.
 	managed := aMorph.
-	overlay := Morph new
-		beTransparent;
-		hResizing: #spaceFill;
-		vResizing: #spaceFill;
-		yourself.
+	overlay := self newOverlay.
 	root addMorph: managed fullFrame: LayoutFrame identity.
 	root addMorph: overlay fullFrame: LayoutFrame identity.
-	"Prevent direct interaction with the managed UI by catching all events."
-	#( mouseDown mouseMove mouseStillDown mouseUp mouseEnter mouseLeave mouseEnterDragging mouseLeaveDragging doubleClick ) do: [ :event |
-		overlay on: event send: #yourself to: overlay ].
+	self blocksUserInteraction ifTrue: [ self installBlockingHandlersOn: overlay ].
 	^ self
 ]
 
@@ -229,6 +495,45 @@ ReplayUIManager >> maxWrapDepth [
 	^ 6 "6 plays nicely with Calypso?"
 ]
 
+{ #category : 'managing UI' }
+ReplayUIManager >> newAttachedOverlay [
+	"Create an overlay for an existing UI owner. It must not participate in the owner's layout."
+
+	^ self newOverlay
+		hResizing: #rigid;
+		vResizing: #rigid;
+		disableTableLayout: true;
+		yourself
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> newOverlay [
+
+	^ Morph new
+		beTransparent;
+		hResizing: #spaceFill;
+		vResizing: #spaceFill;
+		yourself
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> observe: aMorph [
+	"Observe an existing Morph without adding an overlay. This is for passive event recording where user interaction must continue normally."
+	^ self observe: aMorph usingBackend: (ReplayMorphicBackend on: aMorph)
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> observe: aMorph usingBackend: aReplayUIBackend [
+	"Observe an existing UI without creating an overlay or taking ownership. Root morphs such as World can be observed directly."
+	ownsUI := false.
+	self allowUserInteraction.
+	backend := aReplayUIBackend.
+	managed := aMorph.
+	root := aMorph owner ifNil: [ aMorph ].
+	overlay := nil.
+	^ self
+]
+
 { #category : 'event handling' }
 ReplayUIManager >> onClick: event onWrapper: morph [
 
@@ -278,7 +583,7 @@ ReplayUIManager >> openLabeled: title [
 
 { #category : 'instance creation' }
 ReplayUIManager >> openLabeled: title extent: requestedExtent bounds: requestedBounds [
-	"Open managed UI and optionally control content extent and exact window bounds."
+	"Open managed UI optionally controlling content extent or exact window bounds."
 
 	| targetExtent window frameDelta contentExtent |
 	targetExtent := requestedExtent ifNil: [
@@ -299,8 +604,7 @@ ReplayUIManager >> openLabeled: title extent: requestedExtent bounds: requestedB
 			ifNil: [
 				window extent: targetExtent + frameDelta.
 				root extent: targetExtent ] ].
-
-	self currentWorld defer: [ self syncManagedLayout ]
+	self defer: [ self syncManagedLayout ]
 ]
 
 { #category : 'accessing' }
@@ -311,12 +615,86 @@ ReplayUIManager >> overlay [
 	^ overlay
 ]
 
+{ #category : 'accessing' }
+ReplayUIManager >> ownsUI [
+
+	^ ownsUI ifNil: [ true ]
+]
+
+{ #category : 'resolving' }
+ReplayUIManager >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
+
+	^ backend
+		resolve: aReference
+		forAction: anAction
+		thenDo: foundBlock
+		onMissing: missingBlock
+]
+
+{ #category : 'resolving' }
+ReplayUIManager >> resolve: aReference thenDo: foundBlock [
+
+	^ self
+		resolve: aReference
+		thenDo: foundBlock
+		onMissing: [ :error | error signal ]
+]
+
+{ #category : 'resolving' }
+ReplayUIManager >> resolve: aReference thenDo: foundBlock onMissing: missingBlock [
+
+	^ self resolver
+		resolve: aReference
+		thenDo: foundBlock
+		onMissing: missingBlock
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> resolver [
+
+	^ backend resolver
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> scoreLabelBounds: candidateBounds rawBounds: rawBounds target: targetBounds avoiding: placedBounds preference: preferenceIndex [
+
+	| score |
+	score := preferenceIndex * 1000.
+	score := score + ((self distanceFrom: rawBounds origin to: candidateBounds origin) * 100).
+	(candidateBounds intersects: targetBounds) ifTrue: [ score := score + 100000 ].
+	placedBounds do: [ :each |
+		(candidateBounds intersects: each) ifTrue: [ score := score + 50000 ] ].
+	score := score + (self distanceFrom: candidateBounds center to: targetBounds center).
+	^ score
+]
+
+{ #category : 'managing UI' }
+ReplayUIManager >> settleUI [
+
+	backend
+		ifNil: [ ReplayUIBackend new settleUI ]
+		ifNotNil: [ backend settleUI ].
+	self syncManagedLayout.
+	self layoutAnnotations
+]
+
+{ #category : 'accessing' }
+ReplayUIManager >> surfaceMorph [
+
+	^ backend
+		ifNil: [ managed ]
+		ifNotNil: [ backend surfaceMorph ]
+]
+
 { #category : 'managing UI' }
 ReplayUIManager >> syncManagedLayout [
-	"Keep managed content and overlay aligned with the root extent."
+	"Keep managed content and overlay aligned."
 
 	| targetExtent |
-	(root isNil or: [ managed isNil or: [ overlay isNil ] ]) ifTrue: [
+	(root isNil or: [ managed isNil or: [ overlay isNil ] ]) ifTrue: [ ^ self ].
+	self ownsUI ifFalse: [
+		overlay bounds: managed bounds.
+		overlay layoutChanged.
 		^ self ].
 	targetExtent := root extent.
 	targetExtent isZero ifTrue: [ ^ self ].
@@ -328,8 +706,7 @@ ReplayUIManager >> syncManagedLayout [
 	managed doLayoutIn: managed bounds.
 	managed fullBounds.
 	overlay layoutChanged.
-	overlay doLayoutIn: overlay bounds.
-	^ self
+	overlay doLayoutIn: overlay bounds
 ]
 
 { #category : 'accessing' }
@@ -341,12 +718,9 @@ ReplayUIManager >> ui [
 
 { #category : 'managing UI' }
 ReplayUIManager >> wrapForEdition [
-	"Called after the managed UI has been initialized.
-	Wraps all child elements to make them interactive for edition.
-	Wait for the next UI cycle to ensure the elements are in the World."
+	"Called after managed UI initialized. Wrap all child elements to make them interactive in edition. Wait next UI cycle to ensure elements are in World."
 
-	self currentWorld defer: [
-		overlay addMorph: (self wrapMorph: managed atDepth: 1) ]
+	self defer: [ overlay addMorph: (self wrapMorph: managed atDepth: 1) ]
 ]
 
 { #category : 'managing UI' }

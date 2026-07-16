@@ -1,5 +1,5 @@
 "
-Open a browser on a package.
+I open a system browser focused on a configured package.
 "
 Class {
 	#name : 'ReplayBrowsePackage',
@@ -20,17 +20,23 @@ ReplayBrowsePackage >> settingsPresenterOn: editor [
 
 	| presenter |
 	(presenter := editor newList)
-		help: 'Select the package to browse';
+		help: 'Select package browse';
 		items: self class packageOrganizer packages sorted;
 		display: [ :each | each name ];
 		whenSelectedDo: [ :aPackage |
 			self targetPackage: aPackage.
 			editor actions rebuildLayout ].
+	editor registerReplayPresenter: presenter named: 'Browse package target'.
 	target
 		ifNil: [ presenter selectFirst ]
-		ifNotNil: [
-		presenter selectItem: self targetPackage scrollToSelection: true ].
-	^ presenter
+		ifNotNil: [ presenter selectItem: self targetPackage scrollToSelection: true ].
+	^ editor newPresenter
+		layout: (SpBoxLayout newTopToBottom
+				spacing: 10;
+				add: presenter;
+				add: (self placementPresenterOn: editor) expand: false;
+				yourself);
+		yourself
 ]
 
 { #category : 'accessing' }

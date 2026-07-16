@@ -1,8 +1,5 @@
 "
-I represent a step in a `ReplayScenario`.
-I am composed of `ReplayAction`s that are executed sequentially.
-After all the actions have been run with a `ReplayRunner`, a final `ReplayNavigate` action is executed.
-This final action can be configured to return control to the user.
+I group an ordered list of actions and the navigation settings used after those actions finish.
 "
 Class {
 	#name : 'ReplayStep',
@@ -11,8 +8,9 @@ Class {
 		'actions',
 		'navigation'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Core',
+	#package : 'Replay',
+	#tag : 'Core'
 }
 
 { #category : 'accessing' }

@@ -1,16 +1,5 @@
 "
-I am a simple multiline string morph.
-
-```script|show=both
-ReplayAnnotationLabel new contents: 'Each line in the string
-is a line in the morph.'
-```
-% blank to make space
- 
-With rich text support:
-```script|show=both
-ReplayAnnotationLabel new contents: (self iconNamed: #pharo) asText
-```
+I display wrapped annotation text in the overlay. I size myself to the text and keep the visual style used by Replay callouts.
 "
 Class {
 	#name : 'ReplayAnnotationLabel',
@@ -31,6 +20,22 @@ ReplayAnnotationLabel >> contents: aStringOrText [
 		ifTrue: [ self addMorphBack: displayMorph ]
 		ifFalse: [ self replaceSubmorph: (submorphs at: 2) by: displayMorph ].
 
+	self extent: displayMorph extent.
+	self overlay extent: displayMorph extent
+]
+
+{ #category : 'accessing' }
+ReplayAnnotationLabel >> fitWidth: maxWidth [
+
+	| displayMorph |
+	(maxWidth isNil or: [ maxWidth <= 0 ]) ifTrue: [ ^ self ].
+	self width <= maxWidth ifTrue: [ ^ self ].
+	submorphs size < 2 ifTrue: [ ^ self ].
+	displayMorph := submorphs second.
+	displayMorph
+		width: maxWidth;
+		beWrapped;
+		compose.
 	self extent: displayMorph extent.
 	self overlay extent: displayMorph extent
 ]
@@ -63,10 +68,4 @@ ReplayAnnotationLabel >> morphicLayerNumber [
 ReplayAnnotationLabel >> overlay [
 
 	^ submorphs at: 1
-]
-
-{ #category : 'accessing' }
-ReplayAnnotationLabel >> wantsToBeTopmost [
-
-	^ true
 ]

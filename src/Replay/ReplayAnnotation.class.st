@@ -1,28 +1,13 @@
 "
-I annotate an element in the World by adding a border around it.
-I am based on bounds, usually taken from a target Morph but it can be arbitrary.
-I can include a linked label that can be moved independently.
-Note that when applying a label, the target must already be open.
-% Well there's probably a way to trigger the label only when building...
-
-% The example is randomized but when a comment is parsed, it is made into a Form and cached so it will not change
-```script
-ReplayAnnotation example close adapter widget
-```
-
-% The following line adds a space to separate from the above
- 
-Try with a label and moving both it and the window around:
-```pharoeval
-ReplayAnnotation exampleWithLabel
-```
+I am the overlay morph that draws an annotation highlight around target bounds and owns its label and leader line placement.
 "
 Class {
 	#name : 'ReplayAnnotation',
 	#superclass : 'Morph',
 	#instVars : [
 		'label',
-		'line'
+		'line',
+		'placement'
 	],
 	#category : 'Replay-Morphs',
 	#package : 'Replay',
@@ -42,6 +27,15 @@ ReplayAnnotation class >> annotate: bounds label: label [
 	annotation := self new.
 	annotation annotate: bounds.
 	label isEmptyOrNil ifFalse: [ annotation label: label ].
+	^ annotation
+]
+
+{ #category : 'instance creation' }
+ReplayAnnotation class >> annotate: bounds label: label placement: placementSymbol [
+
+	| annotation |
+	annotation := self annotate: bounds label: label.
+	annotation placement: placementSymbol.
 	^ annotation
 ]
 
@@ -119,6 +113,14 @@ ReplayAnnotation >> annotate: rectangle [
 		(Rectangle origin: rectangle origin - 5 corner: rectangle corner + 5)
 ]
 
+{ #category : 'accessing' }
+ReplayAnnotation >> defaultLabelPosition [
+
+	| target |
+	target := self targetBoundsInWorld.
+	^ target right + 20 @ (target center y - (label extent y / 2))
+]
+
 { #category : 'utilities' }
 ReplayAnnotation >> diagonalBetween: rectA and: rectB [
 	"Compute the line between the center of two rectangles and cut at their edges.
@@ -176,6 +178,20 @@ ReplayAnnotation >> edgeBetween: rectA and: rectB [
 	^ self diagonalBetween: rectA and: rectB "No overlap, use a diagonal line"
 ]
 
+{ #category : 'accessing' }
+ReplayAnnotation >> ensureLabelInWorld [
+
+	(label isNil or: [ self world isNil ]) ifTrue: [ ^ self ].
+	label isInWorld ifFalse: [ label openInWorld: self world ].
+	(line notNil and: [ line isInWorld not ]) ifTrue: [ line openInWorld: self world ]
+]
+
+{ #category : 'accessing' }
+ReplayAnnotation >> hasLabel [
+
+	^ label notNil
+]
+
 { #category : 'initialization' }
 ReplayAnnotation >> initialize [
 
@@ -215,14 +231,10 @@ ReplayAnnotation >> morphicLayerNumber [
 
 { #category : 'submorphs - accessing' }
 ReplayAnnotation >> noteNewOwner: theOwner [
-	"When affected to a morph to annotate, move next to it on the top right."
+	"When affected to a morph to annotate, keep the old default and let managers improve it."
 
 	(label isNil or: [ label isInWorld ]) ifTrue: [ ^ self ].
-	label position:
-		bounds right + 20 @ (bounds center y - (bounds height / 2)).
-	label ifNotNil: [
-		label openInWorld: self world.
-		line openInWorld: self world ]
+	self placeLabelAt: self defaultLabelPosition
 ]
 
 { #category : 'initialize' }
@@ -233,16 +245,44 @@ ReplayAnnotation >> outOfWorld: aWorld [
 	super outOfWorld: aWorld
 ]
 
+{ #category : 'accessing' }
+ReplayAnnotation >> placeLabelAt: aPoint [
+
+	label ifNil: [ ^ self ].
+	label position: aPoint.
+	self ensureLabelInWorld.
+	line ifNotNil: [ self step ]
+]
+
+{ #category : 'accessing' }
+ReplayAnnotation >> placement [
+
+	^ placement ifNil: [ #automatic ]
+]
+
+{ #category : 'accessing' }
+ReplayAnnotation >> placement: aSymbol [
+
+	placement := aSymbol ifNil: [ #automatic ] ifNotNil: [ aSymbol asSymbol ]
+]
+
 { #category : 'stepping and presenter' }
 ReplayAnnotation >> step [
 
 	| vertices |
 	label ifNil: [ ^ self ].
 
-	"Verify if label moved and update the line"
-	vertices := self edgeBetween: self bounds and: label bounds.
+	"Verify if label moved and update the line."
+	vertices := self edgeBetween: self targetBoundsInWorld and: label bounds.
 	line vertices = vertices ifTrue: [ ^ self ].
 	line setVertices: vertices
+]
+
+{ #category : 'accessing' }
+ReplayAnnotation >> targetBoundsInWorld [
+
+	self world ifNil: [ ^ self bounds ].
+	^ self boundsInWorld
 ]
 
 { #category : 'accessing' }

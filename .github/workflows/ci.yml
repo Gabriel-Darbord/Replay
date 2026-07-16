@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  pharo:
+    name: Pharo 13
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up smalltalkCI
+        uses: hpi-swa/setup-smalltalkCI@v1
+        id: smalltalkci
+        with:
+          smalltalk-image: Pharo64-13
+
+      - name: Run tests
+        run: smalltalkci -s "${{ steps.smalltalkci.outputs.smalltalk-image }}"
+        shell: bash

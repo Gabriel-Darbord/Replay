@@ -9,6 +9,41 @@ Class {
 }
 
 { #category : 'tests' }
+ReplayRunnerTest >> testAwaitUIActionDelegatesToManagerBackend [
+
+	| backend manager runner |
+	backend := ReplayRecordingBackend new.
+	manager := ReplayUIManager new
+		manage: (Morph new extent: 100 @ 50)
+		usingBackend: backend.
+	runner := ReplayRunner on: ReplayScenario new.
+	runner manager: manager.
+
+	ReplayAwaitUI new runOn: runner.
+
+	self assert: backend lastInteraction equals: #settleUI
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testAwaitUIActionEditionPresenterBuilds [
+
+	| presenter |
+	presenter := ReplayAwaitUI new editionPresenterOn: ReplayEditor new.
+
+	self assert: presenter notNil
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testAwaitUIActionRunsWithoutControllingContinuation [
+
+	| action runner |
+	action := ReplayAwaitUI new.
+	runner := ReplayRunner on: ReplayScenario new.
+	self deny: action controlsRunnerContinuation.
+	self shouldnt: [ action runOn: runner ] raise: Error
+]
+
+{ #category : 'tests' }
 ReplayRunnerTest >> testDelayActionDefaults [
 
 	| action |
@@ -33,6 +68,55 @@ ReplayRunnerTest >> testDelayActionEditionPresenterBuilds [
 ReplayRunnerTest >> testDelayActionPrintsConfiguredSeconds [
 
 	self assert: ((ReplayDelay seconds: 2) printString includesSubstring: '2s')
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testNavigateActionEditionPresenterBuilds [
+
+	| action presenter |
+	action := ReplayNavigate new.
+	presenter := action editionPresenterOn: ReplayEditor new.
+
+	self assert: presenter notNil
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testNavigateBoundsOverridePositionAndExtent [
+
+	| action window requestedBounds |
+	requestedBounds := 50 @ 70 extent: 360 @ 150.
+	action := ReplayNavigate new
+		position: 12 @ 34;
+		extent: 320 @ 140;
+		bounds: requestedBounds;
+		yourself.
+	window := SpPresenter new asDialogWindow.
+	action applyPlacementTo: window.
+	self assert: action position isNil.
+	self assert: action extent isNil.
+	self assert: window initialPosition equals: requestedBounds origin.
+	self assert: window initialExtent equals: requestedBounds extent
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testNavigatePlacementAppliesPositionAndExtent [
+
+	| action window |
+	action := ReplayNavigate new
+		position: 12 @ 34;
+		extent: 320 @ 140;
+		yourself.
+	window := SpPresenter new asDialogWindow.
+	action applyPlacementTo: window.
+	self assert: window initialPosition equals: 12 @ 34.
+	self assert: window initialExtent equals: 320 @ 140
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testNavigateSkipsByDefault [
+
+	self assert: ReplayNavigate new skip.
+	self assert: ReplayStep new navigation skip
 ]
 
 { #category : 'tests' }
@@ -85,4 +169,38 @@ ReplayRunnerTest >> testRunExecutesActionsInStepOrderWithoutOpeningNavigation [
 	scenario addStep: step.
 	scenario run.
 	self assert: log asArray equals: #( first second )
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testRunnerDeferDelegatesToManagerBackend [
+
+	| backend manager runner ran |
+	backend := ReplayRecordingBackend new.
+	manager := ReplayUIManager new
+		manage: (Morph new extent: 100 @ 50)
+		usingBackend: backend.
+	runner := ReplayRunner on: ReplayScenario new.
+	runner manager: manager.
+	ran := false.
+
+	runner defer: [ ran := true ].
+
+	self deny: ran.
+	self assert: backend deferredBlockCount equals: 1.
+	backend runDeferredBlocks.
+	self assert: ran
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testStopClosesAndClearsManager [
+
+	| runner manager |
+	runner := ReplayRunner new.
+	manager := ReplayUIManager new manage: (Morph new extent: 100 @ 50); yourself.
+	runner manager: manager.
+
+	runner stop.
+
+	self assert: runner isStopped.
+	self assert: runner manager isNil
 ]

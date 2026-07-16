@@ -1,5 +1,5 @@
 "
-A state-based iterator for running a tutorial.
+I execute a ReplayScenario step by step, managing action dispatch, UI manager state, and navigation.
 "
 Class {
 	#name : 'ReplayRunner',
@@ -11,8 +11,9 @@ Class {
 		'actionIndex',
 		'focus'
 	],
-	#category : 'Replay',
-	#package : 'Replay'
+	#category : 'Replay-Core',
+	#package : 'Replay',
+	#tag : 'Core'
 }
 
 { #category : 'instance creation' }
@@ -33,6 +34,14 @@ ReplayRunner >> currentStep [
 	^ scenario steps at: stepIndex
 ]
 
+{ #category : 'running' }
+ReplayRunner >> defer: aBlock [
+
+	uiManager
+		ifNil: [ ReplayUIBackend new defer: aBlock ]
+		ifNotNil: [ uiManager defer: aBlock ]
+]
+
 { #category : 'accessing' }
 ReplayRunner >> focus [
 
@@ -43,6 +52,12 @@ ReplayRunner >> focus [
 ReplayRunner >> focus: anObject [
 
 	focus := anObject
+]
+
+{ #category : 'testing' }
+ReplayRunner >> isStopped [
+
+	^ actionIndex isNil
 ]
 
 { #category : 'accessing' }
@@ -130,10 +145,20 @@ ReplayRunner >> scenario: aScenario [
 ]
 
 { #category : 'running' }
+ReplayRunner >> settleUI [
+
+	uiManager
+		ifNil: [ ReplayUIBackend new settleUI ]
+		ifNotNil: [ uiManager settleUI ]
+]
+
+{ #category : 'running' }
 ReplayRunner >> stop [
 	"End the scenario, can happen before its last step."
 
 	stepIndex := nil.
 	actionIndex := nil.
-	uiManager ifNotNil: [ uiManager close ]
+	uiManager ifNotNil: [ :manager |
+		manager close.
+		uiManager := nil ]
 ]

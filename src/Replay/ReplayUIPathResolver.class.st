@@ -1,7 +1,5 @@
 "
-I resolve a recorded Replay UI path against a Morph tree on UI cycles.
-
-Replay UI actions store paths as child indexes. Some Morph trees, especially browser and Spec-backed widgets, finish building asynchronously. I centralize the retry policy so actions do not recursively fork and defer their own lookup logic.
+I resolve recorded Morphic child-index paths over one or more UI cycles so actions can wait for late-created morphs with minimal latency.
 "
 Class {
 	#name : 'ReplayUIPathResolver',
@@ -13,11 +11,12 @@ Class {
 		'whenMissing',
 		'maxAttempts',
 		'attemptCount',
-		'lastFailure'
+		'lastFailure',
+		'scheduleBlock'
 	],
-	#category : 'Replay-Actions',
+	#category : 'Replay-Backends',
 	#package : 'Replay',
-	#tag : 'Actions'
+	#tag : 'Backends'
 }
 
 { #category : 'instance creation' }
@@ -90,7 +89,7 @@ ReplayUIPathResolver >> childSummaryFor: aMorph at: index [
 { #category : 'resolving' }
 ReplayUIPathResolver >> found: aMorph [
 
-	self currentWorld defer: [ whenFound value: aMorph ].
+	whenFound value: aMorph.
 	^ aMorph
 ]
 
@@ -177,8 +176,7 @@ ReplayUIPathResolver >> path: aCollection [
 ReplayUIPathResolver >> resolve [
 
 	(path isNil or: [ path isEmpty ]) ifTrue: [ ^ self found: root ].
-	self scheduleAttempt.
-	^ self
+	^ self attemptResolve
 ]
 
 { #category : 'resolving' }
@@ -227,8 +225,15 @@ ReplayUIPathResolver >> root: aMorph [
 { #category : 'resolving' }
 ReplayUIPathResolver >> scheduleAttempt [
 
-	self currentWorld defer: [ self attemptResolve ].
-	^ self
+	scheduleBlock
+		ifNil: [ ReplayUIBackend new defer: [ self attemptResolve ] ]
+		ifNotNil: [ scheduleBlock value: [ self attemptResolve ] ]
+]
+
+{ #category : 'accessing' }
+ReplayUIPathResolver >> scheduleWith: aBlock [
+
+	scheduleBlock := aBlock
 ]
 
 { #category : 'testing' }

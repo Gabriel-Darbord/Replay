@@ -1,5 +1,5 @@
 "
-Triggers an information event using `UIManager>>#inform:`.
+I show an informational UIManager dialog as a scenario action.
 "
 Class {
 	#name : 'ReplayInform',

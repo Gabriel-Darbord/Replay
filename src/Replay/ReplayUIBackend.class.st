@@ -1,5 +1,5 @@
 "
-Abstract base for UI backend adapters used by ReplayUIManager.
+I define the backend protocol used by ReplayUIManager to resolve targets, dispatch UI actions, and settle the active UI framework.
 "
 Class {
 	#name : 'ReplayUIBackend',
@@ -8,6 +8,18 @@ Class {
 	#package : 'Replay',
 	#tag : 'Backends'
 }
+
+{ #category : 'testing' }
+ReplayUIBackend >> canRun: anAction nativelyOn: nativeElement [
+
+	^ false
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> defer: aBlock [
+
+	self currentWorld defer: aBlock
+]
 
 { #category : 'accessing' }
 ReplayUIBackend >> managedPresenter [
@@ -21,8 +33,118 @@ ReplayUIBackend >> managedUI [
 	^ nil
 ]
 
+{ #category : 'resolving' }
+ReplayUIBackend >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
+
+	^ self resolver
+		resolve: aReference
+		forAction: anAction
+		thenDo: foundBlock
+		onMissing: missingBlock
+]
+
+{ #category : 'resolving' }
+ReplayUIBackend >> resolve: aReference thenDo: foundBlock onMissing: missingBlock [
+
+	^ self resolver
+		resolve: aReference
+		thenDo: foundBlock
+		onMissing: missingBlock
+]
+
+{ #category : 'accessing' }
+ReplayUIBackend >> resolver [
+
+	^ ReplayUIResolver on: self
+]
+
+{ #category : 'accessing' }
+ReplayUIBackend >> root [
+
+	^ self managedUI
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runClick: aReplayClick on: aResolvedUI [
+
+	aReplayClick clickOn: aResolvedUI clickTarget
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runDeleteText: aReplayDeleteText on: aResolvedUI [
+
+	| native |
+	native := aResolvedUI nativeElement.
+	(aReplayDeleteText canDeleteTextIn: native) ifTrue: [
+		^ aReplayDeleteText deleteTextIn: native ].
+	aReplayDeleteText deleteTextIn:
+		(aResolvedUI morphRequiredFor: aReplayDeleteText class displayName)
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runDrag: aReplayDrag on: aResolvedUI [
+
+	aReplayDrag dragOn: (aResolvedUI morphRequiredFor: aReplayDrag class displayName)
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runFocus: aReplayFocus on: aResolvedUI [
+
+	| target |
+	target := aResolvedUI focusTarget.
+	target ifNil: [ target := aResolvedUI morphRequiredFor: 'focus' ].
+	target takeKeyboardFocus
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runPressKey: aReplayPressKey on: aResolvedUI [
+
+	aReplayPressKey pressKeyOn: aResolvedUI keyboardTarget
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runScroll: aReplayScroll on: aResolvedUI [
+
+	aReplayScroll scrollOn: (aResolvedUI morphRequiredFor: aReplayScroll class displayName)
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runSelectText: aReplaySelectText on: aResolvedUI [
+
+	| native |
+	native := aResolvedUI nativeElement.
+	(aReplaySelectText canSelectTextIn: native) ifTrue: [
+		^ aReplaySelectText selectTextIn: native ].
+	aReplaySelectText selectTextIn:
+		(aResolvedUI morphRequiredFor: aReplaySelectText class displayName)
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runShortcut: aReplayShortcut on: aResolvedUI [
+
+	aReplayShortcut shortcutOn: aResolvedUI keyboardTarget
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> runType: aReplayType on: aResolvedUI [
+
+	aReplayType typeOn: aResolvedUI keyboardTarget
+]
+
 { #category : 'accessing' }
 ReplayUIBackend >> semanticScriptReceiver [
 
 	^ nil
+]
+
+{ #category : 'running' }
+ReplayUIBackend >> settleUI [
+
+	self currentWorld doOneCycle
+]
+
+{ #category : 'accessing' }
+ReplayUIBackend >> surfaceMorph [
+
+	^ self managedUI
 ]
