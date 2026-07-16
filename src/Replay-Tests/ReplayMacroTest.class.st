@@ -56,31 +56,65 @@ ReplayMacroTest >> testCapturedShiftShortcutPreservesShiftedCharacter [
 { #category : 'tests' }
 ReplayMacroTest >> testCapturedShortcutInstallsAndRunsThroughMorphDispatcher [
 
-	| catcher capturedShortcut macro morph spy event |
+	| catcher capturedShortcut macro morph spy event categoryName |
+	categoryName := #ReplayMacroCapturedShortcutDispatcherTest.
 	event := self keyboardEventForCharacter: $f buttons: 16.
 	catcher := KMCatcherMorph new.
 	catcher keyStroke: event.
 	capturedShortcut := ReplayShortcut fromShortcut: catcher shortcut.
 	spy := ReplayMacroRunSpy new.
-	macro := ReplayMacro
-		named: 'Captured shortcut macro'
-		shortcut: capturedShortcut
-		scenario: spy.
+	macro := ReplayMacro named: 'Captured shortcut macro' shortcut: capturedShortcut scenario: spy.
 	macro identifier: 'captured-shortcut-run-test'.
 	morph := Morph new.
 	[
 		self assert: capturedShortcut text equals: 'f'.
 		self assert: capturedShortcut flags equals: 16.
-		macro contextNames: { #RubTextEditor }.
+		macro contextNames: { categoryName }.
 		macro install.
 		morph kmDispatcher reset.
-		morph attachKeymapCategory: #RubTextEditor.
+		morph attachKeymapCategory: categoryName.
 		morph kmDispatcher dispatchKeystroke: event.
-		self assert: spy hasRun ]
-		ensure: [
+		self assert: spy hasRun ] ensure: [
 			macro uninstall.
 			morph delete.
 			catcher delete ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testInstalledMacroRunsThroughMorphDispatcher [
+
+	| macro morph spy event categoryName |
+	categoryName := #ReplayMacroDispatcherTest.
+	spy := ReplayMacroRunSpy new.
+	macro := ReplayMacro
+		         named: 'Dispatcher macro'
+		         shortcut: (ReplayShortcut new
+				          text: 'f';
+				          addFlags: 16;
+				          yourself)
+		         scenario: spy.
+	macro identifier: 'dispatcher-run-test'.
+	morph := Morph new.
+
+	[
+		macro contextNames: { categoryName }.
+		macro install.
+		morph kmDispatcher reset.
+		morph attachKeymapCategory: categoryName.
+		event := KeyboardEvent new.
+		event
+			setType: #keystroke
+			buttons: 16
+			position: 0 @ 0
+			keyValue: $f asInteger
+			charCode: $f asInteger
+			hand: nil
+			stamp: Time now.
+		event key: (KeyboardKey fromCharacter: $f).
+		morph kmDispatcher dispatchKeystroke: event.
+		self assert: spy hasRun ] ensure: [
+			macro uninstall.
+			morph delete ]
 ]
 
 { #category : 'tests' }
@@ -143,44 +177,6 @@ ReplayMacroTest >> testInstalledTextEditorMacroIsVisibleToCategoryBinding [
 		keymap := binding keymapForShortcut: macro shortcut asKMShortcut.
 		self assert: (macro isOwnKeymap: keymap) ]
 		ensure: [ macro uninstall ]
-]
-
-{ #category : 'tests' }
-ReplayMacroTest >> testInstalledTextEditorMacroRunsThroughMorphDispatcher [
-
-	| macro morph spy event |
-	spy := ReplayMacroRunSpy new.
-	macro := ReplayMacro
-		named: 'Find macro'
-		shortcut: (ReplayShortcut new
-			text: 'f';
-			addFlags: 16;
-			yourself)
-		scenario: spy.
-	macro identifier: 'dispatcher-run-test'.
-	morph := Morph new.
-
-	[
-		macro contextNames: { #RubTextEditor }.
-		macro install.
-		morph kmDispatcher reset.
-		morph attachKeymapCategory: #RubTextEditor.
-		event := KeyboardEvent new.
-		event
-			setType: #keystroke
-			buttons: 16
-			position: 0 @ 0
-			keyValue: $f asInteger
-			charCode: $f asInteger
-			hand: nil
-			stamp: Time now.
-		event key: (KeyboardKey fromCharacter: $f).
-		morph kmDispatcher dispatchKeystroke: event.
-		self assert: spy hasRun ]
-
-		ensure: [
-			macro uninstall.
-			morph delete ]
 ]
 
 { #category : 'tests' }
