@@ -120,25 +120,26 @@ ReplayMacroTest >> testInstalledMacroRunsThroughMorphDispatcher [
 { #category : 'tests' }
 ReplayMacroTest >> testInstalledMacroUsesReplacedScenarioWhenShortcutRuns [
 
-	| macro morph spy event |
+	| macro morph spy event categoryName |
+	categoryName := #ReplayMacroScenarioReplacementTest.
 	spy := ReplayMacroRunSpy new.
 	macro := ReplayMacro
-		named: 'Scenario macro'
-		shortcut: (ReplayShortcut new
-			text: 'f';
-			addFlags: 16;
-			yourself)
-		scenario: ReplayScenario new.
+		         named: 'Scenario macro'
+		         shortcut: (ReplayShortcut new
+				          text: 'f';
+				          addFlags: 16;
+				          yourself)
+		         scenario: ReplayScenario new.
 	macro
 		identifier: 'scenario-replacement-test';
-		contextNames: { #RubTextEditor }.
+		contextNames: { categoryName }.
 	morph := Morph new.
 
 	[
 		macro install.
 		macro scenario: spy.
 		morph kmDispatcher reset.
-		morph attachKeymapCategory: #RubTextEditor.
+		morph attachKeymapCategory: categoryName.
 		event := KeyboardEvent new.
 		event
 			setType: #keystroke
@@ -150,9 +151,7 @@ ReplayMacroTest >> testInstalledMacroUsesReplacedScenarioWhenShortcutRuns [
 			stamp: Time now.
 		event key: (KeyboardKey fromCharacter: $f).
 		morph kmDispatcher dispatchKeystroke: event.
-		self assert: spy hasRun ]
-
-		ensure: [
+		self assert: spy hasRun ] ensure: [
 			macro uninstall.
 			morph delete ]
 ]
