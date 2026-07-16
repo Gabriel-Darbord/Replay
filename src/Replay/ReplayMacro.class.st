@@ -40,22 +40,9 @@ ReplayMacro class >> installedKeymaps [
 ]
 
 { #category : 'keymapping' }
-ReplayMacro class >> isLegacyReplayKeymap: aKMKeymap [
-
-	^ (self isReplayKeymap: aKMKeymap)
-		and: [ (self isStableReplayKeymap: aKMKeymap) not ]
-]
-
-{ #category : 'keymapping' }
 ReplayMacro class >> isReplayKeymap: aKMKeymap [
 
 	^ aKMKeymap description beginsWith: self keymapDescriptionPrefix
-]
-
-{ #category : 'keymapping' }
-ReplayMacro class >> isStableReplayKeymap: aKMKeymap [
-
-	^ aKMKeymap name asString beginsWith: self keymapNamePrefix
 ]
 
 { #category : 'keymapping' }
@@ -199,7 +186,6 @@ ReplayMacro >> installInCategory: aKMCategory [
 	| keymap |
 	self hasKeyBinding ifFalse: [ ^ nil ].
 	self removeOwnKeymapsFromCategory: aKMCategory.
-	self removeLegacyConflictingKeymapsFromCategory: aKMCategory.
 	keymap := self keymap.
 	aKMCategory addKeymapEntry: keymap.
 	^ keymap
@@ -292,16 +278,6 @@ ReplayMacro >> printOn: stream [
 		nextPutAll: ' (';
 		nextPutAll: self shortcut displayString;
 		nextPut: $)
-]
-
-{ #category : 'keymapping' }
-ReplayMacro >> removeLegacyConflictingKeymapsFromCategory: aKMCategory [
-
-	aKMCategory allEntries keymaps
-		select: [ :keymap |
-			(self class isLegacyReplayKeymap: keymap)
-				and: [ self shortcut matchesKeymap: keymap ] ]
-		thenDo: [ :keymap | aKMCategory removeKeymapEntry: keymap ]
 ]
 
 { #category : 'keymapping' }

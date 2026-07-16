@@ -1156,33 +1156,6 @@ ReplayMacroTest >> testMacroInstallDoesNotReportOwnKeymapAsConflict [
 ]
 
 { #category : 'tests' }
-ReplayMacroTest >> testMacroInstallRemovesLegacyConflictingReplayKeymap [
-
-	| category legacy macro conflicts |
-	category := KMCategory named: #ReplayMacroLegacyCleanupTest.
-	legacy := KMKeymap
-		named: #'Old macro'
-		shortcut: $f control
-		action: [ ]
-		description: 'Replay macro: Old macro'.
-	category addKeymapEntry: legacy.
-	macro := ReplayMacro
-		named: 'New macro'
-		shortcut: (ReplayShortcut new
-			text: 'f';
-			addFlags: 16;
-			yourself)
-		scenario: ReplayScenario new.
-	macro identifier: 'legacy-cleanup-test'.
-	macro installInCategory: category.
-	conflicts := category allEntries keymaps select: [ :each |
-		ReplayMacro isLegacyReplayKeymap: each ].
-
-	self assert: conflicts isEmpty.
-	self assert: (category allEntries keymaps anySatisfy: [ :each | macro isOwnKeymap: each ])
-]
-
-{ #category : 'tests' }
 ReplayMacroTest >> testMacroInstallReplacesOwnKeymapInCategory [
 
 	| category macro firstKeymap secondKeymap ownKeymaps |
