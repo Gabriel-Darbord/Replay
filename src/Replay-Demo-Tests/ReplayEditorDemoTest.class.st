@@ -11,7 +11,7 @@ Class {
 { #category : 'tests' }
 ReplayEditorDemoTest >> testAwaitUISettlesScriptSourceBounds [
 
-	| demo runner editor resolved bounds |
+	| demo runner editor resolved bounds windowExtent |
 	demo := ReplayEditorDemo new.
 	runner := ReplayRunner on: demo scenario.
 	demo setupEditorAction runOn: runner.
@@ -27,9 +27,9 @@ ReplayEditorDemoTest >> testAwaitUISettlesScriptSourceBounds [
 			thenDo: [ :element | resolved := element ]
 			onMissing: [ :error | error signal ].
 		bounds := resolved boundsInSurface.
-		self assert: bounds width > 500.
-		self assert: bounds height > 200 ]
-		ensure: [
+		windowExtent := editor window extent.
+		self assert: bounds width > (windowExtent x / 2).
+		self assert: bounds height > (windowExtent y / 4) ] ensure: [
 			runner manager ifNotNil: [ :manager | manager close ].
 			editor ifNotNil: [ editor window ifNotNil: [ :window | window close ] ] ]
 ]

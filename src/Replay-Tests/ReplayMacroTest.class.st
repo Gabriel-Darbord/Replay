@@ -480,18 +480,21 @@ ReplayMacroTest >> testMacroEditorCanUninstallMacro [
 { #category : 'tests' }
 ReplayMacroTest >> testMacroEditorConflictStatusNamesConflictingContexts [
 
-	| macro editor |
-	macro := ReplayMacro
-		named: 'Find macro'
-		shortcut: (ReplayShortcut new
-			text: 'f';
-			addFlags: 64;
-			yourself)
-		scenario: ReplayScenario new.
-	macro contextNames: { #MorphCtrlNavigation }.
-	editor := ReplayMacroEditor on: macro.
+	| shortcut macro editor |
+	shortcut := ReplayShortcut new
+		            text: 'f';
+		            addFlags: 64;
+		            yourself.
+	self
+		withKeymapNamed: #replayTestFind
+		shortcut: shortcut asKMShortcut
+		inCategoryNamed: #RubTextEditor
+		during: [
+				macro := ReplayMacro named: 'Find macro' shortcut: shortcut scenario: ReplayScenario new.
+				macro contextNames: { #RubSmalltalkEditor }.
+				editor := ReplayMacroEditor on: macro.
 
-	self assert: (editor conflictStatusPresenter label includesSubstring: 'Text editor')
+				self assert: (editor conflictStatusPresenter label includesSubstring: 'Text editor') ]
 ]
 
 { #category : 'tests' }
@@ -716,23 +719,26 @@ ReplayMacroTest >> testMacroEditorSelectsNextContextAfterRemoval [
 { #category : 'tests' }
 ReplayMacroTest >> testMacroEditorShowsConflictsInAllKnownContexts [
 
-	| macro editor conflict |
-	macro := ReplayMacro
-		named: 'Find macro'
-		shortcut: (ReplayShortcut new
-			text: 'f';
-			addFlags: 64;
-			yourself)
-		scenario: ReplayScenario new.
-	macro contextNames: { #MorphCtrlNavigation }.
-	editor := ReplayMacroEditor on: macro.
-	conflict := editor conflictList items
-		detect: [ :each | each categoryName = #RubTextEditor and: [ each name = #find ] ]
-		ifNone: [ nil ].
+	| shortcut macro editor conflict |
+	shortcut := ReplayShortcut new
+		            text: 'f';
+		            addFlags: 64;
+		            yourself.
+	self
+		withKeymapNamed: #replayTestFind
+		shortcut: shortcut asKMShortcut
+		inCategoryNamed: #RubTextEditor
+		during: [
+				macro := ReplayMacro named: 'Find macro' shortcut: shortcut scenario: ReplayScenario new.
+				macro contextNames: { #RubSmalltalkEditor }.
+				editor := ReplayMacroEditor on: macro.
+				conflict := editor conflictList items
+					            detect: [ :each | each categoryName = #RubTextEditor and: [ each name = #replayTestFind ] ]
+					            ifNone: [ nil ].
 
-	self assert: conflict notNil.
-	self assert: (conflict contextDisplayName includesSubstring: 'Text editor').
-	self assert: (editor conflictStatusPresenter label includesSubstring: 'context')
+				self assert: conflict notNil.
+				self assert: (conflict contextDisplayName includesSubstring: 'Text editor').
+				self assert: (editor conflictStatusPresenter label includesSubstring: 'context') ]
 ]
 
 { #category : 'tests' }
@@ -1015,7 +1021,7 @@ ReplayMacroTest >> testMacroEditorUsesAcceptIconWithoutConflicts [
 				          addFlags: 16;
 				          yourself)
 		         scenario: ReplayScenario new.
-	macro contextNames: { #RubTextEditor }.
+	macro contextNames: { #ReplayMacroTestNoConflict }.
 	editor := ReplayMacroEditor on: macro.
 
 	self assert: editor conflictList items isEmpty.
@@ -2247,15 +2253,17 @@ ReplayMacroTest >> testReplayShortcutDisplayStringFallsBackForUnmappedCharacter 
 { #category : 'tests' }
 ReplayMacroTest >> testReplayShortcutMatchesKeymapCaseInsensitively [
 
-	| category keymap shortcut |
-	category := KMRepository default categoryForName: #RubTextEditor.
-	keymap := category keymapNamed: #find.
+	| shortcut sameShortcutDifferentCase |
 	shortcut := ReplayShortcut new
-		text: 'f';
-		addFlags: 64;
-		yourself.
+		            text: 'f';
+		            addFlags: 64;
+		            yourself.
+	sameShortcutDifferentCase := ReplayShortcut new
+		                             text: 'F';
+		                             addFlags: 64;
+		                             yourself.
 
-	self assert: (shortcut matchesKeymap: keymap)
+	self assert: (shortcut sameShortcutAs: sameShortcutDifferentCase)
 ]
 
 { #category : 'tests' }
@@ -2401,4 +2409,18 @@ ReplayMacroTest >> textEditingMorphIn: aMorph [
 	^ aMorph allMorphs
 		detect: [ :each | (ReplayMacroContext categoryNamesForMorph: each) includes: #RubTextEditor ]
 		ifNone: [ self fail: 'Expected a nested Rubric text editor morph.' ]
+]
+
+{ #category : 'support' }
+ReplayMacroTest >> withKeymapNamed: keymapName shortcut: aShortcut inCategoryNamed: categoryName during: aBlock [
+
+	| category keymap |
+	category := KMRepository default categoryForName: categoryName.
+	keymap := KMKeymap
+		          named: keymapName
+		          shortcut: aShortcut
+		          action: [ ]
+		          description: 'Replay test keymap'.
+	category addKeymapEntry: keymap.
+	^ aBlock ensure: [ category removeKeymapEntry: keymap ]
 ]

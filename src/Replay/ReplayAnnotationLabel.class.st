@@ -24,6 +24,22 @@ ReplayAnnotationLabel >> contents: aStringOrText [
 	self overlay extent: displayMorph extent
 ]
 
+{ #category : 'accessing' }
+ReplayAnnotationLabel >> fitWidth: maxWidth [
+
+	| displayMorph |
+	(maxWidth isNil or: [ maxWidth <= 0 ]) ifTrue: [ ^ self ].
+	self width <= maxWidth ifTrue: [ ^ self ].
+	submorphs size < 2 ifTrue: [ ^ self ].
+	displayMorph := submorphs second.
+	displayMorph
+		width: maxWidth;
+		beWrapped;
+		compose.
+	self extent: displayMorph extent.
+	self overlay extent: displayMorph extent
+]
+
 { #category : 'initialization' }
 ReplayAnnotationLabel >> initialize [
 

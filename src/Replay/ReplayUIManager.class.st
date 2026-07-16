@@ -93,6 +93,18 @@ ReplayUIManager >> annotationLayoutBounds [
 ]
 
 { #category : 'annotation layout' }
+ReplayUIManager >> annotationLayoutBoundsFor: anAnnotation [
+
+	| layoutBounds targetBounds |
+	layoutBounds := self annotationLayoutBounds.
+	targetBounds := anAnnotation targetBoundsInWorld.
+	(layoutBounds containsRect: targetBounds) ifTrue: [ ^ layoutBounds ].
+	overlay ifNil: [ ^ layoutBounds merge: targetBounds ].
+	overlay world ifNil: [ ^ layoutBounds merge: targetBounds ].
+	^ layoutBounds merge: overlay boundsInWorld
+]
+
+{ #category : 'annotation layout' }
 ReplayUIManager >> annotationTargetBounds [
 
 	^ self annotationsWithLabels collect: [ :annotation |
@@ -190,21 +202,22 @@ ReplayUIManager >> backend: aReplayUIBackend [
 ReplayUIManager >> bestLabelBoundsFor: anAnnotation avoiding: placedBounds [
 
 	| layoutBounds targetBounds bestBounds bestScore candidates |
-	layoutBounds := self annotationLayoutBounds.
+	layoutBounds := self annotationLayoutBoundsFor: anAnnotation.
 	targetBounds := anAnnotation targetBoundsInWorld.
+	self fitLabelOf: anAnnotation within: layoutBounds.
 	candidates := self labelCandidatesFor: anAnnotation.
 	candidates withIndexDo: [ :rawBounds :index |
-		| candidateBounds score |
-		candidateBounds := self clampRectangle: rawBounds within: layoutBounds.
-		score := self
-			scoreLabelBounds: candidateBounds
-			rawBounds: rawBounds
-			target: targetBounds
-			avoiding: placedBounds
-			preference: index.
-		(bestScore isNil or: [ score < bestScore ]) ifTrue: [
-			bestScore := score.
-			bestBounds := candidateBounds ] ].
+			| candidateBounds score |
+			candidateBounds := self clampRectangle: rawBounds within: layoutBounds.
+			score := self
+				         scoreLabelBounds: candidateBounds
+				         rawBounds: rawBounds
+				         target: targetBounds
+				         avoiding: placedBounds
+				         preference: index.
+			(bestScore isNil or: [ score < bestScore ]) ifTrue: [
+					bestScore := score.
+					bestBounds := candidateBounds ] ].
 	^ bestBounds
 ]
 
@@ -311,6 +324,16 @@ ReplayUIManager >> exposeParentMorph: wrapper [
 		 wrapper owner class == ReplayWrapperMorph ]) ifFalse: [ ^ self ].
 	wrapper owner highlight.
 	wrapper allMorphsDo: [ :m | m delete ]
+]
+
+{ #category : 'annotation layout' }
+ReplayUIManager >> fitLabelOf: anAnnotation within: layoutBounds [
+
+	| maxWidth |
+	anAnnotation label ifNil: [ ^ self ].
+	maxWidth := layoutBounds width - (self annotationLabelMargin * 2).
+	maxWidth := maxWidth max: 80.
+	anAnnotation label fitWidth: maxWidth
 ]
 
 { #category : 'managing UI' }

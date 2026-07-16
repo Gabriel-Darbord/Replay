@@ -237,6 +237,12 @@ ReplayMacro >> installedInContextNamed: aSymbol [
 	^ self installedInCategory: (KMRepository default categoryForName: aSymbol)
 ]
 
+{ #category : 'keymapping' }
+ReplayMacro >> installedKeymaps [
+
+	^ self installedCategories flatCollect: [ :category | category allEntries keymaps select: [ :keymap | self isOwnKeymap: keymap ] ]
+]
+
 { #category : 'conflicts' }
 ReplayMacro >> isOwnKeymap: aKMKeymap [
 

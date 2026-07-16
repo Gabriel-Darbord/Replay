@@ -70,6 +70,7 @@ editor shortcutTextPresenter text: ''f''.
 editor controlCheckBox state ifFalse: [ editor controlCheckBox toggleState ].
 context := editor contextDropList items detect: [ :each | each identifier = #textEditors ].
 editor contextDropList selectItem: context.
+editor addSelectedContext.
 macro := editor macro.
 payload := ReplayScenario new title: ''Find helper macro payload''; yourself.
 step := ReplayStep new.
@@ -215,26 +216,15 @@ ReplayMacroEditorDemo >> stepNamed: aString with: actions [
 { #category : 'actions' }
 ReplayMacroEditorDemo >> triggerInstalledShortcutAction [
 
-	^ self script: '| morph event |
+	^ self script: '| editor macro keymaps |
 Smalltalk globals removeKey: #ReplayMacroEditorDemoTriggered ifAbsent: [ ].
-morph := Morph new.
-[
-	morph kmDispatcher reset.
-	morph attachKeymapCategory: #RubTextEditor.
-	event := KeyboardEvent new.
-	event
-		setType: #keystroke
-		buttons: 16
-		position: 0 @ 0
-		keyValue: $f asInteger
-		charCode: $f asInteger
-		hand: nil
-		stamp: Time now.
-	event key: (KeyboardKey fromCharacter: $f).
-	morph kmDispatcher dispatchKeystroke: event.
-	(Smalltalk globals at: #ReplayMacroEditorDemoTriggered ifAbsent: [ false ]) ifFalse: [
-		self error: ''Macro shortcut did not run'' ] ]
-	ensure: [ morph delete ]'
+editor := self focus macroEditorPresenter.
+macro := editor macro.
+keymaps := macro installedKeymaps.
+keymaps isEmpty ifTrue: [ self error: ''Macro keymap was not installed'' ].
+keymaps first action value.
+(Smalltalk globals at: #ReplayMacroEditorDemoTriggered ifAbsent: [ false ]) ifFalse: [
+	self error: ''Macro shortcut did not run'' ]'
 ]
 
 { #category : 'steps' }

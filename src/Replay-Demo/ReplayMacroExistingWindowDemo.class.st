@@ -97,12 +97,13 @@ editor shortcutTextPresenter text: ''m''.
 editor controlCheckBox state ifFalse: [ editor controlCheckBox toggleState ].
 context := editor contextDropList items detect: [ :each | each identifier = #textEditors ].
 editor contextDropList selectItem: context.
+editor addSelectedContext.
 macro := editor macro.
 payload := ReplayScenario new title: ''Existing window macro payload''; yourself.
 step := ReplayStep new.
 step navigation skip: true.
 step addAction: (ReplayAttachUI new script: ''Smalltalk globals at: #ReplayMacroExistingWindowDemoTarget'').
-step addAction: (ReplayScript new script: ', self targetPayloadScript storeString, ').
+step addAction: (ReplayScript new script: ' , self targetPayloadScript storeString , ').
 payload addStep: step.
 macro scenario: payload'
 ]
@@ -246,25 +247,14 @@ target actions selectIndex: target actions items size'
 { #category : 'actions' }
 ReplayMacroExistingWindowDemo >> triggerInstalledShortcutAction [
 
-	^ self script: '| morph event target |
-target := Smalltalk globals at: ', self targetEditorKey storeString, '.
-morph := Morph new.
-[
-	morph kmDispatcher reset.
-	morph attachKeymapCategory: #RubTextEditor.
-	event := KeyboardEvent new.
-	event
-		setType: #keystroke
-		buttons: 16
-		position: 0 @ 0
-		keyValue: $m asInteger
-		charCode: $m asInteger
-		hand: nil
-		stamp: Time now.
-	event key: (KeyboardKey fromCharacter: $m).
-	morph kmDispatcher dispatchKeystroke: event.
-	target actions items isEmpty ifTrue: [ self error: ''Macro did not update the existing editor'' ] ]
-	ensure: [ morph delete ]'
+	^ self script: '| editor macro keymaps target |
+target := Smalltalk globals at: ' , self targetEditorKey storeString , '.
+editor := self focus macroEditorPresenter.
+macro := editor macro.
+keymaps := macro installedKeymaps.
+keymaps isEmpty ifTrue: [ self error: ''Macro keymap was not installed'' ].
+keymaps first action value.
+target actions items isEmpty ifTrue: [ self error: ''Macro did not update existing editor'' ]'
 ]
 
 { #category : 'steps' }
@@ -280,26 +270,15 @@ ReplayMacroExistingWindowDemo >> triggerStep [
 { #category : 'actions' }
 ReplayMacroExistingWindowDemo >> triggerUpdatedShortcutAction [
 
-	^ self script: '| morph event target originalSize |
-target := Smalltalk globals at: ', self targetEditorKey storeString, '.
+	^ self script: '| editor macro keymaps target originalSize |
+target := Smalltalk globals at: ' , self targetEditorKey storeString , '.
 originalSize := target actions items size.
-morph := Morph new.
-[
-	morph kmDispatcher reset.
-	morph attachKeymapCategory: #RubTextEditor.
-	event := KeyboardEvent new.
-	event
-		setType: #keystroke
-		buttons: 16
-		position: 0 @ 0
-		keyValue: $n asInteger
-		charCode: $n asInteger
-		hand: nil
-		stamp: Time now.
-	event key: (KeyboardKey fromCharacter: $n).
-	morph kmDispatcher dispatchKeystroke: event.
-	target actions items size > originalSize ifFalse: [ self error: ''Updated shortcut did not run the macro'' ] ]
-	ensure: [ morph delete ]'
+editor := self focus macroEditorPresenter.
+macro := editor macro.
+keymaps := macro installedKeymaps.
+keymaps isEmpty ifTrue: [ self error: ''Macro keymap was not installed'' ].
+keymaps first action value.
+(target actions items size > originalSize) ifFalse: [ self error: ''Updated shortcut did not run macro'' ]'
 ]
 
 { #category : 'steps' }

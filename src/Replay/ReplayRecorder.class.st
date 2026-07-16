@@ -619,6 +619,23 @@ ReplayRecorder >> scrollDirectionFrom: anEvent [
 ]
 
 { #category : 'events' }
+ReplayRecorder >> shortcutCharacterFallbackFrom: anEvent [
+
+	| value key |
+	value := anEvent keyValue.
+	((value between: 1 and: 26) and: [ (self modifierFlagsFrom: anEvent) ~= 0 ]) ifTrue: [
+		^ Character value: $a asInteger + value - 1 ].
+	key := anEvent key.
+	key ifNotNil: [
+			[ ^ key asCharacter ]
+				on: Error
+				do: [ nil ] ].
+	^ [ Character value: value ]
+		  on: Error
+		  do: [ nil ]
+]
+
+{ #category : 'events' }
 ReplayRecorder >> shortcutFromEvent: anEvent [
 
 	| text |
@@ -645,7 +662,12 @@ ReplayRecorder >> shortcutModifierFlagsFrom: anEvent [
 { #category : 'events' }
 ReplayRecorder >> shortcutTextFrom: anEvent [
 
-	^ anEvent modifiedCharacter asString asLowercase
+	| character |
+	character := [ anEvent modifiedCharacter ]
+		             on: Error
+		             do: [ self shortcutCharacterFallbackFrom: anEvent ].
+	character ifNil: [ ^ '' ].
+	^ character asString asLowercase
 ]
 
 { #category : 'testing' }
