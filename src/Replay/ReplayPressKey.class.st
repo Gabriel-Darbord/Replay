@@ -131,8 +131,8 @@ ReplayPressKey >> modifierPresenterOn: editor [
 ReplayPressKey >> pressKeyOn: ui [
 
 	self repeatCount timesRepeat: [
-		(self keyDownKey: self keyboardKey buttons: self flags) sentTo: ui.
-		(self keyUpKey: self keyboardKey buttons: self flags) sentTo: ui ]
+			(self keyDownKey: self keyboardKey buttons: self flags) sentTo: ui.
+			(self keyUpKey: self keyboardKey buttons: self flags) sentTo: ui ]
 ]
 
 { #category : 'printing' }

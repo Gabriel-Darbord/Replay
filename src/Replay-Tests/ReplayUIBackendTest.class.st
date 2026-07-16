@@ -998,6 +998,37 @@ ReplayUIBackendTest >> testPressKeyChoicesResolveToKeyboardKeys [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testPressKeyMovesRubricCursorWithoutTyping [
+
+	| action area |
+	action := ReplayPressKey new
+		          keySelector: #left;
+		          yourself.
+	area := RubEditingArea new.
+
+	[
+		area setTextWith: 'a'.
+		area selectFrom: 2 to: 1.
+		action pressKeyOn: area.
+		self assert: area text asString equals: 'a'.
+		self assert: area selectionInterval equals: (1 to: 0) ] ensure: [ area delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testPressKeySendsDownAndUp [
+
+	| action target |
+	target := ReplayEventRecorderMorph new.
+	action := ReplayPressKey new.
+	action keySelector: #left.
+	action pressKeyOn: target.
+
+	self assert: target eventLabels asArray equals: #( keyDown keyUp ).
+	self assert: target events first value key equals: KeyboardKey left.
+	self assert: target events second value key equals: KeyboardKey left
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testPressKeySettingsPresenterBuilds [
 
 	| action presenter |
