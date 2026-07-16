@@ -239,6 +239,12 @@ ReplayRecorder >> ignoresShortcutText: aString flags: anInteger [
 ]
 
 { #category : 'testing' }
+ReplayRecorder >> isKeyPressKeyboardEvent: anEvent [
+
+	^ (self keyPressSelectorFrom: anEvent) notNil
+]
+
+{ #category : 'testing' }
 ReplayRecorder >> isModifierOnlyShortcutEvent: anEvent [
 
 	^ (self modifierFlagsFrom: anEvent) ~= 0 and: [ anEvent keyValue = 0 ]
@@ -269,21 +275,23 @@ ReplayRecorder >> isUnmodifiedDeleteKeyboardEvent: anEvent [
 		and: [ (self deleteDirectionFrom: anEvent) notNil ]
 ]
 
-{ #category : 'testing' }
-ReplayRecorder >> isUnmodifiedKeyPressKeyboardEvent: anEvent [
-
-	^ (self shortcutModifierFlagsFrom: anEvent) = 0
-		and: [ (self keyPressSelectorFrom: anEvent) notNil ]
-]
-
 { #category : 'events' }
 ReplayRecorder >> keyPressSelectorFrom: anEvent [
 
-	| character code |
+	| character |
 	character := anEvent keyCharacter.
 	character ifNil: [ ^ nil ].
-	code := character asInteger.
-	code = Character cr asInteger ifTrue: [ ^ #enter ].
+	character = Character arrowLeft ifTrue: [ ^ #left ].
+	character = Character arrowRight ifTrue: [ ^ #right ].
+	character = Character arrowUp ifTrue: [ ^ #up ].
+	character = Character arrowDown ifTrue: [ ^ #down ].
+	character = Character home ifTrue: [ ^ #home ].
+	character = Character end ifTrue: [ ^ #end ].
+	character = Character pageUp ifTrue: [ ^ #pageUp ].
+	character = Character pageDown ifTrue: [ ^ #pageDown ].
+	character = Character cr ifTrue: [ ^ #enter ].
+	character = Character escape ifTrue: [ ^ #escape ].
+	character = Character tab ifTrue: [ ^ #tab ].
 	^ nil
 ]
 
@@ -448,19 +456,19 @@ ReplayRecorder >> recordKeyboardEvent: anEvent [
 	target := anEvent hand keyboardFocus.
 	(self managedIncludesMorph: target) ifFalse: [ ^ self ].
 	anEvent isKeystroke ifTrue: [
-		self hasPendingShortcut ifTrue: [ self discardPendingShortcut ].
-		self hasPendingKeyPress ifTrue: [ self discardPendingKeyPress ].
-		^ self recordKeystroke: anEvent on: target ].
+			self hasPendingShortcut ifTrue: [ self discardPendingShortcut ].
+			self hasPendingKeyPress ifTrue: [ self discardPendingKeyPress ].
+			^ self recordKeystroke: anEvent on: target ].
 	(anEvent isKeyDown and: [ self isUnmodifiedDeleteKeyboardEvent: anEvent ]) ifTrue: [
-		self flushPendingKeyboardActions.
-		^ self recordDeleteTextOn: self keyboardFocusReference direction: (self deleteDirectionFrom: anEvent) ].
-	(anEvent isKeyDown and: [ self isUnmodifiedKeyPressKeyboardEvent: anEvent ]) ifTrue: [
-		self flushPendingShortcut.
-		pendingKeyPressAction := self pendingKeyPressActionFor: anEvent.
-		^ self ].
+			self flushPendingKeyboardActions.
+			^ self recordDeleteTextOn: self keyboardFocusReference direction: (self deleteDirectionFrom: anEvent) ].
+	(anEvent isKeyDown and: [ self isKeyPressKeyboardEvent: anEvent ]) ifTrue: [
+			self flushPendingShortcut.
+			pendingKeyPressAction := self pendingKeyPressActionFor: anEvent.
+			^ self ].
 	(anEvent isKeyDown and: [ (self shortcutModifierFlagsFrom: anEvent) ~= 0 ]) ifTrue: [
-		self flushPendingKeyPress.
-		^ self recordShortcut: anEvent on: target ].
+			self flushPendingKeyPress.
+			^ self recordShortcut: anEvent on: target ].
 	anEvent isKeyUp ifTrue: [ ^ self flushPendingKeyboardActions ]
 ]
 

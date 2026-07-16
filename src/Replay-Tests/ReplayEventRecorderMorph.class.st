@@ -1,5 +1,5 @@
 "
-I record Morphic mouse events sent by Replay tests.
+I record Morphic mouse and keyboard events sent by Replay tests.
 "
 Class {
 	#name : 'ReplayEventRecorderMorph',
@@ -33,6 +33,24 @@ ReplayEventRecorderMorph >> eventLabels [
 ReplayEventRecorderMorph >> events [
 
 	^ events ifNil: [ events := OrderedCollection new ]
+]
+
+{ #category : 'event handling' }
+ReplayEventRecorderMorph >> handleKeyDown: anEvent [
+
+	self record: #keyDown event: anEvent
+]
+
+{ #category : 'event handling' }
+ReplayEventRecorderMorph >> handleKeyUp: anEvent [
+
+	self record: #keyUp event: anEvent
+]
+
+{ #category : 'event handling' }
+ReplayEventRecorderMorph >> handleKeystroke: anEvent [
+
+	self record: #keystroke event: anEvent
 ]
 
 { #category : 'event handling' }

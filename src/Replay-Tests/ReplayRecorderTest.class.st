@@ -442,6 +442,39 @@ ReplayRecorderTest >> testRecorderPrependsPrologueOnlyWhenActionsWereRecorded [
 ]
 
 { #category : 'tests' }
+ReplayRecorderTest >> testRecorderRecordsArrowKeyDownAsPressKeyWhenKeyUpArrives [
+
+	| root target recorder hand previousFocus action |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self
+				 keyboardEventType: #keyDown
+				 character: Character arrowLeft
+				 buttons: 0
+				 hand: hand).
+		self assert: recorder actions isEmpty.
+		recorder recordEvent: (self
+				 keyboardEventType: #keyUp
+				 character: Character arrowLeft
+				 buttons: 0
+				 hand: hand).
+		action := recorder actions first.
+		self assert: action class equals: ReplayPressKey.
+		self assert: action keySelector equals: #left.
+		self assert: action flags equals: 0.
+		self assert: action uiReference isKeyboardFocus ] ensure: [
+			hand keyboardFocus: previousFocus.
+			recorder manager close ]
+]
+
+{ #category : 'tests' }
 ReplayRecorderTest >> testRecorderRecordsDeleteTextForBackspace [
 	| root target recorder hand previousFocus action |
 	root := Morph new extent: 200 @ 100.
@@ -509,6 +542,39 @@ ReplayRecorderTest >> testRecorderRecordsKeyDownBackspaceAsDeleteText [
 		self assert: action uiReference isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderRecordsModifiedArrowKeyAsPressKey [
+
+	| root target recorder hand previousFocus action |
+	root := Morph new extent: 200 @ 100.
+	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
+	root addMorph: target.
+	recorder := self newRecorderOn: root.
+	hand := World activeHand.
+	previousFocus := hand keyboardFocus.
+
+	[
+		hand keyboardFocus: target.
+		recorder recordEvent: (self
+				 keyboardEventType: #keyDown
+				 character: Character arrowRight
+				 buttons: UserInputEvent cmdKeyMask
+				 hand: hand).
+		self assert: recorder actions isEmpty.
+		recorder recordEvent: (self
+				 keyboardEventType: #keyUp
+				 character: Character arrowRight
+				 buttons: UserInputEvent cmdKeyMask
+				 hand: hand).
+		action := recorder actions first.
+		self assert: action class equals: ReplayPressKey.
+		self assert: action keySelector equals: #right.
+		self assert: action flags equals: UserInputEvent cmdKeyMask.
+		self assert: action uiReference isKeyboardFocus ] ensure: [
+			hand keyboardFocus: previousFocus.
+			recorder manager close ]
 ]
 
 { #category : 'tests' }
