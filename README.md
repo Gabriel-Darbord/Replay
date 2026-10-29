@@ -12,6 +12,9 @@ Metacello new
   load
 ```
 
+Replay runs on Pharo 13, 14 and 15, each covered by CI. Pharo 14 is the
+development version.
+
 ## Usage
 
 Open the editor and create your scenario using the GUI.
