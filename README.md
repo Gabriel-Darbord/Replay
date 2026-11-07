@@ -18,7 +18,7 @@ Replay runs on Pharo 13, 14 and 15, each covered by CI. Pharo 14 is the developm
 
 ## Scenarios
 
-A scenario is a list of steps, and each step is a list of actions: open or attach to some UI, click, drag, scroll, type, press keys, annotate widgets, wait, run scripts.
+A scenario is a list of steps, and each step is a list of actions: open or attach to some UI, click, drag and drop, scroll, type, press keys, select list and tree items by label, choose menu items, check conditions, annotate widgets, wait, run scripts.
 A step ends with an optional navigation dialog that lets the viewer continue or stop, which turns a scenario into a tutorial.
 
 Open the editor to create one:
@@ -29,6 +29,10 @@ ReplayEditor open
 - Add actions with the chooser and the **+** button, then edit them on the right. UI actions have a second view, **Edit UI interaction**, that previews the UI and lets you pick a target by clicking it.
 - Record instead of writing actions by hand: press **Cmd + R** (Ctrl + R outside macOS) in the window you want to record, do what the scenario should do, and press it again to stop. The **Record** button records the window you used last.
 - **Run** plays the scenario, **Run step** plays the selected step.
+
+Actions find the widgets of Spec presenters by name: by default, the name of the instance variable holding the subpresenter, such as `runButton`, or a dotted path such as `toolbar.runButton` when the name alone is ambiguous. Recording and picking a target use these names when they can, so scenarios survive layout changes; other widgets are found by their position in the window. A presenter can expose other names by overriding `replayPresenterAt:ifAbsent:`.
+
+**Check** turns a scenario into a test: its condition is evaluated with the target as `self`, and the run waits for it to hold, then fails if it does not. **Select item** and **Choose menu item** also wait for what they look for, such as a menu opened by a right click.
 
 Scenarios are plain objects serialized with STON. **Copy** puts the scenario on the clipboard and **Import** reads one back. To run a scenario from code:
 ```st
