@@ -72,8 +72,8 @@ ReplayUIPathResolverTest >> testAttemptResolveReportsMissingAfterMaximumAttempts
 	resolver attemptResolve.
 	self assert: capturedError class equals: ReplayMissingUIError.
 	self assert: (capturedError messageText includesSubstring: 'Could not resolve UI target').
-	self assert: (capturedError tag at: #path) equals: #( 2 ).
-	availableChildren := capturedError tag at: #availableChildren.
+	self assert: (capturedError subject at: #path) equals: #( 2 ).
+	availableChildren := capturedError subject at: #availableChildren.
 	self assert: availableChildren size equals: 1.
 	self assert: ((availableChildren first at: #class) = child class name)
 ]

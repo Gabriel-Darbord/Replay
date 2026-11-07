@@ -91,7 +91,7 @@ ReplayResolvedUIElement >> morphRequiredFor: interactionName [
 	morph ifNotNil: [ ^ morph ].
 	ReplayMissingUIError new
 		messageText: 'Resolved UI element has no Morphic ' , interactionName , ' target.';
-		tag: self;
+		subject: self;
 		signal
 ]
 

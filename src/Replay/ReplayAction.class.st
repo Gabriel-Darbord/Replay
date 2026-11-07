@@ -112,6 +112,20 @@ ReplayAction >> helpPresenterOn: editor about: error [
 		  yourself
 ]
 
+{ #category : 'editing' }
+ReplayAction >> helpPresenterOn: editor aboutMissingUI: error [
+	"Actions that need a UI can explain how to provide one"
+
+	^ self helpPresenterOn: editor about: error
+]
+
+{ #category : 'editing' }
+ReplayAction >> helpPresenterOn: editor aboutScript: error [
+	"Actions with a script can explain how it failed"
+
+	^ self helpPresenterOn: editor about: error
+]
+
 { #category : 'testing' }
 ReplayAction >> isClick [
 
@@ -148,6 +162,23 @@ ReplayAction >> noEditionPresenterOn: editor [
 				   add: 'This action cannot be edited.';
 				   yourself);
 		  yourself
+]
+
+{ #category : 'running' }
+ReplayAction >> previewOn: aReplayUIBuilder [
+	"Replay myself to rebuild an editor preview of the UI.
+	Actions with effects outside of the preview UI, or that take time, override me to skip them."
+
+	self runOn: aReplayUIBuilder
+]
+
+{ #category : 'printing' }
+ReplayAction >> printDetail: aString on: stream [
+	"Print a short configuration detail after my name, if there is one."
+
+	aString isEmptyOrNil ifTrue: [ ^ self ].
+	stream nextPutAll: ': '.
+	stream nextPutAll: (aString printStringLimitedTo: 100)
 ]
 
 { #category : 'printing' }

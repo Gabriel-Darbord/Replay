@@ -140,6 +140,6 @@ ReplaySelectText >> unsupportedTarget: anObject [
 
 	ReplayError new
 		messageText: 'Target ', anObject className, ' does not support text selection.';
-		tag: anObject;
+		subject: anObject;
 		signal
 ]

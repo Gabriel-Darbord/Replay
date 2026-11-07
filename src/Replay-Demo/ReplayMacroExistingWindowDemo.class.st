@@ -218,7 +218,7 @@ ReplayMacroExistingWindowDemo >> stepNamed: aString with: actions [
 	actions do: [ :action | step addAction: action ].
 	step navigation
 		text: aString;
-		position: self navigationPosition;
+		placement: (ReplayPlacement position: self navigationPosition);
 		skip: false.
 	^ step
 ]

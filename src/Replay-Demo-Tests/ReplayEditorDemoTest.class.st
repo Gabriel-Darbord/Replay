@@ -102,9 +102,7 @@ ReplayEditorDemoTest >> testScenarioStructure [
 		step actions anySatisfy: [ :action | action isKindOf: ReplayDelay ] ]).
 	self assert: (scenario steps noneSatisfy: [ :step | step navigation skip ]).
 	self assert: (scenario steps allSatisfy: [ :step |
-		step navigation position = expectedNavigationPosition ]).
-	self assert: (scenario steps allSatisfy: [ :step | step navigation extent isNil ]).
-	self assert: (scenario steps allSatisfy: [ :step | step navigation bounds isNil ])
+		step navigation placement = (ReplayPlacement position: expectedNavigationPosition) ])
 ]
 
 { #category : 'tests' }

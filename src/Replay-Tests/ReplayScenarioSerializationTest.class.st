@@ -21,6 +21,102 @@ ReplayScenarioSerializationTest >> roundTripAction: anAction [
 ]
 
 { #category : 'tests' }
+ReplayScenarioSerializationTest >> testAttachActionsRoundTripThroughSton [
+
+	| copy |
+	copy := self roundTripAction: (ReplayAttachUI new script: 'self focus').
+	self assert: copy class equals: ReplayAttachUI.
+	self assert: copy script equals: 'self focus'.
+	self assert: (self roundTripAction: ReplayAttachWorld new) class equals: ReplayAttachWorld.
+	self
+		assert: (self roundTripAction: ReplayAttachActiveWindow new) class
+		equals: ReplayAttachActiveWindow
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testBrowseActionsRoundTripThroughSton [
+
+	| copy |
+	copy := self roundTripAction: (ReplayBrowseClass new targetClass: ReplayStep; yourself).
+	self assert: copy targetClass equals: ReplayStep.
+	copy := self roundTripAction: (ReplayBrowseMethod new targetMethod: ReplayScenario class >> #example; yourself).
+	self assert: copy targetMethod equals: ReplayScenario class >> #example.
+	copy := self roundTripAction: (ReplayBrowsePackage new targetPackage: ReplayStep package; yourself).
+	self assert: copy targetPackage equals: ReplayStep package
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testDefaultsAreNotSerialized [
+
+	| scenario step ston |
+	scenario := ReplayScenario new.
+	step := ReplayStep new.
+	step addAction: ReplayScript new.
+	step addAction: ReplayInform new.
+	step addAction: ReplayOpenPresenter new.
+	scenario addStep: step.
+	"Reading defaults or printing must not store them"
+	scenario title; description.
+	step navigation skip; text; acceptLabel; cancelLabel.
+	step printString.
+	step actions do: [ :each | each printString ].
+
+	ston := STON toString: scenario.
+
+	#( 'title' 'description' 'navigation' 'ReplayNavigate' 'script' 'text' 'placement' ) do: [ :key |
+		self deny: (ston includesSubstring: key) ].
+	self assert: (STON fromString: ston) steps first navigation isDefault
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testDelayActionRoundTripsThroughSton [
+
+	self assert: (self roundTripAction: (ReplayDelay seconds: 2.5)) seconds equals: 2.5
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testExampleStonLoads [
+
+	| scenario step |
+	scenario := STON fromString: ReplayScenario exampleSton.
+	self assert: scenario title equals: 'Example Scenario'.
+	self assert: scenario steps size equals: 1.
+	step := scenario steps first.
+	self assert: step actions first targetClass equals: ReplayScenario.
+	self assert: step actions second class equals: ReplayAnnotate.
+	self deny: step navigation skip.
+	self assert: step navigation text equals: 'Thus concludes this example.'.
+	self assert: step navigation acceptLabel equals: 'Next'
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testInformActionRoundTripsThroughSton [
+
+	self assert: (self roundTripAction: (ReplayInform new text: 'Hello')) text equals: 'Hello'
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testNavigateSkipFalseRoundTripsThroughSton [
+
+	| scenario step copy |
+	scenario := ReplayScenario new.
+	step := ReplayStep new.
+	step navigation skip: false.
+	scenario addStep: step.
+
+	copy := STON fromString: (STON toString: scenario).
+
+	self deny: copy steps first navigation skip
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testUIActionsWithoutSettingsRoundTripThroughSton [
+
+	{ ReplayCloseUI. ReplayClearAnnotations } do: [ :class |
+		self assert: (self roundTripAction: class new) class equals: class ]
+]
+
+{ #category : 'tests' }
 ReplayScenarioSerializationTest >> testAnnotatePlacementRoundTripsThroughSton [
 
 	| copy |
@@ -95,26 +191,22 @@ ReplayScenarioSerializationTest >> testDragActionRoundTripsThroughSton [
 { #category : 'tests' }
 ReplayScenarioSerializationTest >> testNavigatePlacementRoundTripsThroughSton [
 
-	| scenario positionedStep boundedStep copy positionedNavigation boundedNavigation |
+	| scenario positionedStep boundedStep copy |
 	scenario := ReplayScenario new.
 	positionedStep := ReplayStep new.
-	positionedStep navigation
-		position: 12 @ 34;
-		extent: 320 @ 140.
+	positionedStep navigation placement: (ReplayPlacement position: 12 @ 34 extent: 320 @ 140).
 	scenario addStep: positionedStep.
 	boundedStep := ReplayStep new.
-	boundedStep navigation bounds: (50 @ 70 extent: 360 @ 150).
+	boundedStep navigation placement: (ReplayPlacement bounds: (50 @ 70 extent: 360 @ 150)).
 	scenario addStep: boundedStep.
 
 	copy := STON fromString: (STON toString: scenario).
-	positionedNavigation := copy steps first navigation.
-	boundedNavigation := copy steps second navigation.
-	self assert: positionedNavigation position equals: 12 @ 34.
-	self assert: positionedNavigation extent equals: 320 @ 140.
-	self assert: positionedNavigation bounds isNil.
-	self assert: boundedNavigation bounds equals: (50 @ 70 extent: 360 @ 150).
-	self assert: boundedNavigation position isNil.
-	self assert: boundedNavigation extent isNil
+	self
+		assert: copy steps first navigation placement
+		equals: (ReplayPlacement position: 12 @ 34 extent: 320 @ 140).
+	self
+		assert: copy steps second navigation placement
+		equals: (ReplayPlacement bounds: (50 @ 70 extent: 360 @ 150))
 ]
 
 { #category : 'tests' }
@@ -123,14 +215,12 @@ ReplayScenarioSerializationTest >> testOpenPlacementRoundTripsThroughSton [
 	| action copy |
 	action := ReplayOpenPresenter new
 		script: 'SpPresenter new';
-		extent: 1083 @ 532;
-		bounds: (10 @ 20 corner: 300 @ 400);
+		placement: (ReplayPlacement bounds: (10 @ 20 corner: 300 @ 400));
 		yourself.
 	copy := self roundTripAction: action.
 	self assert: copy class equals: ReplayOpenPresenter.
 	self assert: copy script equals: 'SpPresenter new'.
-	self assert: copy extent equals: 1083 @ 532.
-	self assert: copy bounds equals: (10 @ 20 corner: 300 @ 400)
+	self assert: copy placement equals: (ReplayPlacement bounds: (10 @ 20 corner: 300 @ 400))
 ]
 
 { #category : 'tests' }

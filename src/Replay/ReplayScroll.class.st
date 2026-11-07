@@ -80,7 +80,7 @@ ReplayScroll >> direction [
 ReplayScroll >> direction: aSymbol [
 
 	(#(#up #down #left #right) includes: aSymbol)
-		ifFalse: [ ReplayError new messageText: 'Unsupported scroll direction: ', aSymbol asString; tag: aSymbol; signal ].
+		ifFalse: [ ReplayError new messageText: 'Unsupported scroll direction: ', aSymbol asString; subject: aSymbol; signal ].
 	direction := aSymbol
 ]
 

@@ -118,7 +118,7 @@ ReplayDeleteText >> direction [
 ReplayDeleteText >> direction: aSymbol [
 
 	(#(#backward #forward) includes: aSymbol)
-		ifFalse: [ ReplayError new messageText: 'Unsupported delete direction: ', aSymbol asString; tag: aSymbol; signal ].
+		ifFalse: [ ReplayError new messageText: 'Unsupported delete direction: ', aSymbol asString; subject: aSymbol; signal ].
 	direction := aSymbol
 ]
 
@@ -193,6 +193,6 @@ ReplayDeleteText >> unsupportedTarget: anObject [
 
 	ReplayError new
 		messageText: 'Target ', anObject className, ' does not support text deletion.';
-		tag: anObject;
+		subject: anObject;
 		signal
 ]

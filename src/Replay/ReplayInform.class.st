@@ -1,5 +1,5 @@
 "
-I show an informational UIManager dialog as a scenario action.
+I show an informational UIManager notification as a scenario action. Editor previews do not show it.
 "
 Class {
 	#name : 'ReplayInform',
@@ -35,13 +35,9 @@ ReplayInform >> editionPresenterOn: editor [
 		  yourself
 ]
 
-{ #category : 'printing' }
-ReplayInform >> printOn: stream [
-
-	super printOn: stream.
-	text isEmptyOrNil ifTrue: [ ^ self ].
-	stream nextPutAll: ': '.
-	stream nextPutAll: (text printStringLimitedTo: 100)
+{ #category : 'running' }
+ReplayInform >> previewOn: aReplayUIBuilder [
+	"Notifications are not part of the previewed UI."
 ]
 
 { #category : 'running' }

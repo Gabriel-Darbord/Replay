@@ -3,7 +3,7 @@ I attach a replay runner to the currently active Morphic window without adding a
 "
 Class {
 	#name : 'ReplayAttachActiveWindow',
-	#superclass : 'ReplayAction',
+	#superclass : 'ReplayAttach',
 	#category : 'Replay-Actions',
 	#package : 'Replay',
 	#tag : 'Actions'
@@ -12,18 +12,15 @@ Class {
 { #category : 'resolving' }
 ReplayAttachActiveWindow class >> activeSystemWindow [
 
-	| systemWindowClass |
-	systemWindowClass := self systemWindowClass.
-	systemWindowClass ifNil: [ ^ nil ].
-	^ World submorphs
-		detect: [ :morph | (morph isKindOf: systemWindowClass) and: [ morph isActive ] ]
+	^ self currentWorld submorphs
+		detect: [ :morph | (morph isKindOf: SystemWindow) and: [ morph isActive ] ]
 		ifNone: [ nil ]
 ]
 
 { #category : 'resolving' }
 ReplayAttachActiveWindow class >> activeWindowMorph [
 
-	^ self activeWindowMorphFromHand: World activeHand
+	^ self activeWindowMorphFromHand: self currentWorld activeHand
 ]
 
 { #category : 'resolving' }
@@ -34,7 +31,7 @@ ReplayAttachActiveWindow class >> activeWindowMorphFromHand: aHandMorph [
 	focus ifNotNil: [
 		window := self windowMorphFor: focus.
 		window ifNotNil: [ ^ window ] ].
-	^ self activeSystemWindow ifNil: [ World ]
+	^ self activeSystemWindow ifNil: [ self currentWorld ]
 ]
 
 { #category : 'accessing' }
@@ -44,30 +41,15 @@ ReplayAttachActiveWindow class >> displayName [
 ]
 
 { #category : 'resolving' }
-ReplayAttachActiveWindow class >> systemWindowClass [
-
-	^ Smalltalk globals at: #SystemWindow ifAbsent: [ nil ]
-]
-
-{ #category : 'resolving' }
 ReplayAttachActiveWindow class >> windowMorphFor: aMorph [
 
-	| systemWindowClass |
-	systemWindowClass := self systemWindowClass.
-	systemWindowClass ifNil: [ ^ nil ].
 	^ aMorph ownerChain
-		detect: [ :each | each isKindOf: systemWindowClass ]
+		detect: [ :each | each isKindOf: SystemWindow ]
 		ifNone: [ nil ]
 ]
 
-{ #category : 'testing' }
-ReplayAttachActiveWindow >> isUIOpener [
+{ #category : 'managing UI' }
+ReplayAttachActiveWindow >> uiManagerOn: runner [
 
-	^ true
-]
-
-{ #category : 'running' }
-ReplayAttachActiveWindow >> runOn: runner [
-
-	runner manager: (ReplayUIManager new observe: self class activeWindowMorph)
+	^ ReplayUIManager new observe: self class activeWindowMorph
 ]

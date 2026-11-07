@@ -19,10 +19,17 @@ TReplayActionWithText >> appendText: aCharacterOrString [
 			 ifFalse: [ self text copyWith: aCharacterOrString ])
 ]
 
+{ #category : 'printing' }
+TReplayActionWithText >> printOn: stream [
+
+	super printOn: stream.
+	self printDetail: text on: stream
+]
+
 { #category : 'accessing' }
 TReplayActionWithText >> text [
 
-	^ text ifNil: [ text := '' ]
+	^ text ifNil: [ '' ]
 ]
 
 { #category : 'accessing' }

@@ -258,7 +258,7 @@ ReplayUIBackendTest >> testAttachToMorphWithoutOwnerFails [
 		raise: ReplayError
 		withExceptionDo: [ :error |
 			self assert: (error messageText includesSubstring: 'without an owner').
-			self assert: error tag equals: target ]
+			self assert: error subject equals: target ]
 ]
 
 { #category : 'tests' }
@@ -272,7 +272,7 @@ ReplayUIBackendTest >> testAttachToUnrenderedSpecPresenterFails [
 		raise: ReplayError
 		withExceptionDo: [ :error |
 			self assert: (error messageText includesSubstring: 'without an adapter').
-			self assert: error tag equals: presenter ]
+			self assert: error subject equals: presenter ]
 ]
 
 { #category : 'tests' }
@@ -307,7 +307,7 @@ ReplayUIBackendTest >> testAttachUIActionRejectsUnexpectedScriptResult [
 		raise: ReplayScriptError
 		withExceptionDo: [ :error |
 			self assert: (error messageText includesSubstring: 'existing Morph or Spec presenter').
-			self assert: error tag equals: 42 ]
+			self assert: error subject equals: 42 ]
 ]
 
 { #category : 'tests' }
@@ -319,7 +319,6 @@ ReplayUIBackendTest >> testAttachedMorphManagerAllowsUserInteraction [
 	root addMorph: target.
 	manager := ReplayUIManager new attachTo: target.
 
-	self assert: manager interactionPolicy equals: #passThrough.
 	self deny: manager blocksUserInteraction
 ]
 
@@ -361,7 +360,7 @@ ReplayUIBackendTest >> testAttachedMorphManagerResolvesRelativeToManagedMorph [
 	root addMorph: target.
 	manager := ReplayUIManager new attachTo: target.
 
-	manager
+	manager resolver
 		resolve: (ReplayUIReference morphicPath: #( 1 ))
 		thenDo: [ :element | resolved := element ].
 
@@ -766,7 +765,6 @@ ReplayUIBackendTest >> testManagedMorphManagerBlocksUserInteraction [
 	| manager |
 	manager := ReplayUIManager new manage: (Morph new extent: 100 @ 50).
 
-	self assert: manager interactionPolicy equals: #blocked.
 	self assert: manager blocksUserInteraction
 ]
 
@@ -837,7 +835,7 @@ ReplayUIBackendTest >> testMorphicResolverResolvesKeyboardFocusWithinManagedSurf
 
 	[
 		hand keyboardFocus: target.
-		manager
+		manager resolver
 			resolve: ReplayUIReference keyboardFocus
 			thenDo: [ :element | resolved := element ].
 		self assert: resolved morph equals: target ]
@@ -884,8 +882,7 @@ ReplayUIBackendTest >> testOpenLabeledAppliesRequestedContentExtent [
 	[
 		manager
 			openLabeled: 'Replay requested extent test'
-			extent: requestedExtent
-			bounds: nil.
+			placement: (ReplayPlacement extent: requestedExtent).
 		20 timesRepeat: [ World doOneCycle ].
 		self assert: manager ui extent equals: requestedExtent.
 		self assert: manager managedUI extent equals: requestedExtent.
@@ -904,8 +901,7 @@ ReplayUIBackendTest >> testOpenLabeledAppliesRequestedWindowBounds [
 	[
 		manager
 			openLabeled: 'Replay requested bounds test'
-			extent: nil
-			bounds: requestedBounds.
+			placement: (ReplayPlacement bounds: requestedBounds).
 		20 timesRepeat: [ World doOneCycle ].
 		window := manager ui window.
 		self assert: window bounds origin equals: requestedBounds origin.
@@ -1057,7 +1053,7 @@ ReplayUIBackendTest >> testResolvedUIElementClickTargetRequiresMorph [
 		raise: ReplayMissingUIError
 		withExceptionDo: [ :error |
 			self assert: (error messageText includesSubstring: 'click').
-			self assert: error tag equals: resolved ]
+			self assert: error subject equals: resolved ]
 ]
 
 { #category : 'tests' }
@@ -1388,7 +1384,7 @@ ReplayUIBackendTest >> testSpecResolverKeepsSemanticPresenterAsNativeElement [
 	presenter := ReplaySemanticPresenter new.
 	manager := ReplayUIManager new managePresenter: presenter.
 
-	manager
+	manager resolver
 		resolve: (ReplayUIReference named: 'Field')
 		thenDo: [ :element | resolved := element ].
 
@@ -1403,7 +1399,7 @@ ReplayUIBackendTest >> testSpecResolverReportsMissingSemanticNameImmediately [
 	presenter := ReplaySemanticPresenter new.
 	manager := ReplayUIManager new managePresenter: presenter.
 
-	manager
+	manager resolver
 		resolve: (ReplayUIReference named: 'Missing')
 		thenDo: [ :element | self fail ]
 		onMissing: [ :error | capturedError := error ].

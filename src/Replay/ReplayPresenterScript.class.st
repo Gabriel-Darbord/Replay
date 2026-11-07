@@ -1,5 +1,7 @@
 "
 I execute Smalltalk script with the managed Spec presenter as the receiver.
+
+I act on the managed UI, so I also run when the editor rebuilds a UI preview, against the preview presenter.
 "
 Class {
 	#name : 'ReplayPresenterScript',
@@ -15,20 +17,44 @@ ReplayPresenterScript class >> displayName [
 	^ 'Presenter Script'
 ]
 
-{ #category : 'running' }
-ReplayPresenterScript >> runOn: runner [
+{ #category : 'debugging' }
+ReplayPresenterScript >> debugScriptInEditor: editor [
+	"Build a preview of the managed UI up to me, then debug the script on its presenter.
+	The preview opens in a window so the UI loads correctly."
 
-	| receiver compiler method |
+	| builder ui |
+	builder := ReplayUIBuilder on: editor model scenario.
+	builder whenDone: [ self debugScriptOn: builder ].
+	ui := [ builder uiForAction: self inStep: editor model currentStep ]
+		      on: ReplayError
+		      do: [ :error | ^ self inform: error messageText ].
+	(SpMorphPresenter new morph: ui) asWindow
+		title: 'Debugging Presenter Script';
+		open
+]
+
+{ #category : 'running' }
+ReplayPresenterScript >> previewOn: aReplayUIBuilder [
+	"Act on the preview presenter like at run time."
+
+	self runOn: aReplayUIBuilder
+]
+
+{ #category : 'editing' }
+ReplayPresenterScript >> scriptLabel [
+
+	^ 'Script evaluated with the managed Spec presenter as self:'
+]
+
+{ #category : 'evaluating' }
+ReplayPresenterScript >> scriptReceiverOn: runner [
+
+	| receiver |
 	receiver := runner manager ifNotNil: [ :manager |
-		manager backend ifNotNil: [ :backend |
-			backend semanticScriptReceiver ] ].
-	receiver ifNil: [
+		manager backend semanticScriptReceiver ].
+	^ receiver ifNil: [
 		ReplayMissingUIError new
 			messageText: 'No semantic UI script receiver is available for presenter script.';
-			tag: runner;
-			signal ].
-	compiler := Smalltalk compiler isScripting: true.
-	compiler ast: (compiler parse: self script) asDoit.
-	method := compiler compile.
-	method valueWithReceiver: receiver arguments: #( )
+			subject: runner;
+			signal ]
 ]

@@ -40,6 +40,13 @@ ReplayDelay >> editionPresenterOn: editor [
 		yourself
 ]
 
+{ #category : 'running' }
+ReplayDelay >> previewOn: aReplayUIBuilder [
+	"Previews do not wait."
+
+	aReplayUIBuilder nextAction
+]
+
 { #category : 'printing' }
 ReplayDelay >> printOn: stream [
 

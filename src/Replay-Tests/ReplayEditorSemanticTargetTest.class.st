@@ -53,26 +53,6 @@ ReplayEditorSemanticTargetTest >> testFlagTargetsAreRegistered [
 ]
 
 { #category : 'tests' }
-ReplayEditorSemanticTargetTest >> testOpenPlacementDimensionSetters [
-
-	| action |
-	action := ReplayOpenPresenter new.
-	action extentWidth: 1083.
-	action extentHeight: 532.
-	self assert: action extent equals: 1083 @ 532.
-
-	action boundsLeft: 10.
-	action boundsTop: 20.
-	action boundsRight: 300.
-	action boundsBottom: 400.
-	self assert: action bounds equals: (10 @ 20 corner: 300 @ 400).
-
-	action clearPlacement.
-	self assert: action extent isNil.
-	self assert: action bounds isNil
-]
-
-{ #category : 'tests' }
 ReplayEditorSemanticTargetTest >> testOpenPlacementTargetsAreRegistered [
 
 	| editor |

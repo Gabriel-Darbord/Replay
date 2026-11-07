@@ -100,7 +100,7 @@ ReplayUIHandler >> missingManagerFor: runner [
 
 	ReplayMissingUIError new
 		messageText: 'No Replay UI is available for target ', self uiReference printString, '.';
-		tag: runner;
+		subject: runner;
 		signal
 ]
 
@@ -157,10 +157,11 @@ ReplayUIHandler >> runOn: runner [
 		forAction: self
 		thenDo: [ :resolved |
 			runner isStopped ifFalse: [
-				self runOn: runner resolvedUI: resolved.
+				runner protect: [ self runOn: runner resolvedUI: resolved ].
 				"Let UI process action effects before continuing."
-				runner defer: [ runner isStopped ifFalse: [ runner nextAction ] ] ] ]
-		onMissing: [ :error | runner isStopped ifFalse: [ error signal ] ]
+				runner defer: [ runner nextAction ] ] ]
+		onMissing: [ :error |
+			runner isStopped ifFalse: [ runner protect: [ error signal ] ] ]
 ]
 
 { #category : 'running' }

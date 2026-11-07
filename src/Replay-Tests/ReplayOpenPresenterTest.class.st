@@ -3,7 +3,7 @@ Headless tests for opening Spec presenters through Replay.
 "
 Class {
 	#name : 'ReplayOpenPresenterTest',
-	#superclass : 'TestCase',
+	#superclass : 'ReplayTestCase',
 	#category : 'Replay-Tests',
 	#package : 'Replay-Tests'
 }
@@ -34,14 +34,13 @@ ReplayOpenPresenterTest >> testOpenPresenterRunUsesExplicitExtent [
 	requestedExtent := 430 @ 210.
 	action := ReplayOpenPresenter new
 		script: 'ReplayEditor new';
-		extent: requestedExtent;
+		placement: (ReplayPlacement extent: requestedExtent);
 		yourself.
 
 	[
 		self shouldnt: [ action runOn: runner ] raise: Error.
-		20 timesRepeat: [ World doOneCycle ].
-		self assert: runner manager ui extent equals: requestedExtent ]
-		ensure: [ runner manager ifNotNil: [ :manager | manager close ] ]
+		self waitUntil: [ runner manager ui extent = requestedExtent ] ]
+		ensure: [ runner stop ]
 ]
 
 { #category : 'tests' }

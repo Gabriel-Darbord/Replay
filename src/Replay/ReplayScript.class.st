@@ -1,5 +1,7 @@
 "
 I execute configured Smalltalk script with the Replay runner as receiver.
+
+My script may change any state of the image, so I do nothing when the editor rebuilds a UI preview.
 "
 Class {
 	#name : 'ReplayScript',
@@ -23,33 +25,29 @@ ReplayScript >> editionPresenterOn: editor [
 	^ editor newPresenter
 		layout: (SpBoxLayout newTopToBottom
 				spacing: 10;
-				add: (self
-						scriptPresenterOn: editor
-						labeled: 'Script evaluated with the Replay runner as self:');
+				add: (self scriptPresenterOn: editor labeled: self scriptLabel);
 				add: (self
 						debugButtonPresenterOn: editor
 						labeled: 'Debug script'
-						action: [ self debugScript ])
+						action: [ self debugScriptInEditor: editor ])
 				expand: false;
 				yourself);
 		yourself
 ]
 
-{ #category : 'printing' }
-ReplayScript >> printOn: stream [
-
-	super printOn: stream.
-	script isEmptyOrNil ifTrue: [ ^ self ].
-	stream nextPutAll: ': '.
-	stream nextPutAll: (script printStringLimitedTo: 100)
+{ #category : 'running' }
+ReplayScript >> previewOn: aReplayUIBuilder [
+	"The script can change global state: do not run it each time the editor shows a preview."
 ]
 
 { #category : 'running' }
 ReplayScript >> runOn: runner [
 
-	| compiler method |
-	compiler := Smalltalk compiler isScripting: true.
-	compiler ast: (compiler parse: self script) asDoit.
-	method := compiler compile.
-	method valueWithReceiver: runner arguments: #(  )
+	self evaluateScriptOn: runner
+]
+
+{ #category : 'editing' }
+ReplayScript >> scriptLabel [
+
+	^ 'Script evaluated with the Replay runner as self:'
 ]

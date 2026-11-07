@@ -126,7 +126,7 @@ ReplayUIPathResolver >> missing [
 	| error |
 	error := ReplayMissingUIError new
 		         messageText: self missingMessage;
-		         tag: self missingDetails;
+		         subject: self missingDetails;
 		         yourself.
 	whenMissing value: error.
 	^ nil

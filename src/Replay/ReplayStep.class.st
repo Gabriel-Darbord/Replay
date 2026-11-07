@@ -1,5 +1,7 @@
 "
 I group an ordered list of actions and the navigation settings used after those actions finish.
+
+My navigation is only serialized when it differs from the default one, which skips user navigation.
 "
 Class {
 	#name : 'ReplayStep',
@@ -51,4 +53,13 @@ ReplayStep >> printOn: stream [
 	navigation text ifNotEmpty: [ :text |
 		stream nextPutAll: ': '.
 		stream nextPutAll: text ]
+]
+
+{ #category : 'ston persistence' }
+ReplayStep >> stonOn: stonWriter [
+	"Omit the navigation when it is the default one."
+
+	stonWriter writeObject: self streamMap: [ :map |
+		actions isEmptyOrNil ifFalse: [ map at: #actions put: actions ].
+		navigation isDefault ifFalse: [ map at: #navigation put: navigation ] ]
 ]

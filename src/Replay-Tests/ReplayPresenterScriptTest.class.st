@@ -13,13 +13,23 @@ ReplayPresenterScriptTest >> testRunExecutesScriptWithManagedPresenterAsReceiver
 
 	| presenter manager runner action |
 	presenter := ReplayScriptablePresenter new.
-	manager := ReplayUIManager new
-		           managedPresenter: presenter;
-		           yourself.
+	manager := ReplayUIManager new managePresenter: presenter.
 	runner := ReplayRunner new manager: manager.
 	action := ReplayPresenterScript new script: 'self record: #ran'.
 	action runOn: runner.
 	self assert: presenter log asArray equals: #( ran )
+]
+
+{ #category : 'tests' }
+ReplayPresenterScriptTest >> testRunWithMorphicManagerRaisesReplayMissingUIError [
+
+	| runner action |
+	runner := ReplayRunner new manager: (ReplayUIManager new manage: Morph new).
+	action := ReplayPresenterScript new script: '1 + 1'.
+
+	self
+		should: [ action runOn: runner ]
+		raise: ReplayMissingUIError
 ]
 
 { #category : 'tests' }

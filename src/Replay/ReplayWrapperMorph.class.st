@@ -14,6 +14,13 @@ Class {
 }
 
 { #category : 'accessing' }
+ReplayWrapperMorph >> index [
+	"Answer the index of my wrapped morph among the submorphs of its owner."
+
+	^ index
+]
+
+{ #category : 'accessing' }
 ReplayWrapperMorph >> index: anInteger [
 
 	index := anInteger

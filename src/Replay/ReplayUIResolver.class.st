@@ -65,7 +65,7 @@ ReplayUIResolver >> missingReference: aReference reason: aString onMissing: miss
 	| error |
 	error := ReplayMissingUIError new
 		messageText: aString;
-		tag: (Dictionary new
+		subject: (Dictionary new
 			at: #backend put: backend;
 			at: #reference put: aReference;
 			at: #attempts put: self attemptCount;

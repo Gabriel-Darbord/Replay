@@ -1,12 +1,44 @@
 "
-Headless tests for ReplayRunner sequencing.
+Tests for ReplayRunner sequencing, UI manager ownership, and failure handling.
 "
 Class {
 	#name : 'ReplayRunnerTest',
-	#superclass : 'TestCase',
+	#superclass : 'ReplayTestCase',
 	#category : 'Replay-Tests',
 	#package : 'Replay-Tests'
 }
+
+{ #category : 'support' }
+ReplayRunnerTest >> openPresenterAction [
+
+	^ ReplayOpenPresenter new script: 'ReplayScriptablePresenter new'
+]
+
+{ #category : 'support' }
+ReplayRunnerTest >> scenarioTitle [
+
+	^ 'Replay runner test ' , self selector
+]
+
+{ #category : 'support' }
+ReplayRunnerTest >> scenarioWithSteps: actionLists [
+
+	| scenario |
+	scenario := ReplayScenario new title: self scenarioTitle.
+	actionLists do: [ :actions |
+		| step |
+		step := ReplayStep new.
+		actions do: [ :action | step addAction: action ].
+		scenario addStep: step ].
+	^ scenario
+]
+
+{ #category : 'support' }
+ReplayRunnerTest >> windowCountAction [
+	"The runner focus is a block counting the windows of the scenario."
+
+	^ ReplayScript new script: 'self focus value'
+]
 
 { #category : 'tests' }
 ReplayRunnerTest >> testAwaitUIActionDelegatesToManagerBackend [
@@ -44,79 +76,96 @@ ReplayRunnerTest >> testAwaitUIActionRunsWithoutControllingContinuation [
 ]
 
 { #category : 'tests' }
-ReplayRunnerTest >> testDelayActionDefaults [
+ReplayRunnerTest >> testCloseUIThroughRunnerClosesOwnedWindow [
 
-	| action |
-	action := ReplayDelay new.
+	| counts runner |
+	counts := OrderedCollection new.
+	runner := ReplayRunner on: (self scenarioWithSteps: { {
+		self openPresenterAction.
+		self windowCountAction.
+		ReplayCloseUI new.
+		self windowCountAction } }).
+	runner focus: [ counts add: (self newWindowsLabeled: self scenarioTitle) size ].
 
-	self assert: action controlsRunnerContinuation.
-	self assert: action seconds equals: 1.
-	self assert: (ReplayDelay seconds: 2) seconds equals: 2
+	runner run.
+
+	self assert: counts asArray equals: #( 1 0 ).
+	self assert: runner isStopped.
+	self assert: runner manager isNil
 ]
 
 { #category : 'tests' }
-ReplayRunnerTest >> testDelayActionEditionPresenterBuilds [
+ReplayRunnerTest >> testErrorInDeferredContinuationStopsRunner [
 
-	| action presenter |
-	action := ReplayDelay seconds: 1.
-	presenter := action editionPresenterOn: ReplayEditor new.
+	| backend manager scenario runner |
+	backend := ReplayRecordingBackend new.
+	manager := ReplayUIManager new
+		manage: (Morph new extent: 100 @ 50)
+		usingBackend: backend.
+	Morph new addMorph: manager ui.
+	scenario := self scenarioWithSteps: { {  } }.
+	scenario steps first navigation skip: false.
+	runner := ReplayRunner on: scenario.
+	runner run. "Waits on the navigation dialog"
+	runner manager: manager.
+	runner defer: [ self error: 'Deferred failure' ].
 
-	self assert: presenter notNil
+	self deny: runner isStopped.
+	self should: [ backend runDeferredBlocks ] raise: Error.
+	self assert: runner isStopped.
+	self assert: runner manager isNil.
+	self assert: manager ui owner isNil
 ]
 
 { #category : 'tests' }
-ReplayRunnerTest >> testDelayActionPrintsConfiguredSeconds [
+ReplayRunnerTest >> testErrorMidScenarioStopsRunnerAndClosesOwnedUI [
 
-	self assert: ((ReplayDelay seconds: 2) printString includesSubstring: '2s')
+	| log runner |
+	log := OrderedCollection new.
+	runner := ReplayRunner on: (self scenarioWithSteps: { {
+		self openPresenterAction.
+		(ReplayScript new script: 'self error: ''Scenario failure''').
+		(ReplayRecordingAction label: #after log: log) } }).
+
+	self should: [ runner run ] raise: ReplayScriptError.
+	self assert: runner isStopped.
+	self assert: runner manager isNil.
+	self assert: log isEmpty.
+	self assert: (self newWindowsLabeled: self scenarioTitle) isEmpty
 ]
 
 { #category : 'tests' }
-ReplayRunnerTest >> testNavigateActionEditionPresenterBuilds [
+ReplayRunnerTest >> testLongScenarioDoesNotDeepenTheStack [
 
-	| action presenter |
-	action := ReplayNavigate new.
-	presenter := action editionPresenterOn: ReplayEditor new.
+	| depths runner |
+	depths := OrderedCollection new.
+	runner := ReplayRunner on: (self scenarioWithSteps: ((1 to: 50) collect: [ :index |
+		{ ReplayScript new script: 'self focus add: thisContext stack size' } ])).
+	runner focus: depths.
 
-	self assert: presenter notNil
+	runner run.
+
+	self assert: depths size equals: 50.
+	self assert: depths asSet size equals: 1
 ]
 
 { #category : 'tests' }
-ReplayRunnerTest >> testNavigateBoundsOverridePositionAndExtent [
+ReplayRunnerTest >> testManagerReplacementClosesPreviousManager [
 
-	| action window requestedBounds |
-	requestedBounds := 50 @ 70 extent: 360 @ 150.
-	action := ReplayNavigate new
-		position: 12 @ 34;
-		extent: 320 @ 140;
-		bounds: requestedBounds;
-		yourself.
-	window := SpPresenter new asDialogWindow.
-	action applyPlacementTo: window.
-	self assert: action position isNil.
-	self assert: action extent isNil.
-	self assert: window initialPosition equals: requestedBounds origin.
-	self assert: window initialExtent equals: requestedBounds extent
-]
+	| runner firstRoot first second |
+	runner := ReplayRunner new.
+	firstRoot := Morph new.
+	first := ReplayUIManager new manage: (Morph new extent: 100 @ 50).
+	firstRoot addMorph: first ui.
+	second := ReplayUIManager new manage: (Morph new extent: 100 @ 50).
 
-{ #category : 'tests' }
-ReplayRunnerTest >> testNavigatePlacementAppliesPositionAndExtent [
+	runner manager: first.
+	runner manager: second.
 
-	| action window |
-	action := ReplayNavigate new
-		position: 12 @ 34;
-		extent: 320 @ 140;
-		yourself.
-	window := SpPresenter new asDialogWindow.
-	action applyPlacementTo: window.
-	self assert: window initialPosition equals: 12 @ 34.
-	self assert: window initialExtent equals: 320 @ 140
-]
-
-{ #category : 'tests' }
-ReplayRunnerTest >> testNavigateSkipsByDefault [
-
-	self assert: ReplayNavigate new skip.
-	self assert: ReplayStep new navigation skip
+	self assert: runner manager identicalTo: second.
+	self assert: first ui owner isNil.
+	runner manager: second.
+	self assert: runner manager identicalTo: second
 ]
 
 { #category : 'tests' }
@@ -129,30 +178,25 @@ ReplayRunnerTest >> testNextActionAfterStopDoesNothing [
 	scenario addStep: step.
 	runner := ReplayRunner on: scenario.
 
-	[
-		runner run.
-		runner stop.
-		self shouldnt: [ runner nextAction ] raise: Error ]
-		ensure: [ runner manager ifNotNil: [ :manager | manager close ] ]
+	runner run.
+	runner stop.
+	self shouldnt: [ runner nextAction ] raise: Error.
+	self assert: runner isStopped
 ]
 
 { #category : 'tests' }
 ReplayRunnerTest >> testRunDelayActionContinuesRunnerAsynchronously [
 
-	| log scenario step runner |
+	| log runner |
 	log := OrderedCollection new.
-	scenario := ReplayScenario new.
-	step := ReplayStep new.
-	step navigation skip: true.
-	step addAction: (ReplayRecordingAction label: #before log: log).
-	step addAction: (ReplayDelay seconds: 0).
-	step addAction: (ReplayRecordingAction label: #after log: log).
-	scenario addStep: step.
-	runner := ReplayRunner on: scenario.
+	runner := ReplayRunner on: (self scenarioWithSteps: { {
+		(ReplayRecordingAction label: #before log: log).
+		(ReplayDelay seconds: 0).
+		(ReplayRecordingAction label: #after log: log) } }).
 
 	runner run.
 	self assert: log asArray equals: #( before ).
-	20 timesRepeat: [ World doOneCycle. (Delay forMilliseconds: 10) wait ].
+	self waitUntil: [ runner isStopped ].
 	self assert: log asArray equals: #( before after )
 ]
 
@@ -169,6 +213,50 @@ ReplayRunnerTest >> testRunExecutesActionsInStepOrderWithoutOpeningNavigation [
 	scenario addStep: step.
 	scenario run.
 	self assert: log asArray equals: #( first second )
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testRunExecutesEveryStepInOrder [
+
+	| log runner |
+	log := OrderedCollection new.
+	runner := ReplayRunner on: (self scenarioWithSteps: {
+		{ ReplayRecordingAction label: #first log: log }.
+		{  }.
+		{
+			(ReplayRecordingAction label: #second log: log).
+			(ReplayRecordingAction label: #third log: log) } }).
+
+	runner run.
+
+	self assert: log asArray equals: #( first second third ).
+	self assert: runner isStopped
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testRunStepNotInScenarioSignalsReplayError [
+
+	| runner |
+	runner := ReplayRunner on: (self scenarioWithSteps: { {  } }).
+
+	self should: [ runner runStep: ReplayStep new ] raise: ReplayError
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testRunStepStartsFromTheGivenStep [
+
+	| log scenario runner |
+	log := OrderedCollection new.
+	scenario := self scenarioWithSteps: {
+		{ ReplayRecordingAction label: #first log: log }.
+		{ ReplayRecordingAction label: #second log: log }.
+		{ ReplayRecordingAction label: #third log: log } }.
+	runner := ReplayRunner on: scenario.
+
+	runner runStep: scenario steps second.
+
+	self assert: log asArray equals: #( second third ).
+	self assert: runner isStopped
 ]
 
 { #category : 'tests' }
@@ -203,4 +291,21 @@ ReplayRunnerTest >> testStopClosesAndClearsManager [
 
 	self assert: runner isStopped.
 	self assert: runner manager isNil
+]
+
+{ #category : 'tests' }
+ReplayRunnerTest >> testTwoOpenersInARowKeepOnlyTheLastWindow [
+
+	| runner windowCounts |
+	windowCounts := OrderedCollection new.
+	runner := ReplayRunner on: (self scenarioWithSteps: { {
+		self openPresenterAction.
+		self openPresenterAction.
+		self windowCountAction } }).
+	runner focus: [ windowCounts add: (self newWindowsLabeled: self scenarioTitle) size ].
+
+	runner run.
+
+	self assert: windowCounts asArray equals: #( 1 ).
+	self assert: (self newWindowsLabeled: self scenarioTitle) isEmpty
 ]
