@@ -1,3 +1,6 @@
+"
+I am a guided tour of the macro library: it creates a macro, checks its shortcut for conflicts, installs it, triggers it, updates it and uninstalls it. Run me with `ReplayMacroEditorDemo run`, or look at how I am made with `ReplayMacroEditorDemo editScenario`.
+"
 Class {
 	#name : 'ReplayMacroEditorDemo',
 	#superclass : 'Object',
@@ -28,8 +31,7 @@ ReplayMacroEditorDemo class >> scenario [
 { #category : 'actions' }
 ReplayMacroEditorDemo >> addMacroAction [
 
-	^ self script: 'self focus macroList addButton click.
-self focus scenarioEditor editShortcut'
+	^ self script: 'self focus macroList addButton click. self focus scenarioEditor editShortcut'
 ]
 
 { #category : 'actions' }

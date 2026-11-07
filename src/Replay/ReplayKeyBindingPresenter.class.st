@@ -106,7 +106,7 @@ ReplayKeyBindingPresenter >> addCharacterText [
 	chords := characterTextPresenter text asArray
 		          collect: [ :character |
 		          ReplayKeyChord character: character modifiers: modifiersPresenter modifiers ]
-		          thenSelect: [ :chord | chord notNil ].
+		          thenSelect: [ :chord | chord isNotNil ].
 	characterTextPresenter text: ''.
 	chords ifEmpty: [ ^ self ].
 	self editKeyBinding: (chords inject: self keyBinding into: [ :binding :chord | binding copyWith: chord ]).
@@ -247,7 +247,7 @@ ReplayKeyBindingPresenter >> isShown [
 
 	^ self adapter
 		  ifNil: [ false ]
-		  ifNotNil: [ :adapter | adapter widget notNil and: [ adapter widget world notNil ] ]
+		  ifNotNil: [ :anAdapter | anAdapter widget isNotNil and: [ anAdapter widget world isNotNil ] ]
 ]
 
 { #category : 'accessing' }

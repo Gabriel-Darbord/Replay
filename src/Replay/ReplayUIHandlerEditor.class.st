@@ -102,15 +102,15 @@ ReplayUIHandlerEditor >> highlight: aRectangle in: aReplayUIManager [
 
 { #category : 'building' }
 ReplayUIHandlerEditor >> newFieldsLayout [
-	"The target section, then the fields of my action"
+	"The target section, then the box of my action"
 
-	| layout |
-	layout := SpBoxLayout newTopToBottom
+	| box |
+	box := SpBoxLayout newTopToBottom
 		          spacing: 10;
 		          yourself.
-	layout add: self newTargetSection expand: false.
-	self addFieldsTo: layout.
-	^ layout
+	box add: self newTargetSection expand: false.
+	self addFieldsTo: box.
+	^ box
 ]
 
 { #category : 'target' }

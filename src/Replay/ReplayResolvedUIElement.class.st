@@ -54,7 +54,7 @@ ReplayResolvedUIElement >> boundsInSurface [
 { #category : 'testing' }
 ReplayResolvedUIElement >> hasMorph [
 
-	^ morph notNil
+	^ morph isNotNil
 ]
 
 { #category : 'accessing' }

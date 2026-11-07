@@ -19,8 +19,8 @@ ReplayPointerActionEditor class >> isAbstract [
 ReplayPointerActionEditor >> buttonsField [
 	"One check box per mouse button"
 
-	| layout |
-	layout := SpBoxLayout newLeftToRight spacing: 8.
+	| box |
+	box := SpBoxLayout newLeftToRight spacing: 8.
 	action class buttonChoices do: [ :association |
 		ReplayKeyModifiersPresenter
 			add: (self
@@ -28,8 +28,8 @@ ReplayPointerActionEditor >> buttonsField [
 					 label: association value
 					 get: [ action hasButton: association key ]
 					 set: [ :state | action setButton: association key to: state ])
-			fittedTo: layout ].
-	^ self labeled: 'Mouse buttons:' field: layout
+			fittedTo: box ].
+	^ self labeled: 'Mouse buttons:' field: box
 ]
 
 { #category : 'fields' }

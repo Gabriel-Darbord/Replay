@@ -199,7 +199,7 @@ ReplayUIResolver >> timeout [
 ReplayUIResolver >> timeoutFor: anAction [
 	"How long to retry a lookup for anAction: its own timeout when it has one, or mine"
 
-	^ ((anAction respondsTo: #resolutionTimeout) ifTrue: [ anAction resolutionTimeout ]) ifNil: [ self timeout ]
+	^ (anAction ifNotNil: [ anAction resolutionTimeout ]) ifNil: [ self timeout ]
 ]
 
 { #category : 'accessing' }

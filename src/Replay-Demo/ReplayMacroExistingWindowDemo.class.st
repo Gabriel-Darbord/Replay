@@ -31,8 +31,7 @@ ReplayMacroExistingWindowDemo class >> scenario [
 { #category : 'actions' }
 ReplayMacroExistingWindowDemo >> addMacroAction [
 
-	^ self script: 'self focus macroList addButton click.
-self focus scenarioEditor editShortcut'
+	^ self script: 'self focus macroList addButton click. self focus scenarioEditor editShortcut'
 ]
 
 { #category : 'actions' }

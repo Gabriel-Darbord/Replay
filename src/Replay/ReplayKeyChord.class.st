@@ -191,7 +191,7 @@ ReplayKeyChord >> character [
 	^ Character value: 0
 ]
 
-{ #category : 'printing' }
+{ #category : 'displaying' }
 ReplayKeyChord >> displayString [
 	"As Keymapping prints me, when it knows my key"
 

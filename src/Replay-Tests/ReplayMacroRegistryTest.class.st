@@ -55,7 +55,7 @@ ReplayMacroRegistryTest >> testDefaultRegistryLoadsItsFileOnFirstAccess [
 	registry := ReplayTemporaryMacroRegistry default.
 
 	self assert: registry file equals: ReplayTemporaryMacroRegistry defaultFile.
-	self assert: (registry library macros collect: [ :macro | macro name ]) asArray equals: #( 'Startup macro' ).
+	self assert: (registry library macros collect: [ :macro | macro name ] as: Array) equals: #( 'Startup macro' ).
 	self assert: ReplayTemporaryMacroRegistry default identicalTo: registry.
 	self deny: registry library macros first isInstalled
 ]
@@ -75,7 +75,7 @@ ReplayMacroRegistryTest >> testImportStringAddsAMacroOrALibrary [
 	macro := self macroNamed: 'Imported macro' keyBinding: (self controlShortcut: 'r').
 	macro contextNames: { #RubTextEditor }.
 	added := registry importString: (STON toString: macro).
-	self assert: (added collect: [ :each | each name ]) asArray equals: #( 'Imported macro' ).
+	self assert: (added collect: [ :each | each name ] as: Array) equals: #( 'Imported macro' ).
 	self assert: added first keyBinding equals: (self controlShortcut: 'r').
 	self assert: added first contextNames asArray equals: { #RubTextEditor }.
 
@@ -83,9 +83,9 @@ ReplayMacroRegistryTest >> testImportStringAddsAMacroOrALibrary [
 	library addMacro: (self macroNamed: 'First').
 	library addMacro: (self macroNamed: 'Second').
 	added := registry importString: (STON toString: library).
-	self assert: (added collect: [ :each | each name ]) asArray equals: #( 'First' 'Second' ).
+	self assert: (added collect: [ :each | each name ] as: Array) equals: #( 'First' 'Second' ).
 	self
-		assert: (registry library macros collect: [ :each | each name ]) asArray
+		assert: (registry library macros collect: [ :each | each name ] as: Array)
 		equals: #( 'Imported macro' 'First' 'Second' )
 ]
 
@@ -140,7 +140,7 @@ ReplayMacroRegistryTest >> testImportStringSaves [
 	registry importString: (STON toString: (self macroNamed: 'Imported')).
 
 	self
-		assert: ((ReplayMacroRegistry libraryFromFile: registry file) macros collect: [ :each | each name ]) asArray
+		assert: ((ReplayMacroRegistry libraryFromFile: registry file) macros collect: [ :each | each name ] as: Array)
 		equals: #( 'Imported' )
 ]
 
@@ -265,7 +265,7 @@ ReplayMacroRegistryTest >> testReplaceLibrarySwapsKeymapsAndRunsTheNewMacro [
 	self dispatch: $f buttons: 16 inCategoryNamed: #ReplayMacroRegistryTest.
 	self assert: spy hasRun.
 	self
-		assert: ((ReplayMacroRegistry libraryFromFile: registry file) macros collect: [ :each | each identifier ]) asArray
+		assert: ((ReplayMacroRegistry libraryFromFile: registry file) macros collect: [ :each | each identifier ] as: Array)
 		equals: { oldMacro identifier }
 ]
 
@@ -363,7 +363,7 @@ ReplayMacroRegistryTest >> testStartupSurvivesABadFile [
 
 	| registry |
 	ReplayTemporaryMacroRegistry defaultFile: (self fileWith: 'not STON {').
-	self shouldnt: [ ReplayTemporaryMacroRegistry startUp: true ] raise: Error.
+	ReplayTemporaryMacroRegistry startUp: true.
 	self deny: ReplayTemporaryMacroRegistry hasDefault.
 
 	registry := ReplayMacroRegistry new
@@ -371,6 +371,6 @@ ReplayMacroRegistryTest >> testStartupSurvivesABadFile [
 		            yourself.
 	registry library addMacro: (self macroNamed: 'Kept').
 	ReplayMacroRegistry default: registry.
-	self shouldnt: [ ReplayMacroRegistry startUp: true ] raise: Error.
+	ReplayMacroRegistry startUp: true.
 	self assert: registry library macros size equals: 1
 ]

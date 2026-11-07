@@ -54,13 +54,11 @@ ReplayKeyModifiersPresenter >> controlCheckBox [
 { #category : 'layout' }
 ReplayKeyModifiersPresenter >> defaultLayout [
 
-	| layout |
-	layout := SpBoxLayout newLeftToRight spacing: 8.
+	| box |
+	box := SpBoxLayout newLeftToRight spacing: 8.
 	ReplayKeyModifiers all do: [ :mask |
-		| checkBox |
-		checkBox := self checkBoxFor: mask.
-		self class add: checkBox fittedTo: layout ].
-	^ layout
+		self class add: (self checkBoxFor: mask) fittedTo: box ].
+	^ box
 ]
 
 { #category : 'initialization' }

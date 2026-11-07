@@ -36,7 +36,7 @@ ReplayMacroContext class >> availableContexts [
 		flatCollect: [ :context | context categoryNames ]) asSet.
 	fallbackContexts := KMRepository default categories values
 		select: [ :category |
-			category allEntries keymaps notEmpty and: [
+			category allEntries keymaps isNotEmpty and: [
 				(knownCategoryNames includes: category name) not ] ]
 		thenCollect: [ :category | self forCategory: category ].
 	contexts addAll: (fallbackContexts sorted: [ :first :second | first displayName <= second displayName ]).
@@ -147,7 +147,7 @@ ReplayMacroContext class >> installableCategoryNames [
 	| names |
 	names := KMRepository default categories values
 		select: [ :category |
-			category allEntries keymaps notEmpty and: [
+			category allEntries keymaps isNotEmpty and: [
 				(category name asString beginsWith: 'Replay') not ] ]
 		thenCollect: [ :category | category name ].
 	^ (names asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection

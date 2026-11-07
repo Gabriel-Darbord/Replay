@@ -25,10 +25,11 @@ ReplayUIManager class >> backendObserving: aMorph [
 	"A backend for aMorph observed as it is: the Spec backend of the presenter of a Spec window, so that its subpresenters resolve by name, or else the Morphic backend"
 
 	| model |
-	model := (aMorph respondsTo: #model) ifTrue: [ aMorph model ].
-	((model isKindOf: SpWindowPresenter) and: [ model presenter notNil ])
-		ifTrue: [ ^ ReplaySpecBackend presenter: model presenter morph: aMorph ].
-	^ ReplayMorphicBackend on: aMorph
+	aMorph isSystemWindow ifFalse: [ ^ ReplayMorphicBackend on: aMorph ].
+	model := aMorph model.
+	(model isPresenter and: [ model isWindowPresenter and: [ model presenter isNotNil ] ])
+		ifFalse: [ ^ ReplayMorphicBackend on: aMorph ].
+	^ ReplaySpecBackend presenter: model presenter morph: aMorph
 ]
 
 { #category : 'managing UI' }
@@ -63,8 +64,7 @@ ReplayUIManager >> attachTo: aMorph usingBackend: aReplayUIBackend [
 	overlay := self newAttachedOverlay.
 	overlay bounds: managed bounds.
 	root addMorphFront: overlay.
-	self syncManagedLayout.
-	^ self
+	self syncManagedLayout
 ]
 
 { #category : 'managing UI' }
@@ -171,8 +171,7 @@ ReplayUIManager >> manage: aMorph usingBackend: aReplayUIBackend [
 	overlay := self newOverlay.
 	root addMorph: managed fullFrame: LayoutFrame identity.
 	root addMorph: overlay fullFrame: LayoutFrame identity.
-	self installBlockingHandlersOn: overlay.
-	^ self
+	self installBlockingHandlersOn: overlay
 ]
 
 { #category : 'managing UI' }
@@ -235,8 +234,7 @@ ReplayUIManager >> observe: aMorph usingBackend: aReplayUIBackend [
 	backend := aReplayUIBackend.
 	managed := aMorph.
 	root := aMorph owner ifNil: [ aMorph ].
-	overlay := nil.
-	^ self
+	overlay := nil
 ]
 
 { #category : 'instance creation' }

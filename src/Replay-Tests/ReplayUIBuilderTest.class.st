@@ -180,7 +180,7 @@ ReplayUIBuilderTest >> testMissingUIHelpDefaultsToGenericHelp [
 		messageText: 'No UI';
 		helpPresenterFor: actionEditor.
 
-	self assert: presenter notNil.
+	self assert: presenter isNotNil.
 	self assert: ((self allPresentersIn: presenter) anySatisfy: [ :each |
 		(each isKindOf: SpButtonPresenter) and: [ each label = 'Debug exception' ] ])
 ]
@@ -225,7 +225,7 @@ ReplayUIBuilderTest >> testScriptErrorHelpWithoutScriptDefaultsToGenericHelp [
 		messageText: 'Failure';
 		helpPresenterFor: (ReplayEditor new editAction: ReplayFocus new).
 
-	self assert: presenter notNil.
+	self assert: presenter isNotNil.
 	self assert: ((self allPresentersIn: presenter) anySatisfy: [ :each |
 		(each isKindOf: SpButtonPresenter) and: [ each label = 'Debug exception' ] ])
 ]

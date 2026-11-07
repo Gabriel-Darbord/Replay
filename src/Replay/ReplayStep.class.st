@@ -36,6 +36,7 @@ ReplayStep >> addAction: action [
 { #category : 'initialization' }
 ReplayStep >> initialize [
 
+	super initialize.
 	navigation := ReplayNavigate new
 ]
 

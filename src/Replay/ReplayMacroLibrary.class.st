@@ -93,7 +93,7 @@ ReplayMacroLibrary >> installsOnStartup [
 ReplayMacroLibrary >> installsOnStartup: aBoolean [
 	"Not stored when false, so the default is not serialized"
 
-	installsOnStartup := aBoolean ifTrue: [ true ] ifFalse: [ nil ]
+	installsOnStartup := aBoolean ifTrue: [ true ]
 ]
 
 { #category : 'conflicts' }

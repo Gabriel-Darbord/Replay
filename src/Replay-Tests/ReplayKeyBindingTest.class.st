@@ -57,9 +57,9 @@ ReplayKeyBindingTest >> testCapturedShiftShortcutHoldsShift [
 		stamp: Time now.
 	event key: (KeyboardKey fromCharacter: $F).
 	catcher := KMCatcherMorph new.
-	[
-		catcher keyStroke: event.
-		captured := ReplayKeyBinding fromKMCombination: catcher shortcut ] ensure: [ catcher delete ].
+	captured := [
+	            catcher keyStroke: event.
+	            ReplayKeyBinding fromKMCombination: catcher shortcut ] ensure: [ catcher delete ].
 
 	self assert: captured equals: (ReplayKeyBinding character: $f modifiers: ReplayKeyModifiers shift).
 	self assert: captured equals: (ReplayKeyBinding character: $F modifiers: 0)
@@ -133,7 +133,7 @@ ReplayKeyBindingTest >> testConvertsEveryInstalledKeymap [
 
 	KMRepository default categories do: [ :category |
 		category allEntries keymaps do: [ :keymap |
-			self shouldnt: [ ReplayKeyBinding fromKeymap: keymap ] raise: Error ] ]
+			ReplayKeyBinding fromKeymap: keymap ] ]
 ]
 
 { #category : 'tests' }
@@ -286,7 +286,7 @@ ReplayKeyBindingTest >> testKeysPresenterHasIconControls [
 	self deny: presenter addCharacterButton icon isNil.
 	self deny: presenter removeKeyButton icon isNil.
 	self assert: (presenter removeKeyButton help includesSubstring: 'Delete').
-	self assert: presenter clearKeysButton notNil
+	self assert: presenter clearKeysButton isNotNil
 ]
 
 { #category : 'tests' }
@@ -299,7 +299,7 @@ ReplayKeyBindingTest >> testKeysPresenterShowsSpecialKeys [
 	presenter := ReplayKeyBindingPresenter on: binding.
 
 	self assert: presenter keyList items asArray equals: binding chords.
-	self assert: (presenter keyList items collect: [ :chord | chord displayString ]) asArray equals: #( 'LEFT' 'K' )
+	self assert: (presenter keyList items collect: [ :chord | chord displayString ] as: Array) equals: #( 'LEFT' 'K' )
 ]
 
 { #category : 'tests' }
@@ -335,7 +335,7 @@ ReplayKeyBindingTest >> testShiftIsAModifierNotACase [
 	self
 		assert: (ReplayKeyBinding character: $F modifiers: 0)
 		equals: (ReplayKeyBinding character: $f modifiers: ReplayKeyModifiers shift).
-	self deny: (ReplayKeyBinding character: $F modifiers: 0) = (ReplayKeyBinding character: $f modifiers: 0).
+	self deny: (ReplayKeyBinding character: $F modifiers: 0) equals: (ReplayKeyBinding character: $f modifiers: 0).
 	self
 		assert: (ReplayKeyBinding character: $F modifiers: 0) hash
 		equals: (ReplayKeyBinding character: $f modifiers: ReplayKeyModifiers shift) hash.

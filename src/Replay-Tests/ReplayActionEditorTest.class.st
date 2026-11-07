@@ -372,5 +372,5 @@ ReplayActionEditorTest >> testViewsRegisterTheirOwnNames [
 	switcher switcher children second state: true.
 	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ #missing ]) equals: #missing.
 	switcher switcher children first state: true.
-	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) notNil
+	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) isNotNil
 ]

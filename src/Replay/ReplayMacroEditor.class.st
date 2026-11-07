@@ -529,7 +529,7 @@ ReplayMacroEditor >> updateInstallationStatus [
 				 ifNotEmpty: [ 'Installed in: ' , (', ' join: installedContexts) ])
 		on: installationStatusPresenter.
 	self updateInstallRequirementPresenters.
-	self updateInstallButtonInstalled: installedContexts notEmpty
+	self updateInstallButtonInstalled: installedContexts isNotEmpty
 ]
 
 { #category : 'updating' }

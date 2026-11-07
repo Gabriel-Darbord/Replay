@@ -167,13 +167,13 @@ ReplayActionEditor >> newContentLayout [
 { #category : 'building' }
 ReplayActionEditor >> newFieldsLayout [
 
-	| layout |
-	layout := SpBoxLayout newTopToBottom
+	| box |
+	box := SpBoxLayout newTopToBottom
 		          spacing: 10;
 		          yourself.
-	self addFieldsTo: layout.
-	layout children ifEmpty: [ layout add: self newNoFieldsNotice expand: false ].
-	^ layout
+	self addFieldsTo: box.
+	box children ifEmpty: [ box add: self newNoFieldsNotice expand: false ].
+	^ box
 ]
 
 { #category : 'building' }
@@ -337,7 +337,7 @@ ReplayActionEditor >> initializePresenters [
 	self layout: self newContentLayout
 ]
 
-{ #category : 'initialization' }
+{ #category : 'accessing - model' }
 ReplayActionEditor >> setModelBeforeInitialization: anAction [
 
 	action := anAction

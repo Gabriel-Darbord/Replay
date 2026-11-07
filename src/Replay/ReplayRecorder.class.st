@@ -45,13 +45,8 @@ ReplayRecorder >> actions: aCollection [
 
 { #category : 'recording' }
 ReplayRecorder >> actionsWithoutRecordedTiming [
-	| stripped |
-	stripped := OrderedCollection new.
-	self actions do: [ :action |
-		| copy |
-		copy := action copyWithoutRecordedTiming.
-		copy shouldRecordWhenTimingStripped ifTrue: [ stripped add: copy ] ].
-	^ stripped
+	^ (self actions collect: [ :action | action copyWithoutRecordedTiming ]) select: [ :copy |
+		  copy shouldRecordWhenTimingStripped ]
 ]
 
 { #category : 'recording' }
@@ -207,19 +202,19 @@ ReplayRecorder >> flushPendingShortcut [
 
 { #category : 'testing' }
 ReplayRecorder >> hasManagedTarget [
-	^ manager notNil and: [ manager managedUI notNil ]
+	^ manager isNotNil and: [ manager managedUI isNotNil ]
 ]
 
 { #category : 'testing' }
 ReplayRecorder >> hasPendingKeyPress [
 
-	^ pendingKeyPressAction notNil
+	^ pendingKeyPressAction isNotNil
 ]
 
 { #category : 'testing' }
 ReplayRecorder >> hasPendingShortcut [
 
-	^ pendingShortcutAction notNil
+	^ pendingShortcutAction isNotNil
 ]
 
 { #category : 'accessing' }
@@ -257,13 +252,13 @@ ReplayRecorder >> ignoresMorph: aMorph [
 { #category : 'testing' }
 ReplayRecorder >> isRecording [
 
-	^ hand notNil
+	^ hand isNotNil
 ]
 
 { #category : 'testing' }
 ReplayRecorder >> isKeyPressKeyboardEvent: anEvent [
 
-	^ (self keyPressSelectorFrom: anEvent) notNil
+	^ (self keyPressSelectorFrom: anEvent) isNotNil
 ]
 
 { #category : 'testing' }
@@ -271,7 +266,7 @@ ReplayRecorder >> isTransientMouseTarget: aMorph [
 
 	| current |
 	current := aMorph.
-	[ current notNil ] whileTrue: [
+	[ current isNotNil ] whileTrue: [
 		current class name = #SpPopoverMorph ifTrue: [ ^ true ].
 		current := current owner ].
 	^ false
@@ -281,7 +276,7 @@ ReplayRecorder >> isTransientMouseTarget: aMorph [
 ReplayRecorder >> isUnmodifiedDeleteKeyboardEvent: anEvent [
 
 	^ (self isShortcutEvent: anEvent) not
-		and: [ (self deleteDirectionFrom: anEvent) notNil ]
+		and: [ (self deleteDirectionFrom: anEvent) isNotNil ]
 ]
 
 { #category : 'events' }
@@ -311,7 +306,7 @@ ReplayRecorder >> listener [
 { #category : 'targeting' }
 ReplayRecorder >> managedIncludesMorph: aMorph [
 	self hasManagedTarget ifFalse: [ ^ false ].
-	^ aMorph notNil and: [ aMorph ownerChain includes: manager managedUI ]
+	^ aMorph isNotNil and: [ aMorph ownerChain includes: manager managedUI ]
 ]
 
 { #category : 'accessing' }
@@ -343,7 +338,7 @@ ReplayRecorder >> menuItemAtWorldPoint: aPoint [
 	| morph |
 	morph := (self currentWorld morphsAt: aPoint) ifEmpty: [ ^ nil ] ifNotEmpty: #first.
 	^ morph withAllOwners
-		  detect: [ :each | (each isKindOf: MenuItemMorph) and: [ each owner isKindOf: MenuMorph ] ]
+		  detect: [ :each | each isMenuItemMorph and: [ each owner isMenuMorph ] ]
 		  ifNone: [ nil ]
 ]
 
@@ -386,7 +381,7 @@ ReplayRecorder >> preserveTiming [
 
 { #category : 'accessing' }
 ReplayRecorder >> preserveTiming: aBoolean [
-	preserveTiming := aBoolean = true
+	preserveTiming := aBoolean == true
 ]
 
 { #category : 'accessing' }
@@ -430,8 +425,8 @@ ReplayRecorder >> recordEvent: anEvent [
 
 	anEvent isMouse ifTrue: [
 		self flushPendingKeyboardActions.
-		((self menuItemAtWorldPoint: anEvent position) ifNotNil: [ :item |
-			 self recordMouseEvent: anEvent onMenuItem: item ]) == true ifTrue: [ ^ self ].
+		(self menuItemAtWorldPoint: anEvent position) ifNotNil: [ :item |
+			(self recordMouseEvent: anEvent onMenuItem: item) ifTrue: [ ^ self ] ].
 		(self shouldIgnoreMouseEvent: anEvent) ifTrue: [ ^ self clearMouseGesture ].
 		anEvent isMouseDown ifTrue: [ ^ self recordMouseDown: anEvent ].
 		anEvent isMouseMove ifTrue: [ ^ self recordMouseMove: anEvent ].
@@ -531,7 +526,7 @@ ReplayRecorder >> recordMouseUp: anEvent [
 	reference := mouseDownReference ifNil: [ self referenceForMorph: target ].
 	reference ifNil: [ ^ self clearMouseGesture ].
 	endPosition := self offsetForWorldPoint: anEvent position inMorph: target.
-	mouseMoved = true ifTrue: [
+	mouseMoved ifTrue: [
 		action := self dragActionFor: reference endingAt: endPosition.
 		self clearMouseGesture.
 		^ self recordAction: action ].

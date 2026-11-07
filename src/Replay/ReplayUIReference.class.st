@@ -131,7 +131,7 @@ ReplayUIReference >> printOn: aStream [
 	aStream nextPutAll: ')'
 ]
 
-{ #category : 'accessing' }
+{ #category : 'evaluating' }
 ReplayUIReference >> value [
 
 	^ value

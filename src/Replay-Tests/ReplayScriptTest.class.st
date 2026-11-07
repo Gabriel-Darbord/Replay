@@ -19,7 +19,7 @@ ReplayScriptTest >> testCompilationErrorIsWrappedWithItsCause [
 		raise: ReplayScriptError
 		withExceptionDo: [ :error |
 			self assert: error action identicalTo: action.
-			self assert: error cause notNil ]
+			self assert: error cause isNotNil ]
 ]
 
 { #category : 'tests' }

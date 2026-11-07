@@ -20,7 +20,7 @@ ReplaySpecResolver >> lookUpNamed: aReference forAction: anAction [
 			             missing: aReference
 			             because: 'No Spec presenter named ' , aReference value printString , ' was exposed by the managed presenter.' ].
 	morph := self morphOf: presenter.
-	(morph notNil or: [ anAction notNil and: [ anAction canRunNativelyOn: presenter ] ]) ifFalse: [
+	(morph isNotNil or: [ anAction isNotNil and: [ anAction canRunNativelyOn: presenter ] ]) ifFalse: [
 		self
 			missing: aReference
 			because: 'Spec presenter ' , aReference value printString , ' was found, but it has no rendered widget.' ].

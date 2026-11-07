@@ -73,8 +73,9 @@ ReplayKeyModifiers class >> modified: aKMKeyCombination by: modifiers [
 	"aKMKeyCombination with modifiers held, Shift printed last as Keymapping does"
 
 	| kmModifiers composed |
-	kmModifiers := ({ self control. self alt. self command. self shift } select: [ :mask |
-		                (modifiers bitAnd: mask) ~= 0 ]) collect: [ :mask | self kmModifierFor: mask ].
+	kmModifiers := { self control. self alt. self command. self shift }
+		               select: [ :mask | (modifiers bitAnd: mask) ~= 0 ]
+		               thenCollect: [ :mask | self kmModifierFor: mask ].
 	kmModifiers ifEmpty: [ ^ aKMKeyCombination ].
 	kmModifiers size = 1 ifTrue: [
 		^ KMModifiedKeyCombination modifier: kmModifiers first character: aKMKeyCombination ].
@@ -98,8 +99,9 @@ ReplayKeyModifiers class >> nameOf: aMask [
 ReplayKeyModifiers class >> namesOf: modifiers [
 	"The display names of the modifiers held in modifiers"
 
-	^ (self all select: [ :mask | (modifiers bitAnd: mask) ~= 0 ]) collect: [ :mask |
-		  self nameOf: mask ]
+	^ self all
+		  select: [ :mask | (modifiers bitAnd: mask) ~= 0 ]
+		  thenCollect: [ :mask | self nameOf: mask ]
 ]
 
 { #category : 'masks' }

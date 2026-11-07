@@ -94,7 +94,7 @@ ReplayMacroTestCase >> setUp [
 
 	super setUp.
 	installedKeymapEntries := ReplayMacro installedKeymapEntries.
-	defaultRegistry := ReplayMacroRegistry instVarNamed: 'Default'.
+	defaultRegistry := ReplayMacroRegistry instVarNamed: 'default'.
 	ReplayMacroRegistry default: ReplayMacroRegistry new.
 	temporaryFiles := OrderedCollection new
 ]
@@ -102,11 +102,11 @@ ReplayMacroTestCase >> setUp [
 { #category : 'running' }
 ReplayMacroTestCase >> tearDown [
 
-	[ super tearDown ] ensure: [
+	[
 		ReplayMacro uninstallAllInstalledKeymaps.
 		installedKeymapEntries do: [ :entry | entry key addKeymapEntry: entry value ].
 		ReplayMacroRegistry default: defaultRegistry.
-		temporaryFiles do: [ :file | file ensureDelete ] ]
+		temporaryFiles do: [ :file | file ensureDelete ] ] ensure: [ super tearDown ]
 ]
 
 { #category : 'support' }

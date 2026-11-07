@@ -66,13 +66,7 @@ ReplayOpenUI >> runOn: runner [
 
 { #category : 'managing UI' }
 ReplayOpenUI >> uiManagerOn: runner [
-
-	^ ReplayUIManager new manage: (self uiOn: runner)
-]
-
-{ #category : 'managing UI' }
-ReplayOpenUI >> uiOn: runner [
-	"Return the configured UI as a Morph"
+	"A manager owning the new UI"
 
 	self subclassResponsibility
 ]

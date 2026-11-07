@@ -319,21 +319,21 @@ ReplayEditor >> importScenario [
 		 title: 'Import Scenario') ifNotNil: [ :string | self importString: string ]
 ]
 
-{ #category : 'tools' }
+{ #category : 'actions' }
 ReplayEditor >> importString: aString [
 	"Edit the scenario of the STON aString. Anything else is reported, and changes nothing."
 
-	| scenario |
-	scenario := [ STON fromString: aString ]
+	| imported |
+	imported := [ STON fromString: aString ]
 		            on: Error
 		            do: [ :error |
 			            self inform: 'This is not a valid STON string: ' , error messageText.
 			            ^ nil ].
-	(scenario isKindOf: ReplayScenario) ifFalse: [
-		self inform: 'This STON string holds a ' , scenario class name , ', not a scenario.'.
+	(imported isKindOf: ReplayScenario) ifFalse: [
+		self inform: 'This STON string holds a ' , imported class name , ', not a scenario.'.
 		^ nil ].
-	self scenario: scenario.
-	^ scenario
+	self scenario: imported.
+	^ imported
 ]
 
 { #category : 'initialization' }
@@ -402,7 +402,7 @@ ReplayEditor >> isInLibrary [
 
 { #category : 'recording' }
 ReplayEditor >> isRecording [
-	^ recorder notNil
+	^ recorder isNotNil
 ]
 
 { #category : 'macro' }
@@ -412,7 +412,7 @@ ReplayEditor >> macro [
 	^ macro
 ]
 
-{ #category : 'macro' }
+{ #category : 'accessing' }
 ReplayEditor >> macroEditor [
 	"The settings of my macro, shown by the Edit shortcut button, or nil when my scenario is not in a library"
 

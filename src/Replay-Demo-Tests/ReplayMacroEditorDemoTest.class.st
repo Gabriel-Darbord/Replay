@@ -32,7 +32,7 @@ ReplayMacroEditorDemoTest >> testAnnotatedTargetsExist [
 
 	names do: [ :name |
 		self
-			assert: (editor replayPresenterAt: name ifAbsent: [ nil ]) notNil
+			assert: (editor replayPresenterAt: name ifAbsent: [ nil ]) isNotNil
 			description: 'Missing demo target: ' , name ]
 ]
 

@@ -48,3 +48,16 @@ ReplayBrowse >> target [
 
 	^ target
 ]
+
+{ #category : 'managing UI' }
+ReplayBrowse >> uiManagerOn: runner [
+
+	^ ReplayUIManager new manage: (self uiOn: runner)
+]
+
+{ #category : 'managing UI' }
+ReplayBrowse >> uiOn: runner [
+	"The browser to open, a Morph"
+
+	self subclassResponsibility
+]

@@ -39,7 +39,7 @@ ReplaySelectItemTest >> testAMissingLabelWaitsAndSaysWhatIsShown [
 	         nil ]
 		         on: ReplayMissingUIError
 		         do: [ :missing | missing ].
-	self assert: error notNil.
+	self assert: error isNotNil.
 	self assert: (error messageText includesSubstring: '''one'', ''two''')
 ]
 

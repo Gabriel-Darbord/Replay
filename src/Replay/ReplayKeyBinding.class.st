@@ -114,7 +114,7 @@ ReplayKeyBinding >> copyWithoutChordAt: anIndex [
 	^ self class chords: (self chords copyWithoutIndex: anIndex)
 ]
 
-{ #category : 'printing' }
+{ #category : 'displaying' }
 ReplayKeyBinding >> displayString [
 
 	^ ', ' join: (self chords collect: [ :chord | chord displayString ])
@@ -145,7 +145,7 @@ ReplayKeyBinding >> isEmpty [
 ReplayKeyBinding >> isKeymappable [
 	"Whether Keymapping can install me: I have chords, and it knows each of their keys"
 
-	^ self notEmpty and: [ self chords allSatisfy: [ :chord | chord keyboardKey notNil ] ]
+	^ self isNotEmpty and: [ self chords allSatisfy: [ :chord | chord keyboardKey isNotNil ] ]
 ]
 
 { #category : 'testing' }
@@ -157,9 +157,9 @@ ReplayKeyBinding >> matchesKeymap: aKMKeymap [
 ]
 
 { #category : 'testing' }
-ReplayKeyBinding >> notEmpty [
+ReplayKeyBinding >> isNotEmpty [
 
-	^ self isEmpty not
+	^ self chords isNotEmpty
 ]
 
 { #category : 'printing' }

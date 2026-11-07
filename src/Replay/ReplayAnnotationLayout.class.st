@@ -61,12 +61,12 @@ ReplayAnnotationLayout >> bestLabelBoundsFor: anAnnotation avoiding: placedBound
 ReplayAnnotationLayout >> clampRectangle: aRectangle within: containerBounds [
 
 	| x y |
-	containerBounds width >= aRectangle width
-		ifTrue: [ x := (aRectangle left max: containerBounds left) min: containerBounds right - aRectangle width ]
-		ifFalse: [ x := containerBounds left ].
-	containerBounds height >= aRectangle height
-		ifTrue: [ y := (aRectangle top max: containerBounds top) min: containerBounds bottom - aRectangle height ]
-		ifFalse: [ y := containerBounds top ].
+	x := containerBounds width >= aRectangle width
+		     ifTrue: [ (aRectangle left max: containerBounds left) min: containerBounds right - aRectangle width ]
+		     ifFalse: [ containerBounds left ].
+	y := containerBounds height >= aRectangle height
+		     ifTrue: [ (aRectangle top max: containerBounds top) min: containerBounds bottom - aRectangle height ]
+		     ifFalse: [ containerBounds top ].
 	^ x @ y extent: aRectangle extent
 ]
 
@@ -134,7 +134,7 @@ ReplayAnnotationLayout >> layoutAnnotations [
 
 	| placedBounds annotations |
 	annotations := self annotationsWithLabels.
-	placedBounds := (annotations collect: [ :annotation | annotation targetBoundsInWorld ]) asOrderedCollection.
+	placedBounds := annotations collect: [ :annotation | annotation targetBoundsInWorld ] as: OrderedCollection.
 	annotations do: [ :annotation |
 		| bestBounds |
 		annotation ensureLabelInWorld.

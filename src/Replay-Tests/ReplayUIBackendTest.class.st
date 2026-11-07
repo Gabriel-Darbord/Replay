@@ -18,7 +18,7 @@ ReplayUIBackendTest >> testAddingLabeledAnnotationToNonWorldOverlayDoesNotFail [
 	manager := ReplayUIManager new attachTo: target.
 	annotation := ReplayAnnotation annotate: target bounds label: 'Detached annotation'.
 
-	self shouldnt: [ manager addOverlay: annotation ] raise: Error.
+	manager addOverlay: annotation.
 	self deny: annotation label isInWorld.
 	manager close
 ]
@@ -56,7 +56,7 @@ ReplayUIBackendTest >> testAnnotatePlacementSettingsPresenterBuilds [
 	action := ReplayAnnotate new placement: #below; text: 'Placed'; yourself.
 	presenter := ReplayEditor new editAction: action.
 
-	self assert: presenter notNil
+	self assert: presenter isNotNil
 ]
 
 { #category : 'tests' }
@@ -275,7 +275,7 @@ ReplayUIBackendTest >> testAttachUIActionAttachesToScriptMorph [
 
 	action runOn: runner.
 
-	self assert: runner manager notNil.
+	self assert: runner manager isNotNil.
 	self deny: runner manager ownsUI.
 	self assert: runner manager managedUI equals: target.
 	self assert: runner manager overlay owner equals: root
@@ -387,7 +387,7 @@ ReplayUIBackendTest >> testClearAnnotationsActionEditionPresenterBuilds [
 	| presenter |
 	presenter := ReplayEditor new editAction: ReplayClearAnnotations new.
 
-	self assert: presenter notNil
+	self assert: presenter isNotNil
 ]
 
 { #category : 'tests' }
@@ -660,7 +660,7 @@ ReplayUIBackendTest >> testDeleteTextSettingsPresenterBuilds [
 	| action presenter |
 	action := ReplayDeleteText new direction: #forward; count: 2; yourself.
 	presenter := ReplayEditor new editAction: action.
-	self assert: presenter notNil
+	self assert: presenter isNotNil
 ]
 
 { #category : 'tests' }
@@ -924,15 +924,15 @@ ReplayUIBackendTest >> testOwnedMorphManagerInstallsBlockingOverlayHandlers [
 	manager := ReplayUIManager new manage: (Morph new extent: 100 @ 50).
 
 	self assert: manager ownsUI.
-	self assert: manager overlay eventHandler notNil
+	self assert: manager overlay eventHandler isNotNil
 ]
 
 { #category : 'tests' }
 ReplayUIBackendTest >> testPointerActionSettingsPresentersBuild [
 
-	self assert: (ReplayEditor new editAction: ReplayClick new) notNil.
-	self assert: (ReplayEditor new editAction: ReplayScroll new) notNil.
-	self assert: (ReplayEditor new editAction: ReplayDrag new) notNil
+	self assert: (ReplayEditor new editAction: ReplayClick new) isNotNil.
+	self assert: (ReplayEditor new editAction: ReplayScroll new) isNotNil.
+	self assert: (ReplayEditor new editAction: ReplayDrag new) isNotNil
 ]
 
 { #category : 'tests' }
@@ -1094,7 +1094,7 @@ ReplayUIBackendTest >> testPressKeySettingsPresenterBuilds [
 		modifiers: ReplayKeyModifiers shift.
 	presenter := ReplayEditor new editAction: action.
 
-	self assert: presenter notNil
+	self assert: presenter isNotNil
 ]
 
 { #category : 'tests' }
@@ -1348,7 +1348,7 @@ ReplayUIBackendTest >> testShortcutIgnoresUnknownKeys [
 	target := ReplayEventRecorderMorph new.
 	action := ReplayShortcut keyBinding:
 		          (ReplayKeyBinding chords: { ReplayKeyChord key: #NOT_A_KEY modifiers: ReplayKeyModifiers command }).
-	self shouldnt: [ action shortcutOn: target ] raise: Error.
+	action shortcutOn: target.
 	self assert: target eventLabels isEmpty
 ]
 
@@ -1403,7 +1403,7 @@ ReplayUIBackendTest >> testSpecBackendResolvesNamedPresenterSemantically [
 
 	[
 		manager openLabeled: 'Replay semantic resolver test'.
-		self shouldnt: [ action runOn: runner ] raise: Error ]
+		action runOn: runner ]
 		ensure: [ manager close ]
 ]
 
@@ -1486,7 +1486,7 @@ ReplayUIBackendTest >> testSpecResolverRetriesMissingSemanticNameUntilTimeout [
 		onMissing: [ :error | capturedError := error ].
 
 	self assert: capturedError isNil.
-	self waitUntil: [ capturedError notNil ].
+	self waitUntil: [ capturedError isNotNil ].
 	self assert: capturedError class equals: ReplayMissingUIError.
 	self assert: (capturedError messageText includesSubstring: 'No Spec presenter named ''Missing''').
 	self assert: (capturedError messageText includesSubstring: 'Gave up after 100 ms')
@@ -1506,7 +1506,7 @@ ReplayUIBackendTest >> testSpecResolverResolvesNativeButtonClickBeforeMorphExist
 		thenDo: [ :element | resolved := element ]
 		onMissing: [ :error | error signal ].
 
-	self assert: resolved notNil.
+	self assert: resolved isNotNil.
 	self assert: resolved nativeElement equals: presenter button.
 	self deny: resolved hasMorph.
 	action runOn: ReplayRunner new resolvedUI: resolved.
@@ -1527,7 +1527,7 @@ ReplayUIBackendTest >> testSpecResolverResolvesNativeFocusBeforeMorphExists [
 		thenDo: [ :element | resolved := element ]
 		onMissing: [ :error | error signal ].
 
-	self assert: resolved notNil.
+	self assert: resolved isNotNil.
 	self assert: resolved nativeElement equals: presenter field.
 	self deny: resolved hasMorph
 ]
@@ -1549,7 +1549,7 @@ ReplayUIBackendTest >> testSpecResolverResolvesNativeSelectTextBeforeMorphExists
 		thenDo: [ :element | resolved := element ]
 		onMissing: [ :error | error signal ].
 
-	self assert: resolved notNil.
+	self assert: resolved isNotNil.
 	self assert: resolved nativeElement equals: presenter field.
 	self deny: resolved hasMorph.
 	action runOn: ReplayRunner new resolvedUI: resolved.
@@ -1654,7 +1654,7 @@ ReplayUIBackendTest >> testUIHandlerTargetPresenterBuildsForSemanticTarget [
 	action targetNamed: 'Field'.
 	presenter := ReplayEditor new editAction: action.
 
-	self assert: presenter notNil
+	self assert: presenter isNotNil
 ]
 
 { #category : 'tests' }
@@ -1719,7 +1719,7 @@ ReplayUIBackendTest >> testDebugClickResolvesNamedTargetThroughManager [
 
 	click debugClickIn: manager.
 
-	self assert: click debuggedBlock notNil.
+	self assert: click debuggedBlock isNotNil.
 	self deny: presenter clicked.
 	click debuggedBlock value.
 	self assert: presenter clicked
@@ -1836,7 +1836,7 @@ ReplayUIBackendTest >> testSpecResolverTimesOutOnNamedPresenterThatNeverRenders 
 		thenDo: [ :element | self fail: 'Unexpected resolution without widget' ]
 		onMissing: [ :error | capturedError := error ].
 
-	self waitUntil: [ capturedError notNil ].
+	self waitUntil: [ capturedError isNotNil ].
 	self assert: (capturedError messageText includesSubstring: 'was found, but it has no rendered widget').
 	self assert: (capturedError messageText includesSubstring: 'Gave up after 100 ms')
 ]
@@ -1856,7 +1856,7 @@ ReplayUIBackendTest >> testSpecResolverWaitsForTheWidgetOfANamedPresenter [
 	self assert: resolved isNil.
 	morph := presenter build.
 	[
-		self waitUntil: [ resolved notNil ].
+		self waitUntil: [ resolved isNotNil ].
 		self assert: resolved nativeElement identicalTo: presenter button.
 		self assert: resolved morph identicalTo: presenter button adapter widget ] ensure: [ morph delete ]
 ]

@@ -1,3 +1,6 @@
+"
+Test helper presenter exposing its button by the name 'Button', which remembers that it was clicked.
+"
 Class {
 	#name : 'ReplayButtonSemanticPresenter',
 	#superclass : 'SpPresenter',

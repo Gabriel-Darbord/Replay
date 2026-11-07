@@ -24,6 +24,6 @@ ReplayOverlayMorph >> initialize [
 { #category : 'event handling' }
 ReplayOverlayMorph >> rejectsEvent: anEvent [
 
-	^ (anEvent hand isKindOf: ReplayHandMorph) or: [
-		  super rejectsEvent: anEvent ]
+	^ (anEvent hand ifNil: [ false ] ifNotNil: [ :hand | hand isReplayHand ])
+		  or: [ super rejectsEvent: anEvent ]
 ]

@@ -42,7 +42,8 @@ ReplayCheck >> ensureReadyOn: aResolvedUIElement [
 	"Wait until my condition holds on my target"
 
 	| result |
-	result := self evaluateScriptOn: aResolvedUIElement.
+	result := self evaluateScriptOn:
+		          (aResolvedUIElement nativeElement ifNil: [ aResolvedUIElement morph ]).
 	result == true ifTrue: [ ^ self ].
 	result == false ifFalse: [
 		^ self unexpectedScriptResult: result expected: 'true or false' ].
@@ -80,10 +81,9 @@ ReplayCheck >> runOnMorph: aMorph [
 
 { #category : 'evaluating' }
 ReplayCheck >> scriptReceiverOn: anObject [
-	"The native element of my resolved target, or its widget when it has none. When debugged from the editor, anObject is a runner, which is then the receiver."
+	"My condition is evaluated with anObject as self: the target when I run (see ensureReadyOn:)"
 
-	(anObject isKindOf: ReplayResolvedUIElement) ifFalse: [ ^ anObject ].
-	^ anObject nativeElement ifNil: [ anObject morph ]
+	^ anObject
 ]
 
 { #category : 'accessing' }

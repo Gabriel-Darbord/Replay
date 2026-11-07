@@ -79,6 +79,7 @@ ReplayRunner >> focus: anObject [
 { #category : 'initialization' }
 ReplayRunner >> initialize [
 
+	super initialize.
 	proceeding := false.
 	advanced := false
 ]
@@ -99,7 +100,7 @@ ReplayRunner >> manager [
 ReplayRunner >> manager: aReplayUIManager [
 	"Replace the managed UI. The previous manager is closed so its UI or overlay does not leak."
 
-	(manager notNil and: [ manager ~~ aReplayUIManager ]) ifTrue: [
+	(manager isNotNil and: [ manager ~~ aReplayUIManager ]) ifTrue: [
 		manager close ].
 	manager := aReplayUIManager
 ]

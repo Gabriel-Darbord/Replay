@@ -320,7 +320,7 @@ ReplayMacroLibraryEditor >> refreshMacroList [
 	"The list has its own copy: macros are added and removed through the library"
 
 	macroList items: self library macros copy.
-	(macroList selectedItem isNil and: [ self library macros notEmpty ]) ifTrue: [
+	(macroList selectedItem isNil and: [ self library macros isNotEmpty ]) ifTrue: [
 		macroList selectIndex: 1 ]
 ]
 
@@ -344,10 +344,10 @@ ReplayMacroLibraryEditor >> removeMacro: aReplayMacro [
 ReplayMacroLibraryEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 
 	aPresenterName = 'Scenario editor' ifTrue: [ ^ scenarioPane presenterAt: 1 ].
-	aPresenterName = 'Macro editor' ifTrue: [ ^ self macroEditor ifNil: absentBlock ].
+	aPresenterName = 'Macro editor' ifTrue: [ ^ self macroEditor ifNil: [ absentBlock value ] ].
 	^ replayPresenters at: aPresenterName ifAbsent: [
 		  scenarioEditor
-			  ifNil: absentBlock
+			  ifNil: [ absentBlock value ]
 			  ifNotNil: [ scenarioEditor replayPresenterAt: aPresenterName ifAbsent: absentBlock ] ]
 ]
 

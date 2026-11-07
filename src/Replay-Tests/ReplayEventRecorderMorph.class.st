@@ -35,13 +35,13 @@ ReplayEventRecorderMorph >> events [
 	^ events ifNil: [ events := OrderedCollection new ]
 ]
 
-{ #category : 'event handling' }
+{ #category : 'events - processing' }
 ReplayEventRecorderMorph >> handleKeyDown: anEvent [
 
 	self record: #keyDown event: anEvent
 ]
 
-{ #category : 'event handling' }
+{ #category : 'events - processing' }
 ReplayEventRecorderMorph >> handleKeyUp: anEvent [
 
 	self record: #keyUp event: anEvent
@@ -53,31 +53,31 @@ ReplayEventRecorderMorph >> handleKeystroke: anEvent [
 	self record: #keystroke event: anEvent
 ]
 
-{ #category : 'event handling' }
+{ #category : 'events - processing' }
 ReplayEventRecorderMorph >> handleMouseDown: anEvent [
 
 	self record: #mouseDown event: anEvent
 ]
 
-{ #category : 'event handling' }
+{ #category : 'events - processing' }
 ReplayEventRecorderMorph >> handleMouseMove: anEvent [
 
 	self record: #mouseMove event: anEvent
 ]
 
-{ #category : 'event handling' }
+{ #category : 'events - processing' }
 ReplayEventRecorderMorph >> handleMouseUp: anEvent [
 
 	self record: #mouseUp event: anEvent
 ]
 
-{ #category : 'event handling' }
+{ #category : 'events - processing' }
 ReplayEventRecorderMorph >> handleMouseWheel: anEvent [
 
 	self record: #mouseWheel event: anEvent
 ]
 
-{ #category : 'events - processing' }
+{ #category : 'event handling' }
 ReplayEventRecorderMorph >> handlesMouseDown: anEvent [
 
 	^ true

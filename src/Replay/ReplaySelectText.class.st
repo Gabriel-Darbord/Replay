@@ -34,7 +34,7 @@ ReplaySelectText >> canRunNativelyOn: anObject [
 { #category : 'testing' }
 ReplaySelectText >> canSelectTextIn: anObject [
 
-	^ anObject notNil and: [
+	^ anObject isNotNil and: [
 		(anObject respondsTo: #selectionInterval:)
 			or: [ anObject respondsTo: #selectFrom:to: ] ]
 ]

@@ -10,5 +10,5 @@ SpToolbarButtonPresenter >> replayCanClickNatively [
 SpToolbarButtonPresenter >> replayClickNatively [
 	"As my Morphic adapter does on a click"
 
-	self action ifNotNil: [ :action | action cull: self ]
+	self action ifNotNil: [ :actionBlock | actionBlock cull: self ]
 ]

@@ -13,7 +13,7 @@ ReplayEditorSemanticTargetTest >> assertEditor: editor names: names [
 
 	names do: [ :name |
 		self
-			assert: (editor replayPresenterAt: name ifAbsent: [ nil ]) notNil
+			assert: (editor replayPresenterAt: name ifAbsent: [ nil ]) isNotNil
 			description: name , ' should be registered' ]
 ]
 
@@ -29,7 +29,7 @@ ReplayEditorSemanticTargetTest >> testActionPanesUseOnlyTheActionScheme [
 
 	| editor |
 	editor := self newEditor.
-	(ReplayAction allSubclasses reject: [ :each | each isAbstract ]) do: [ :actionClass |
+	ReplayAction allSubclasses reject: [ :each | each isAbstract ] thenDo: [ :actionClass |
 		| actionEditor |
 		actionEditor := editor editAction: actionClass new.
 		(actionEditor instVarNamed: #fields) keysDo: [ :name |
@@ -110,11 +110,11 @@ ReplayEditorSemanticTargetTest >> testSelectingActionReplacesDynamicTargets [
 	editor := ReplayEditor on: scenario.
 
 	editor selectAction: typeAction.
-	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) isNotNil.
 	self assert: (editor replayPresenterAt: 'Action editor' ifAbsent: [ nil ]) identicalTo: editor actionEditor.
 	editor selectAction: scriptAction.
 	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ #missing ]) equals: #missing.
-	self assert: (editor replayPresenterAt: 'Action script' ifAbsent: [ nil ]) notNil
+	self assert: (editor replayPresenterAt: 'Action script' ifAbsent: [ nil ]) isNotNil
 ]
 
 { #category : 'tests' }
@@ -162,7 +162,7 @@ ReplayEditorSemanticTargetTest >> testShortcutActionRegistersVisibleKeyEditors [
 	self
 		assert: (editor replayPresenterAt: 'Action alt option' ifAbsent: [ nil ])
 		identicalTo: presenter modifiersPresenter altCheckBox.
-	self assert: (editor replayPresenterAt: 'Action keymap list' ifAbsent: [ nil ]) notNil
+	self assert: (editor replayPresenterAt: 'Action keymap list' ifAbsent: [ nil ]) isNotNil
 ]
 
 { #category : 'tests' }

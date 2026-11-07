@@ -31,6 +31,13 @@ ReplayToolPresenter class >> isToolWindow: aMorph [
 	^ (windowPresenter isKindOf: SpWindowPresenter) and: [ windowPresenter presenter isKindOf: ReplayToolPresenter ]
 ]
 
+{ #category : 'instance creation' }
+ReplayToolPresenter class >> open [
+	"Open my tool in its own window, and answer it"
+
+	^ self subclassResponsibility
+]
+
 { #category : 'accessing' }
 ReplayToolPresenter class >> openInstances [
 	"The tools of my kind that have their own window"
@@ -82,9 +89,23 @@ ReplayToolPresenter >> requestSton: aLabel title: aTitle [
 ReplayToolPresenter >> windowMorph [
 	"The system window that shows me, my own or the one of the tool that embeds me, or nil when I am not shown"
 
-	^ self adapter ifNotNil: [ :adapter |
-		  adapter widget ifNotNil: [ :widget |
-			  (widget isKindOf: SystemWindow)
+	^ self adapter ifNotNil: [ :anAdapter |
+		  anAdapter widget ifNotNil: [ :widget |
+			  widget isSystemWindow
 				  ifTrue: [ widget ]
 				  ifFalse: [ widget ownerThatIsA: SystemWindow ] ] ]
+]
+
+{ #category : 'actions' }
+ReplayToolPresenter >> importString: aString [
+	"Import what the STON aString holds, as the user pasted it"
+
+	self subclassResponsibility
+]
+
+{ #category : 'accessing' }
+ReplayToolPresenter >> macroEditor [
+	"The editor of the macro I show, or nil"
+
+	^ self subclassResponsibility
 ]

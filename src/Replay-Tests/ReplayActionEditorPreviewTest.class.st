@@ -51,7 +51,7 @@ ReplayActionEditorPreviewTest >> showUIView [
 { #category : 'support' }
 ReplayActionEditorPreviewTest >> waitForEditSession [
 
-	self waitUntil: [ editor actionEditor editSession notNil ].
+	self waitUntil: [ editor actionEditor editSession isNotNil ].
 	self waitUntil: [ editor actionEditor editSession manager overlay submorphs anySatisfy: [ :each | each isKindOf: ReplayWrapperMorph ] ].
 	^ editor actionEditor editSession
 ]
@@ -125,10 +125,10 @@ ReplayActionEditorPreviewTest >> testHighlightsANamedTarget [
 	self showUIView.
 	manager := self waitForEditSession manager.
 
-	self waitUntil: [ (self highlightsOf: manager) notEmpty ].
+	self waitUntil: [ (self highlightsOf: manager) isNotEmpty ].
 
 	manager resolve: focus target forAction: focus thenDo: [ :resolved | expected := resolved boundsInSurface ] onMissing: [ :error | self fail ].
-	self waitUntil: [ expected notNil ].
+	self waitUntil: [ expected isNotNil ].
 	self assert: (self highlightsOf: manager) first bounds equals: (expected expandBy: 5).
 	self assert: (editor replayPresenterAt: 'Action target notice' ifAbsent: [ nil ]) label isEmpty
 ]
@@ -142,7 +142,7 @@ ReplayActionEditorPreviewTest >> testHighlightsAPathTarget [
 	self showUIView.
 	manager := self waitForEditSession manager.
 
-	self waitUntil: [ (self highlightsOf: manager) notEmpty ].
+	self waitUntil: [ (self highlightsOf: manager) isNotEmpty ].
 
 	expected := manager managedMorph submorphs first boundsIn: manager managedMorph.
 	self assert: (self highlightsOf: manager) first bounds equals: (expected expandBy: 5)
@@ -158,7 +158,7 @@ ReplayActionEditorPreviewTest >> testMissingTargetShowsANoticeInsteadOfSignallin
 	manager := self waitForEditSession manager.
 	notice := editor replayPresenterAt: 'Action target notice' ifAbsent: [ nil ].
 
-	self waitUntil: [ notice label notEmpty ] timeout: 10 seconds.
+	self waitUntil: [ notice label isNotEmpty ] timeout: 10 seconds.
 
 	self assert: (notice label includesSubstring: 'Target not found').
 	self assert: (self highlightsOf: manager) isEmpty

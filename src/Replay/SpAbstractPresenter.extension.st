@@ -2,19 +2,10 @@ Extension { #name : 'SpAbstractPresenter' }
 
 { #category : '*Replay' }
 SpAbstractPresenter >> replayChildrenDo: aBlock [
-	"Evaluate aBlock with the name and the presenter of each of my subpresenters: first my named subpresenters (see replayNamedChildrenDo:), then the others that Spec shows in me, with nil as name: the presenters of my layout, and the pages of a notebook"
+	"Evaluate aBlock with the name and the presenter of each of my subpresenters: first my named subpresenters (see replayNamedChildrenDo:), then the others that Spec shows in me, with nil as name (see replayUnnamedChildrenDo:)"
 
 	self replayNamedChildrenDo: aBlock.
-	(self respondsTo: #layout) ifTrue: [
-		self layout ifNotNil: [ :layout |
-			(layout respondsTo: #allPresenters) ifTrue: [
-				layout allPresenters do: [ :each |
-					(each isKindOf: SpAbstractPresenter) ifTrue: [
-						aBlock value: nil value: each ] ] ] ] ].
-	(self respondsTo: #pages) ifTrue: [
-		self pages do: [ :page |
-			((page respondsTo: #activePresenter) and: [ page activePresenter notNil ])
-				ifTrue: [ aBlock value: nil value: page activePresenter ] ] ]
+	self replayUnnamedChildrenDo: aBlock
 ]
 
 { #category : '*Replay' }
@@ -24,7 +15,7 @@ SpAbstractPresenter >> replayDefaultPresenterAt: aPresenterName ifAbsent: absent
 	| separator child |
 	separator := aPresenterName indexOf: $..
 	separator = 0 ifTrue: [
-		^ (self replayDescendantNamed: aPresenterName) ifNil: absentBlock ].
+		^ (self replayDescendantNamed: aPresenterName) ifNil: [ absentBlock value ] ].
 	child := (self replayDescendantNamed: (aPresenterName first: separator - 1))
 		         ifNil: [ ^ absentBlock value ].
 	^ child
@@ -84,7 +75,7 @@ SpAbstractPresenter >> replayNameOfPresenterWith: aMorph [
 						        entry value isEmpty
 							        ifTrue: [ name ]
 							        ifFalse: [ entry value , '.' , name ] ].
-				(path notEmpty and: [ child adapter notNil and: [ child adapter widget == aMorph ] ])
+				(path isNotEmpty and: [ child adapter isNotNil and: [ child adapter widget == aMorph ] ])
 					ifTrue: [ ^ self replayShortestNameOf: child inPath: path ].
 				queue add: child -> path ] ] ].
 	^ nil
@@ -99,15 +90,13 @@ SpAbstractPresenter >> replayNamedChildrenDo: aBlock [
 		(frameworkNames includes: name) ifFalse: [
 			| value |
 			value := self instVarAt: index.
-			((value isKindOf: SpAbstractPresenter) and: [
-				 value ~~ self and: [ (self replayHasAncestor: value) not ] ])
+			(value isPresenter and: [ value ~~ self and: [ (self replayHasAncestor: value) not ] ])
 				ifTrue: [ aBlock value: name value: value ] ] ].
 	(self class allInstVarNames includes: 'additionalSubpresentersMap')
 		ifFalse: [ ^ self ].
 	(self instVarNamed: 'additionalSubpresentersMap') ifNotNil: [ :map |
 		map keysAndValuesDo: [ :key :value |
-			(value isKindOf: SpAbstractPresenter) ifTrue: [
-				aBlock value: key asString value: value ] ] ]
+			value isPresenter ifTrue: [ aBlock value: key asString value: value ] ] ]
 ]
 
 { #category : '*Replay' }
@@ -138,4 +127,32 @@ SpAbstractPresenter >> replayCanClickNatively [
 	"Answer whether a Replay click can act on me without my widget, as a click on my widget would"
 
 	^ false
+]
+
+{ #category : '*Replay' }
+SpAbstractPresenter >> replayChildItemsOf: anItem [
+	"The items under anItem, for Replay to find an item by the labels of its path, or nil when my items have none"
+
+	^ nil
+]
+
+{ #category : '*Replay' }
+SpAbstractPresenter >> replayLabelOf: anItem inColumns: columns [
+	"The text of anItem in the first of columns that shows text, or nil"
+
+	columns do: [ :column |
+		(column replayLabelOf: anItem) ifNotNil: [ :label | ^ label ] ].
+	^ nil
+]
+
+{ #category : '*Replay' }
+SpAbstractPresenter >> replaySelectsItems [
+	"Whether I show items that a Replay action can select by label (see ReplaySelectItem)"
+
+	^ false
+]
+
+{ #category : '*Replay' }
+SpAbstractPresenter >> replayUnnamedChildrenDo: aBlock [
+	"Evaluate aBlock with nil and each subpresenter that Spec shows in me without a name of mine. I have none by default."
 ]

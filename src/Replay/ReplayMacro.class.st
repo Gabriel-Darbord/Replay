@@ -23,7 +23,7 @@ ReplayMacro class >> installedKeymapEntries [
 
 	| entries |
 	entries := OrderedCollection new.
-	KMRepository default categories values do: [ :category |
+	KMRepository default categories valuesDo: [ :category |
 		category allEntries keymaps do: [ :keymap |
 			(self isReplayKeymap: keymap) ifTrue: [ entries add: category -> keymap ] ] ].
 	^ entries
@@ -78,7 +78,7 @@ ReplayMacro class >> uninstallAllInstalledKeymaps [
 	"Maintenance: remove every Replay macro keymap from the image, including stale ones whose macro is in no library"
 
 	<script>
-	KMRepository default categories values do: [ :category |
+	KMRepository default categories valuesDo: [ :category |
 		category allEntries keymaps
 			select: [ :keymap | self isReplayKeymap: keymap ]
 			thenDo: [ :keymap | category removeKeymapEntry: keymap ] ]
@@ -154,7 +154,7 @@ ReplayMacro >> contextNames: aCollection [
 { #category : 'testing' }
 ReplayMacro >> hasInstallContexts [
 
-	^ self contextNames notEmpty
+	^ self contextNames isNotEmpty
 ]
 
 { #category : 'testing' }
@@ -231,7 +231,7 @@ ReplayMacro >> installedKeymaps [
 { #category : 'keymapping' }
 ReplayMacro >> isInstalled [
 
-	^ self installedCategories notEmpty
+	^ self installedCategories isNotEmpty
 ]
 
 { #category : 'conflicts' }

@@ -14,12 +14,6 @@ TestReplayAction class >> shouldBeDropListElement [
 	^ false
 ]
 
-{ #category : 'testing' }
-TestReplayAction class >> shouldBeMenuItem [
-
-	^ false
-]
-
 { #category : 'running' }
 TestReplayAction >> runOn: aReplayRunner [
 

@@ -64,25 +64,25 @@ ReplayClick >> clickCount: anInteger [
 { #category : 'running' }
 ReplayClick >> clickOn: aMorph [
 
-	| worldPoint hand target |
+	| worldPoint hand handler |
 	worldPoint := self worldPointAt: self position in: aMorph.
 	hand := self newHandAt: worldPoint.
-	target := self
-		          targetStartingAt: aMorph
-		          handling: #handlesMouseDown:
-		          with: (self mouseDownEventAt: worldPoint hand: hand).
+	handler := self
+		           targetStartingAt: aMorph
+		           handling: #handlesMouseDown:
+		           with: (self mouseDownEventAt: worldPoint hand: hand).
 	1 to: self clickCount do: [ :index |
 		| downEvent |
 		hand position: worldPoint.
 		downEvent := self mouseDownEventAt: worldPoint hand: hand.
 		self sendsMouseDown ifTrue: [
-			hand mouseFocus: target.
-			downEvent sentTo: target ].
+			hand mouseFocus: handler.
+			downEvent sentTo: handler ].
 		self sendsSyntheticClick ifTrue: [
-			target click: downEvent.
-			index = 2 ifTrue: [ target doubleClick: downEvent asPseudoDoubleClickEvent ] ].
+			handler click: downEvent.
+			index = 2 ifTrue: [ handler doubleClick: downEvent asPseudoDoubleClickEvent ] ].
 		self sendsMouseUp ifTrue: [
-			(self mouseUpEventAt: worldPoint hand: hand) sentTo: target ] ]
+			(self mouseUpEventAt: worldPoint hand: hand) sentTo: handler ] ]
 ]
 
 { #category : 'debugging' }

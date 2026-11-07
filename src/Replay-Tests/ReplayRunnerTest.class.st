@@ -62,7 +62,7 @@ ReplayRunnerTest >> testAwaitUIActionEditionPresenterBuilds [
 	| presenter |
 	presenter := ReplayEditor new editAction: ReplayAwaitUI new.
 
-	self assert: presenter notNil
+	self assert: presenter isNotNil
 ]
 
 { #category : 'tests' }
@@ -72,7 +72,7 @@ ReplayRunnerTest >> testAwaitUIActionRunsWithoutControllingContinuation [
 	action := ReplayAwaitUI new.
 	runner := ReplayRunner on: ReplayScenario new.
 	self deny: action controlsRunnerContinuation.
-	self shouldnt: [ action runOn: runner ] raise: Error
+	action runOn: runner
 ]
 
 { #category : 'tests' }
@@ -180,7 +180,7 @@ ReplayRunnerTest >> testNextActionAfterStopDoesNothing [
 
 	runner run.
 	runner stop.
-	self shouldnt: [ runner nextAction ] raise: Error.
+	runner nextAction.
 	self assert: runner isStopped
 ]
 

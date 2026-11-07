@@ -64,7 +64,7 @@ ReplayEditorDemoTest >> testReplayEditorExposesDemoSemanticTargets [
 	| editor missing |
 	editor := ReplayEditor on: ReplayScenario new.
 	#('Step list' 'Action list' 'Action chooser' 'Action editor') do: [ :targetName |
-		self assert: (editor replayPresenterAt: targetName ifAbsent: [ nil ]) notNil ].
+		self assert: (editor replayPresenterAt: targetName ifAbsent: [ nil ]) isNotNil ].
 	missing := editor replayPresenterAt: 'Missing target' ifAbsent: [ #missing ].
 	self assert: missing equals: #missing
 ]

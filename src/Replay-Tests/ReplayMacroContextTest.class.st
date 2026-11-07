@@ -25,7 +25,7 @@ ReplayMacroContextTest >> testAvailableContextsKeepIndividualFallbackContexts [
 	simpleList := contexts detect: [ :context | context identifier = #SimpleHierarchicalList ] ifNone: [ nil ].
 	self assert: everywhere displayName equals: 'Everywhere'.
 	(KMRepository default categories includesKey: #SimpleHierarchicalList) ifTrue: [
-		self assert: simpleList notNil.
+		self assert: simpleList isNotNil.
 		self assert: simpleList categoryNames asArray equals: { #SimpleHierarchicalList } ]
 ]
 

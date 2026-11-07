@@ -14,7 +14,5 @@ ReplayInformTest >> testRunShowsTheTextWithoutFailing [
 
 	| runner |
 	runner := ReplayRunner on: ReplayScenario new.
-	self
-		shouldnt: [ (ReplayInform new text: 'Replay *inform* test') runOn: runner ]
-		raise: Error
+	(ReplayInform new text: 'Replay *inform* test') runOn: runner
 ]

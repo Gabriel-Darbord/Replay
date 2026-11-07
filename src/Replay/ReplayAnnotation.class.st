@@ -185,13 +185,13 @@ ReplayAnnotation >> ensureLabelInWorld [
 
 	(label isNil or: [ self world isNil ]) ifTrue: [ ^ self ].
 	label isInWorld ifFalse: [ label openInWorld: self world ].
-	(line notNil and: [ line isInWorld not ]) ifTrue: [ line openInWorld: self world ]
+	(line isNotNil and: [ line isInWorld not ]) ifTrue: [ line openInWorld: self world ]
 ]
 
 { #category : 'accessing' }
 ReplayAnnotation >> hasLabel [
 
-	^ label notNil
+	^ label isNotNil
 ]
 
 { #category : 'initialization' }
@@ -202,7 +202,7 @@ ReplayAnnotation >> initialize [
 	self borderStyle: (BorderStyle width: 5 color: Color red)
 ]
 
-{ #category : 'initialize' }
+{ #category : 'initialization' }
 ReplayAnnotation >> intoWorld: aWorld [
 	"My label and line live in the World: show them once I get there, when I was added to a UI out of the World"
 
@@ -247,7 +247,7 @@ ReplayAnnotation >> noteNewOwner: theOwner [
 	self placeLabelAt: self defaultLabelPosition
 ]
 
-{ #category : 'initialize' }
+{ #category : 'initialization' }
 ReplayAnnotation >> outOfWorld: aWorld [
 
 	label ifNotNil: [ label delete ].

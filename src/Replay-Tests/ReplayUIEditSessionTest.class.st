@@ -16,7 +16,7 @@ Class {
 { #category : 'support' }
 ReplayUIEditSessionTest >> childIndexesOf: aWrapper [
 
-	^ (aWrapper submorphs collect: [ :each | each index ]) asArray
+	^ aWrapper submorphs collect: [ :each | each index ] as: Array
 ]
 
 { #category : 'running' }
@@ -62,7 +62,7 @@ ReplayUIEditSessionTest >> testExposeChildrenWrapsUnwrappedChildren [
 
 	self assert: (self childIndexesOf: rootWrapper) equals: #( 1 2 3 ).
 	self
-		assert: (rootWrapper submorphs collect: [ :each | each wrappedMorph ]) asArray
+		assert: (rootWrapper submorphs collect: [ :each | each wrappedMorph ] as: Array)
 		equals: root submorphs asArray
 ]
 
@@ -100,7 +100,7 @@ ReplayUIEditSessionTest >> testWrappersFollowChildOrder [
 
 	self assert: (self childIndexesOf: rootWrapper) equals: #( 1 2 3 ).
 	self
-		assert: (rootWrapper submorphs collect: [ :each | each wrappedMorph ]) asArray
+		assert: (rootWrapper submorphs collect: [ :each | each wrappedMorph ] as: Array)
 		equals: root submorphs asArray
 ]
 

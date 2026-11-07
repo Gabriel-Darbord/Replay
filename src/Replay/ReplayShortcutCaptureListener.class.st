@@ -65,7 +65,7 @@ ReplayShortcutCaptureListener >> handleListenEvent: anEvent [
 { #category : 'testing' }
 ReplayShortcutCaptureListener >> isActive [
 
-	^ hand notNil
+	^ hand isNotNil
 ]
 
 { #category : 'capturing' }

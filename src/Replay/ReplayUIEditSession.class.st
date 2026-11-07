@@ -55,7 +55,7 @@ ReplayUIEditSession >> exposeChildMorphs: wrapper [
 	Wrappers are kept in the same order as the children they wrap."
 
 	| wrappedIndexes |
-	wrappedIndexes := (wrapper submorphs collect: [ :each | each index ]) asSet.
+	wrappedIndexes := wrapper submorphs collect: [ :each | each index ] as: Set.
 	wrapper wrappedMorph submorphs withIndexDo: [ :child :index |
 		(wrappedIndexes includes: index) ifFalse: [
 			self

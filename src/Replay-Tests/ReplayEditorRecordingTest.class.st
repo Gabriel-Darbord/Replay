@@ -51,7 +51,7 @@ ReplayEditorRecordingTest >> setUp [
 { #category : 'running' }
 ReplayEditorRecordingTest >> tearDown [
 
-	[ super tearDown ] ensure: [ ReplayRecordingToggleListener listeners removeKey: hand ifAbsent: [  ] ]
+	[ ReplayRecordingToggleListener listeners removeKey: hand ifAbsent: [  ] ] ensure: [ super tearDown ]
 ]
 
 { #category : 'support' }
@@ -86,7 +86,7 @@ ReplayEditorRecordingTest >> testClosingTheWindowStopsRecordingAndListening [
 	editor window close.
 
 	self deny: editor isRecording.
-	self assert: (editor scenario steps first actions collect: [ :action | action class ]) asArray
+	self assert: (editor scenario steps first actions collect: [ :action | action class ] as: Array)
 		equals: { ReplayAttachActiveWindow. ReplayClick }.
 	self assert: self toggleListeners isEmpty.
 	self assert: hand eventListeners isEmptyOrNil
@@ -158,7 +158,7 @@ ReplayEditorRecordingTest >> testShortcutRecordsTheFocusedWindowWithoutRecording
 	self press: self recordingKeyBinding on: hand.
 
 	self deny: editor isRecording.
-	self assert: (editor currentStep actions collect: [ :action | action class ]) asArray
+	self assert: (editor currentStep actions collect: [ :action | action class ] as: Array)
 		equals: { ReplayAttachActiveWindow. ReplayType }.
 	self assert: editor currentStep actions last text equals: 'a'
 ]

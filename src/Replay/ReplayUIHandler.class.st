@@ -102,7 +102,7 @@ ReplayUIHandler >> resolveTargetWith: aReplayUIManager thenDo: foundBlock onMiss
 ReplayUIHandler >> runNativelyOn: anObject [
 	"Act on anObject, the native element of a resolved target, if I can. Answer whether I did."
 
-	(anObject notNil and: [ self canRunNativelyOn: anObject ]) ifFalse: [ ^ false ].
+	(anObject isNotNil and: [ self canRunNativelyOn: anObject ]) ifFalse: [ ^ false ].
 	self runOnNative: anObject.
 	^ true
 ]
@@ -112,9 +112,9 @@ ReplayUIHandler >> ensureReady: aResolvedUIElement on: runner [
 	"Check that I am ready to run on aResolvedUIElement (see ensureReadyOn:). An error other than a missing UI stops the runner."
 
 	^ [ self ensureReadyOn: aResolvedUIElement ]
-		  on: Error
+		  on: Error - ReplayMissingUIError
 		  do: [ :error |
-			  (error isKindOf: ReplayMissingUIError) ifFalse: [ runner stop ].
+			  runner stop.
 			  error pass ]
 ]
 
@@ -208,7 +208,7 @@ ReplayUIHandler >> target [
 ReplayUIHandler >> target: aReplayUIReference [
 	"Target the referenced UI element. Nil or a World reference target the current World."
 
-	target := (aReplayUIReference notNil and: [ aReplayUIReference isWorld not ])
+	target := (aReplayUIReference isNotNil and: [ aReplayUIReference isWorld not ])
 		          ifTrue: [ aReplayUIReference ]
 ]
 
@@ -239,7 +239,7 @@ ReplayUIHandler >> targetNamed: aString [
 	self target: (ReplayUIReference named: aString)
 ]
 
-{ #category : 'accessing' }
+{ #category : 'target' }
 ReplayUIHandler >> targetWorld [
 
 	target := nil

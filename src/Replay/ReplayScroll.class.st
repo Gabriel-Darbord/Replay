@@ -120,16 +120,16 @@ ReplayScroll >> runOnMorph: aMorph [
 { #category : 'running' }
 ReplayScroll >> scrollOn: aMorph [
 
-	| worldPoint hand target |
+	| worldPoint hand handler |
 	worldPoint := self worldPointAt: self position in: aMorph.
 	hand := self newHandAt: worldPoint.
-	target := self
-		          targetStartingAt: aMorph
-		          handling: #handlesMouseWheel:
-		          with: (self wheelEventAt: worldPoint hand: hand).
+	handler := self
+		           targetStartingAt: aMorph
+		           handling: #handlesMouseWheel:
+		           with: (self wheelEventAt: worldPoint hand: hand).
 	self count timesRepeat: [
 		hand position: worldPoint.
-		(self wheelEventAt: worldPoint hand: hand) sentTo: target ]
+		(self wheelEventAt: worldPoint hand: hand) sentTo: handler ]
 ]
 
 { #category : 'events' }

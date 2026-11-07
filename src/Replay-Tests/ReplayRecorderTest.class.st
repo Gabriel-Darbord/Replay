@@ -588,7 +588,7 @@ ReplayRecorderTest >> testRecorderIgnoresItsIgnoredKeyBinding [
 			recorder recordEvent: (self keyboardEventType: type character: $r buttons: UserInputEvent cmdKeyMask hand: hand) ].
 		self assert: recorder recordedActions isEmpty.
 		recorder recordEvent: (self keyboardEventType: #keyDown character: $f buttons: UserInputEvent cmdKeyMask hand: hand).
-		self assert: (recorder recordedActions collect: [ :action | action keyBinding ]) asArray
+		self assert: (recorder recordedActions collect: [ :action | action keyBinding ] as: Array)
 			equals: { ReplayKeyBinding character: $f modifiers: ReplayKeyModifiers command } ]
 		ensure: [ recorder manager close ]
 ]

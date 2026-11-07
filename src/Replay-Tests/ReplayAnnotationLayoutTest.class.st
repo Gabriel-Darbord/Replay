@@ -87,7 +87,7 @@ ReplayAnnotationLayoutTest >> testExplicitPlacementComesFirstThenTheOthers [
 
 	self assert: candidates first equals: (byPlacement at: #above).
 	self assert: candidates size equals: 8.
-	self assert: (candidates allButFirst includes: (byPlacement at: #above)) not.
+	self deny: (candidates allButFirst includes: (byPlacement at: #above)).
 	self assert: candidates asSet equals: byPlacement values asSet
 ]
 

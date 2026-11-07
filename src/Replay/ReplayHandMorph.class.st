@@ -38,6 +38,12 @@ ReplayHandMorph >> handleQueuedEvents [
 	"Handle the events queued while handling others. Hands of the World handle them in later UI cycles, which never come for me."
 
 	| event |
-	[ (event := self pendingEventQueue nextOrNil) notNil ] whileTrue: [
+	[ (event := self pendingEventQueue nextOrNil) isNotNil ] whileTrue: [
 		event == #invalid ifFalse: [ self handleEvent: event ] ]
+]
+
+{ #category : 'testing' }
+ReplayHandMorph >> isReplayHand [
+
+	^ true
 ]

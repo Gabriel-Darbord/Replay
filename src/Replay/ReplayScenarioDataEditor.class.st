@@ -57,7 +57,7 @@ ReplayScenarioDataEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBl
 	^ absentBlock value
 ]
 
-{ #category : 'initialization' }
+{ #category : 'accessing - model' }
 ReplayScenarioDataEditor >> setModelBeforeInitialization: aScenario [
 
 	scenario := aScenario

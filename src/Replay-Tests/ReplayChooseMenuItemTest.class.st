@@ -64,7 +64,7 @@ ReplayChooseMenuItemTest >> testAMissingItemSaysWhatTheMenuShows [
 	         nil ]
 		         on: ReplayMissingUIError
 		         do: [ :missing | missing ].
-	self assert: error notNil.
+	self assert: error isNotNil.
 	self assert: (error messageText includesSubstring: '''Hello'', ''More''')
 ]
 
@@ -126,8 +126,9 @@ ReplayChooseMenuItemTest >> testChoosesInTheContextMenuOfARightClick [
 		self waitUntil: [ runner focus = #done ].
 		"The right click selected the row under it"
 		self assert: chosen equals: #one ] ensure: [
-		(self currentWorld submorphs select: [ :morph | morph isKindOf: MenuMorph ])
-			do: [ :menu | menu delete ].
+		self currentWorld submorphs
+			select: [ :morph | morph isMenuMorph ]
+			thenDo: [ :menu | menu delete ].
 		manager close ]
 ]
 

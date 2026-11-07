@@ -70,6 +70,11 @@ ReplayAnnotate >> printOn: stream [
 ]
 
 { #category : 'running' }
+ReplayAnnotate >> runOnMorph: aMorph [
+	"Not sent: see runOn:resolvedUI:"
+]
+
+{ #category : 'running' }
 ReplayAnnotate >> runOn: runner resolvedUI: resolvedUI [
 	"Highlight the widget of my target in the overlay of the managed UI, once the UI has processed the previous actions"
 

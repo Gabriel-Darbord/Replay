@@ -13,7 +13,7 @@ Class {
 		'file'
 	],
 	#classInstVars : [
-		'Default'
+		'default'
 	],
 	#category : 'Replay-Macros',
 	#package : 'Replay',
@@ -24,14 +24,14 @@ Class {
 ReplayMacroRegistry class >> default [
 	"The registry on the default file, loaded on first access"
 
-	^ Default ifNil: [ Default := self onFile: self defaultFile ]
+	^ default ifNil: [ default := self onFile: self defaultFile ]
 ]
 
 { #category : 'accessing' }
 ReplayMacroRegistry class >> default: aReplayMacroRegistry [
 	"Use aReplayMacroRegistry as the default one, for example a registry on another file"
 
-	Default := aReplayMacroRegistry
+	default := aReplayMacroRegistry
 ]
 
 { #category : 'persistence' }
@@ -44,7 +44,7 @@ ReplayMacroRegistry class >> defaultFile [
 ReplayMacroRegistry class >> hasDefault [
 	"Whether the default registry exists, so that macros of its library can be in use"
 
-	^ Default isNotNil
+	^ default isNotNil
 ]
 
 { #category : 'class initialization' }
@@ -119,10 +119,10 @@ ReplayMacroRegistry class >> startUp: isImageStarting [
 
 	isImageStarting ifFalse: [ ^ self ].
 	[
-		Default
+		default
 			ifNil: [ self default ]
 			ifNotNil: [ :registry | registry load ].
-		Default installOnStartup ]
+		default installOnStartup ]
 		on: Error
 		do: [ :error | self traceCr: 'Replay macros were not loaded at startup: ' , error messageText ]
 ]

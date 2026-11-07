@@ -13,9 +13,9 @@ ReplayMacroTest >> testCapturedShortcutInstallsAndRunsThroughMorphDispatcher [
 
 	| catcher capturedShortcut macro spy |
 	catcher := KMCatcherMorph new.
-	[
-		catcher keyStroke: (self keyboardEventForCharacter: $f buttons: 16).
-		capturedShortcut := ReplayKeyBinding fromKMCombination: catcher shortcut ] ensure: [ catcher delete ].
+	capturedShortcut := [
+	                    catcher keyStroke: (self keyboardEventForCharacter: $f buttons: 16).
+	                    ReplayKeyBinding fromKMCombination: catcher shortcut ] ensure: [ catcher delete ].
 	spy := ReplayMacroRunSpy new.
 	macro := ReplayMacro scenario: spy keyBinding: capturedShortcut.
 	macro contextNames: { #ReplayMacroCapturedShortcutDispatcherTest }.
@@ -31,7 +31,7 @@ ReplayMacroTest >> testIdentifierIsAssignedAtCreation [
 
 	| macro copy |
 	macro := self macroNamed: 'Never installed'.
-	self assert: macro identifier notNil.
+	self assert: macro identifier isNotNil.
 	copy := STON fromString: (STON toString: macro).
 	self assert: copy identifier equals: macro identifier.
 	self deny: (self macroNamed: 'Other') identifier equals: macro identifier
@@ -89,7 +89,7 @@ ReplayMacroTest >> testInstalledKeymapEntriesListMacroKeymaps [
 	self assert: (ReplayMacro installedKeymapEntries anySatisfy: [ :association |
 			 association key name = #RubTextEditor and: [ macro isOwnKeymap: association value ] ]).
 	self assert: (ReplayMacro installedKeymaps anySatisfy: [ :keymap | macro isOwnKeymap: keymap ]).
-	self assert: (macro installedKeymaps collect: [ :keymap | keymap name ]) asArray equals: { macro keymapName }
+	self assert: (macro installedKeymaps collect: [ :keymap | keymap name ] as: Array) equals: { macro keymapName }
 ]
 
 { #category : 'tests' }

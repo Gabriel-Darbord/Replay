@@ -235,7 +235,7 @@ ReplayPlacement >> printOn: aStream [
 	aStream nextPut: $(.
 	bounds ifNotNil: [ aStream print: bounds ].
 	position ifNotNil: [ aStream nextPutAll: 'at '; print: position ].
-	(position notNil and: [ extent notNil ]) ifTrue: [ aStream space ].
+	(position isNotNil and: [ extent isNotNil ]) ifTrue: [ aStream space ].
 	extent ifNotNil: [ aStream nextPutAll: 'size '; print: extent ].
 	aStream nextPut: $)
 ]

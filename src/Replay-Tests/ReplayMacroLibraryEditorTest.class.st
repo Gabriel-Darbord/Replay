@@ -34,7 +34,7 @@ ReplayMacroLibraryEditorTest >> editorOnFile [
 { #category : 'support' }
 ReplayMacroLibraryEditorTest >> savedMacroNamesOf: anEditor [
 
-	^ ((ReplayMacroRegistry libraryFromFile: anEditor registry file) macros collect: [ :macro | macro name ]) asArray
+	^ (ReplayMacroRegistry libraryFromFile: anEditor registry file) macros collect: [ :macro | macro name ] as: Array
 ]
 
 { #category : 'tests' }
@@ -65,9 +65,9 @@ ReplayMacroLibraryEditorTest >> testAddToLibrarySavesTheDefaultLibrary [
 	editor open.
 	editor shortcutButton click.
 
-	self assert: (registry library macroWithScenario: scenario) notNil.
+	self assert: (registry library macroWithScenario: scenario) isNotNil.
 	self
-		assert: ((ReplayMacroRegistry libraryFromFile: registry file) macros collect: [ :macro | macro name ]) asArray
+		assert: ((ReplayMacroRegistry libraryFromFile: registry file) macros collect: [ :macro | macro name ] as: Array)
 		equals: #( 'Added scenario' )
 ]
 
@@ -85,7 +85,7 @@ ReplayMacroLibraryEditorTest >> testBuilds [
 	self assert: editor installAllButton label equals: 'Install all'.
 	self assert: editor installOnStartupCheckBox label equals: 'Install on startup'.
 	self deny: editor installOnStartupCheckBox state.
-	self shouldnt: [ editor build ] raise: Error
+	editor build
 ]
 
 { #category : 'tests' }
@@ -249,7 +249,7 @@ ReplayMacroLibraryEditorTest >> testEmbeddedEditorRecordsWhileItsMacroIsShown [
 	firstEditor recorder recordAction: ReplayClick new.
 	editor showMacro: second.
 	self deny: firstEditor isRecording.
-	self assert: (first scenario steps first actions collect: [ :action | action class ]) asArray
+	self assert: (first scenario steps first actions collect: [ :action | action class ] as: Array)
 		equals: { ReplayAttachWorld. ReplayClick }.
 	self assert: (ReplayRecordingToggleListener onHand: hand) editors asArray equals: { editor scenarioEditor }.
 	self assert: editor scenarioEditor hand identicalTo: hand.
@@ -278,7 +278,7 @@ ReplayMacroLibraryEditorTest >> testMovingRecordingScenarioToLibraryKeepsTheReco
 
 	self deny: editor isRecording.
 	self assert: hand eventListeners isEmptyOrNil.
-	self assert: (macro scenario steps first actions collect: [ :action | action class ]) asArray
+	self assert: (macro scenario steps first actions collect: [ :action | action class ] as: Array)
 		equals: { ReplayAttachWorld. ReplayClick }.
 	"The embedded editor was built on the recorded actions, and shows the first one"
 	self assert: libraryEditor scenarioEditor currentAction identicalTo: macro scenario steps first actions first
@@ -342,7 +342,7 @@ ReplayMacroLibraryEditorTest >> testOpensWithUnknownKey [
 	editor := ReplayMacroLibraryEditor on: library.
 
 	self assert: editor macroList items first identicalTo: macro.
-	self shouldnt: [ editor macroList items first printString ] raise: Error
+	editor macroList items first printString
 ]
 
 { #category : 'tests' }
@@ -417,7 +417,7 @@ ReplayMacroLibraryEditorTest >> testScenarioEditorOpensOncePerScenario [
 	editor := ReplayEditor openOn: scenario.
 
 	self assert: (ReplayEditor openOn: scenario) identicalTo: editor.
-	self assert: (ReplayEditor openInstances select: [ :each | each scenario == scenario ]) size equals: 1
+	self assert: (ReplayEditor openInstances count: [ :each | each scenario == scenario ]) equals: 1
 ]
 
 { #category : 'tests' }
@@ -440,7 +440,7 @@ ReplayMacroLibraryEditorTest >> testSemanticNames [
 		identicalTo: editor installOnStartupCheckBox.
 	self assert: (editor replayPresenterAt: 'Install all button' ifAbsent: [ nil ]) identicalTo: editor installAllButton.
 	#( 'Import button' 'Export library button' 'Export macro button' ) do: [ :name |
-		self assert: (editor replayPresenterAt: name ifAbsent: [ nil ]) notNil ].
+		self assert: (editor replayPresenterAt: name ifAbsent: [ nil ]) isNotNil ].
 	self
 		assert: (editor replayPresenterAt: 'Edit shortcut button' ifAbsent: [ nil ])
 		identicalTo: editor scenarioEditor shortcutButton.

@@ -47,7 +47,7 @@ ReplayDeleteText >> canDeleteTextIn: anObject [
 	| editor |
 	anObject ifNil: [ ^ false ].
 	editor := self textEditorFor: anObject.
-	^ editor notNil and: [ editor respondsTo: self deleteSelector ]
+	^ editor isNotNil and: [ editor respondsTo: self deleteSelector ]
 ]
 
 { #category : 'accessing' }

@@ -7,7 +7,7 @@ Class {
 	#name : 'ReplayTemporaryMacroRegistry',
 	#superclass : 'ReplayMacroRegistry',
 	#classInstVars : [
-		'DefaultFile'
+		'defaultFile'
 	],
 	#category : 'Replay-Tests',
 	#package : 'Replay-Tests'
@@ -16,13 +16,13 @@ Class {
 { #category : 'persistence' }
 ReplayTemporaryMacroRegistry class >> defaultFile [
 
-	^ DefaultFile
+	^ defaultFile
 ]
 
 { #category : 'persistence' }
 ReplayTemporaryMacroRegistry class >> defaultFile: aFileReference [
 	"Use aFileReference from now on, and forget the default registry on the previous file"
 
-	DefaultFile := aFileReference.
-	Default := nil
+	defaultFile := aFileReference.
+	default := nil
 ]

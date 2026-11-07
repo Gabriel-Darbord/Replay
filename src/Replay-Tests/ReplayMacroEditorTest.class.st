@@ -76,7 +76,7 @@ ReplayMacroEditorTest >> testBuildsAndRefreshesConflicts [
 	| editor |
 	editor := self editorOn: self conflictingMacro.
 	self assert: editor contextList items asArray equals: { #RubSmalltalkEditor }.
-	self assert: editor conflictList items notEmpty.
+	self assert: editor conflictList items isNotEmpty.
 	self assert: editor conflictWarningIconPresenter image equals: (editor iconNamed: #warning).
 	self assert: (editor conflictWarningIconPresenter help includesSubstring: 'conflict')
 ]

@@ -21,7 +21,7 @@ ReplayViewSwitcherPresenterTest >> testShowsTheFirstViewAndBuildsOthersWhenSelec
 			             secondBuilds := secondBuilds + 1.
 			             second ]) }.
 
-	self assert: (switcher switcher presenters collect: [ :button | button label ]) asArray equals: #( 'First' 'Second' ).
+	self assert: (switcher switcher presenters collect: [ :button | button label ] as: Array) equals: #( 'First' 'Second' ).
 	self assert: switcher view identicalTo: first.
 	self assert: secondBuilds equals: 0.
 	(switcher switcher presenterAt: 2) state: true.

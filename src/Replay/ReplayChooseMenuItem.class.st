@@ -55,10 +55,10 @@ ReplayChooseMenuItem class >> parentItemOf: aMenuItemMorph [
 
 	| menu |
 	menu := aMenuItemMorph owner.
-	(menu isKindOf: MenuMorph) ifFalse: [ ^ nil ].
+	(menu isNotNil and: [ menu isMenuMorph ]) ifFalse: [ ^ nil ].
 	menu popUpOwner ifNotNil: [ :item | ^ item ].
 	self currentWorld submorphs do: [ :morph |
-		(morph isKindOf: MenuMorph) ifTrue: [
+		morph isMenuMorph ifTrue: [
 			morph items
 				detect: [ :each | each subMenu == menu ]
 				ifFound: [ :each | ^ each ] ] ].
@@ -94,7 +94,7 @@ ReplayChooseMenuItem >> frontmostMenu [
 	"The frontmost menu of the World that is not a submenu, or nil"
 
 	^ self currentWorld submorphs
-		  detect: [ :morph | (morph isKindOf: MenuMorph) and: [ morph popUpOwner isNil ] ]
+		  detect: [ :morph | morph isMenuMorph and: [ morph popUpOwner isNil ] ]
 		  ifNone: [ nil ]
 ]
 

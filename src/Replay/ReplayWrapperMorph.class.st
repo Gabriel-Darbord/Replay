@@ -66,7 +66,7 @@ ReplayWrapperMorph >> onMouseLeave: event [
 	event wasHandled: true
 ]
 
-{ #category : 'initialize' }
+{ #category : 'initialization' }
 ReplayWrapperMorph >> outOfWorld: aWorld [
 
 	wrappedMorph := nil.

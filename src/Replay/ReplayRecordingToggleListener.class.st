@@ -63,7 +63,7 @@ ReplayRecordingToggleListener >> editorToStart [
 
 	| focusWindow shown |
 	focusWindow := hand keyboardFocus ifNotNil: [ :focus | focus ownerThatIsA: SystemWindow ].
-	shown := editors select: [ :editor | editor windowMorph notNil ].
+	shown := editors select: [ :editor | editor windowMorph isNotNil ].
 	shown ifEmpty: [ ^ nil ].
 	focusWindow ifNotNil: [
 		shown

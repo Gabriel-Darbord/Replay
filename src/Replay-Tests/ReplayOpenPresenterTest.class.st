@@ -38,7 +38,7 @@ ReplayOpenPresenterTest >> testOpenPresenterRunUsesExplicitExtent [
 		yourself.
 
 	[
-		self shouldnt: [ action runOn: runner ] raise: Error.
+		action runOn: runner.
 		self waitUntil: [ runner manager ui extent = requestedExtent ] ]
 		ensure: [ runner stop ]
 ]

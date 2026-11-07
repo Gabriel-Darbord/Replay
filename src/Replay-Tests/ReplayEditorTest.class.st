@@ -119,7 +119,7 @@ ReplayEditorTest >> testChooserPicksTheKindOfActionThatPlusAdds [
 
 	editor actionList addButton click.
 	editor actionList addButton click.
-	self assert: (editor currentStep actions collect: [ :action | action class ]) asArray equals: { ReplayClick. ReplayClick }.
+	self assert: (editor currentStep actions collect: [ :action | action class ] as: Array) equals: { ReplayClick. ReplayClick }.
 	self assert: editor actionList items asArray equals: editor currentStep actions asArray.
 	self assert: editor currentAction identicalTo: editor currentStep actions last
 ]
@@ -145,7 +145,7 @@ ReplayEditorTest >> testDeletingTheLastStepShowsNoActionAndDisablesStepTools [
 	| type editor |
 	type := ReplayType new.
 	editor := ReplayEditor on: (self scenarioWithSteps: { { type } }).
-	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) isNotNil.
 	editor removeStep: editor currentStep.
 
 	self assert: editor scenario steps isEmpty.
@@ -153,8 +153,8 @@ ReplayEditorTest >> testDeletingTheLastStepShowsNoActionAndDisablesStepTools [
 	self assert: editor currentAction isNil.
 	self assert: editor actionList items isEmpty.
 	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ #missing ]) equals: #missing.
-	self shouldnt: [ editor editStepNavigation ] raise: Error.
-	self shouldnt: [ editor runStep ] raise: Error.
+	editor editStepNavigation.
+	editor runStep.
 
 	"Adding an action makes a step again"
 	editor addActionLast: ReplayClick new.
@@ -194,7 +194,7 @@ ReplayEditorTest >> testOtherPanesUnselectTheActionSoItCanBeShownAgain [
 		editor actionList selectItem: type.
 		self assert: (editor actionEditor isKindOf: ReplayTypeEditor).
 		self assert: editor actionEditor action identicalTo: type.
-		self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) notNil ]
+		self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) isNotNil ]
 ]
 
 { #category : 'tests' }
@@ -205,7 +205,7 @@ ReplayEditorTest >> testRemoveButtonWithoutSelectionRemovesNothing [
 	editor := ReplayEditor on: (self scenarioWithSteps: { { click } }).
 	editor actionList selectIndex: 0.
 
-	self shouldnt: [ editor actionList removeButton click ] raise: Error.
+	editor actionList removeButton click.
 	self assert: editor currentStep actions asArray equals: { click }
 ]
 

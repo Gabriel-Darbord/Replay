@@ -3,7 +3,7 @@ I select an item of a list, table, tree or drop list by its label, the text it s
 
 I run natively on Spec presenters (SpAbstractListPresenter, SpAbstractTreePresenter and SpDropListPresenter), so I do not depend on where the item is on screen, or whether it is scrolled into view. While no item has my label, I wait for one like for a missing target.
 
-In a table or tree table, the label of an item is the text of its first text column.
+The presenter tells the label of its items (see replayLabelOfItem:), such as the text of the first text column of a table.
 "
 Class {
 	#name : 'ReplaySelectItem',
@@ -42,20 +42,17 @@ ReplaySelectItem >> canRunNativelyOn: anObject [
 { #category : 'testing' }
 ReplaySelectItem >> canSelectIn: anObject [
 
-	^ (anObject isKindOf: SpAbstractListPresenter)
-		  or: [ (anObject isKindOf: SpAbstractTreePresenter)
-		  or: [ anObject isKindOf: SpDropListPresenter ] ]
+	^ anObject isPresenter and: [ anObject replaySelectsItems ]
 ]
 
 { #category : 'running' }
 ReplaySelectItem >> childrenOf: anItem in: aPresenter [
 
-	(self isTree: aPresenter) ifFalse: [
-		ReplayError new
-			messageText: 'Only trees have items under items: give ' , aPresenter className , ' a single label.';
-			subject: aPresenter;
-			signal ].
-	^ (aPresenter childrenFor: anItem) asArray
+	^ (aPresenter replayChildItemsOf: anItem) ifNil: [
+		  ReplayError new
+			  messageText: 'Only trees have items under items: give ' , aPresenter className , ' a single label.';
+			  subject: aPresenter;
+			  signal ]
 ]
 
 { #category : 'running' }
@@ -66,27 +63,11 @@ ReplaySelectItem >> ensureReadyOn: aResolvedUIElement [
 		self pathIn: aResolvedUIElement nativeElement ]
 ]
 
-{ #category : 'testing' }
-ReplaySelectItem >> isTree: aPresenter [
-
-	^ aPresenter isKindOf: SpAbstractTreePresenter
-]
-
 { #category : 'running' }
 ReplaySelectItem >> labelOf: anItem in: aPresenter [
 	"The text that aPresenter shows for anItem"
 
-	| label |
-	label := (aPresenter isKindOf: SpDropListPresenter)
-		         ifTrue: [ aPresenter display cull: anItem ]
-		         ifFalse: [
-			         (self textColumnOf: aPresenter)
-				         ifNil: [
-					         (aPresenter respondsTo: #display)
-						         ifTrue: [ aPresenter display value: anItem ]
-						         ifFalse: [ anItem ] ]
-				         ifNotNil: [ :column | column readObject: anItem ] ].
-	^ label asString
+	^ aPresenter replayLabelOfItem: anItem
 ]
 
 { #category : 'error handling' }
@@ -104,9 +85,7 @@ ReplaySelectItem >> pathIn: aPresenter [
 
 	| items path |
 	self ensureLabels.
-	items := (self isTree: aPresenter)
-		         ifTrue: [ aPresenter roots asArray ]
-		         ifFalse: [ aPresenter items asArray ].
+	items := aPresenter replayRootItems.
 	path := OrderedCollection new.
 	self labels doWithIndex: [ :label :depth |
 		| index |
@@ -143,28 +122,5 @@ ReplaySelectItem >> runOnNative: aPresenter [
 { #category : 'running' }
 ReplaySelectItem >> select: aPath in: aPresenter [
 
-	"Scrolling to the selection waits for a widget, so I only ask for it when there is one"
-
-	| scroll |
-	(aPresenter isKindOf: SpDropListPresenter) ifTrue: [
-		^ aPresenter selectIndex: aPath first ].
-	scroll := aPresenter adapter notNil.
-	(self isTree: aPresenter) ifFalse: [
-		^ scroll
-			  ifTrue: [ aPresenter selectIndex: aPath first scrollToSelection: true ]
-			  ifFalse: [ aPresenter selectIndex: aPath first ] ].
-	aPath size > 1 ifTrue: [ aPresenter expandPath: aPath allButLast ].
-	scroll
-		ifTrue: [ aPresenter selectPath: aPath scrollToSelection: true ]
-		ifFalse: [ aPresenter selectPath: aPath ]
-]
-
-{ #category : 'running' }
-ReplaySelectItem >> textColumnOf: aPresenter [
-	"The first text column of a table, or nil"
-
-	(aPresenter respondsTo: #columns) ifFalse: [ ^ nil ].
-	^ aPresenter columns
-		  detect: [ :column | column isKindOf: SpStringTableColumn ]
-		  ifNone: [ nil ]
+	aPresenter replaySelectItemAt: aPath
 ]
