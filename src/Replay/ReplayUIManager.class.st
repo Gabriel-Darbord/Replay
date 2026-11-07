@@ -208,11 +208,7 @@ ReplayUIManager >> newAttachedOverlay [
 { #category : 'managing UI' }
 ReplayUIManager >> newOverlay [
 
-	^ Morph new
-		beTransparent;
-		hResizing: #spaceFill;
-		vResizing: #spaceFill;
-		yourself
+	^ ReplayOverlayMorph new
 ]
 
 { #category : 'managing UI' }

@@ -1,7 +1,7 @@
 "
 I simulate a mouse drag gesture on a resolved UI target: a mouse down at my start offset, interpolated mouse moves, and a mouse up at my end offset, with the mouse buttons and keyboard modifiers of my superclass. Offsets are from the top-left corner of the target, nil for its center.
 
-All my events go to the morph that handles the mouse down, found up the owner chain of the target, as the mouse focus would.
+My events go through a ReplayHandMorph, with the mouse focus on the morph that handles the mouse down, found up the owner chain of the target. The hand detects the drag as Morphic does, so the morph can start a drag and drop: it then carries the dragged morph and drops it at my end offset, on whatever widget is there.
 "
 Class {
 	#name : 'ReplayDrag',
@@ -30,24 +30,25 @@ ReplayDrag class >> displayName [
 
 { #category : 'running' }
 ReplayDrag >> dragOn: aMorph [
+	"Send my events through the hand, which detects the drag and starts a drag and drop when the morph handling the mouse down asks for it.
+	The mouse focus goes to that morph first, as the hand of the World would give it."
 
-	| startPoint endPoint hand target downEvent previousPoint |
+	| startPoint endPoint hand downEvent previousPoint |
 	startPoint := self worldPointAt: self startPosition in: aMorph.
 	endPoint := self worldPointAt: self endPosition in: aMorph.
 	hand := self newHandAt: startPoint.
 	downEvent := self mouseDownEventAt: startPoint hand: hand.
-	target := self targetStartingAt: aMorph handling: #handlesMouseDown: with: downEvent.
-	hand mouseFocus: target.
-	downEvent sentTo: target.
-	previousPoint := startPoint.
-	1 to: self steps do: [ :index |
-		| nextPoint moveEvent |
-		nextPoint := self interpolatedPointFrom: startPoint to: endPoint atStep: index.
-		hand position: nextPoint.
-		moveEvent := self mouseMoveEventFrom: previousPoint to: nextPoint hand: hand.
-		moveEvent sentTo: target.
-		previousPoint := nextPoint ].
-	(self mouseUpEventAt: endPoint hand: hand) sentTo: target
+	hand mouseFocus: (self targetStartingAt: aMorph handling: #handlesMouseDown: with: downEvent).
+	[
+		hand handleEvent: downEvent.
+		previousPoint := startPoint.
+		1 to: self steps do: [ :index |
+			| nextPoint |
+			nextPoint := self interpolatedPointFrom: startPoint to: endPoint atStep: index.
+			hand handleEvent: (self mouseMoveEventFrom: previousPoint to: nextPoint hand: hand).
+			previousPoint := nextPoint ].
+		hand handleEvent: (self mouseUpEventAt: endPoint hand: hand) ]
+		ensure: [ hand endGesture ]
 ]
 
 { #category : 'accessing' }

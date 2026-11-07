@@ -691,7 +691,8 @@ ReplayUIBackendTest >> testDragSendsDownMoveAndUpEvents [
 		steps: 2;
 		modifiers: UserInputEvent shiftKeyMask;
 		yourself.
-	action dragOn: target.
+	target openInWorld.
+	[ action dragOn: target ] ensure: [ target delete ].
 	self assert: target eventLabels asArray equals: #(mouseDown mouseMove mouseMove mouseUp).
 	downEvent := target events first value.
 	firstMove := target events second value.

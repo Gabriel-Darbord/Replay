@@ -3,7 +3,7 @@ I am the abstract base for actions that send synthetic mouse events to the Morph
 
 I hold the mouse buttons pressed during the gesture, a mask of MouseEvent buttons (redButton for the left button by default), and the keyboard modifiers held, a ReplayKeyModifiers mask. Positions are offsets from the top-left corner of the target widget, nil for its center; I convert them to World points.
 
-My events are sent directly to the morph handling them, found by walking up the owner chain of the target, with a private hand that is not the hand of the World, so a replay does not move the mouse focus of the user.
+My events go to the morph handling them, found by walking up the owner chain of the target, through a ReplayHandMorph: a private hand that is not a hand of the World, so a replay does not move the pointer or the mouse focus of the user.
 "
 Class {
 	#name : 'ReplayPointerAction',
@@ -99,10 +99,7 @@ ReplayPointerAction >> mouseUpEventAt: aPoint hand: aHand [
 ReplayPointerAction >> newHandAt: aPoint [
 	"A hand for my events, apart from the hand of the World"
 
-	^ HandMorph new
-		position: aPoint;
-		privateOwner: self currentWorld;
-		yourself
+	^ ReplayHandMorph at: aPoint in: self currentWorld
 ]
 
 { #category : 'printing' }
