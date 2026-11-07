@@ -16,6 +16,16 @@ Class {
 }
 
 { #category : 'building' }
+ReplaySpecBackend class >> windowHasStatusbar: aWindowPresenter [
+	"Pharo 14 renamed hasStatusBar to hasStatusbar and deprecated the old name, while Pharo 13 only has the old one.
+	Sending the deprecated name is not harmless: with automatic rewrites on, it rewrites this method; with them off, the deprecation log keeps every window presenter it was sent to."
+
+	^ (aWindowPresenter respondsTo: #hasStatusbar)
+		  ifTrue: [ aWindowPresenter hasStatusbar ]
+		  ifFalse: [ aWindowPresenter hasStatusBar ]
+]
+
+{ #category : 'building' }
 ReplaySpecBackend class >> buildMorphFromSpec: aSpecPresenter [
 	"Build the Morphic content for a Spec presenter without embedding a nested Spec window."
 
@@ -43,7 +53,7 @@ ReplaySpecBackend class >> buildMorphFromSpec: aSpecPresenter [
 		widget
 			hResizing: #spaceFill;
 			vResizing: #spaceFill.
-		adapter model hasStatusBar ifTrue: [ adapter addStatusBarTo: container ].
+		(self windowHasStatusbar: adapter model) ifTrue: [ adapter addStatusBarTo: container ].
 		adapter add: container toWindow: adapter widget.
 		presenter updateTitle.
 		container delete.

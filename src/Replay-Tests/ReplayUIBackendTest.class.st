@@ -1870,3 +1870,14 @@ ReplayUIBackendTest >> testUIReferencesAreValues [
 	self deny: (ReplayUIReference morphicPath: #( 1 )) equals: (ReplayUIReference named: #( 1 )).
 	self assert: ReplayUIReference world equals: ReplayUIReference world
 ]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testBuildingAMorphFromSpecSendsNoDeprecatedMessage [
+	"A deprecated send is rewritten in place or logged with its receiver, which kept every built window alive."
+
+	| deprecations |
+	(Deprecation class canUnderstand: #deprecationsWhile:) ifFalse: [ ^ self skip ].
+	deprecations := Deprecation deprecationsWhile: [
+		ReplaySpecBackend buildMorphFromSpec: (SpLabelPresenter new label: 'Replay'; yourself) ].
+	self assert: deprecations isEmpty
+]
