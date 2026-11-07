@@ -726,3 +726,24 @@ ReplayRecorderTest >> testRecorderNamesTheWidgetsOfSpecPresenters [
 		self assert: action target equals: (ReplayUIReference named: 'runButton').
 		self assert: action position equals: button center - button topLeft ]
 ]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderTranslatesAClickOnAMenuItemToChooseMenuItem [
+
+	| recorder menu item hand |
+	recorder := self newRecorderOn: (Morph new extent: 200 @ 100).
+	menu := MenuMorph new.
+	menu add: 'Hello' target: Object new selector: #yourself.
+	menu openInWorld.
+	hand := World activeHand.
+	[
+		menu fullBounds.
+		item := menu items first.
+		recorder recordEvent: (self mouseButtonEventType: #mouseDown position: item center which: MouseEvent redButton buttons: MouseEvent redButton hand: hand).
+		recorder recordEvent: (self mouseButtonEventType: #mouseUp position: item center which: MouseEvent redButton buttons: 0 hand: hand).
+		self assert: recorder actions size equals: 1.
+		self assert: recorder actions first class equals: ReplayChooseMenuItem.
+		self assert: recorder actions first labels equals: #( 'Hello' ) ] ensure: [
+		menu delete.
+		recorder manager close ]
+]

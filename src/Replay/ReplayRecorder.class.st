@@ -25,7 +25,8 @@ Class {
 		'ignoredKeyBinding',
 		'prologueActions',
 		'pendingShortcutAction',
-		'pendingKeyPressAction'
+		'pendingKeyPressAction',
+		'menuItemDown'
 	],
 	#category : 'Replay-Recording',
 	#package : 'Replay',
@@ -336,6 +337,17 @@ ReplayRecorder >> mouseMoveCount [
 ]
 
 { #category : 'targeting' }
+ReplayRecorder >> menuItemAtWorldPoint: aPoint [
+	"The item of a menu open in the World under aPoint, or nil. Menus open outside the managed UI, over it."
+
+	| morph |
+	morph := (self currentWorld morphsAt: aPoint) ifEmpty: [ ^ nil ] ifNotEmpty: #first.
+	^ morph withAllOwners
+		  detect: [ :each | (each isKindOf: MenuItemMorph) and: [ each owner isKindOf: MenuMorph ] ]
+		  ifNone: [ nil ]
+]
+
+{ #category : 'targeting' }
 ReplayRecorder >> offsetForWorldPoint: aPoint inMorph: aMorph [
 	| parent localPoint |
 	parent := aMorph owner ifNil: [ aMorph ].
@@ -418,6 +430,8 @@ ReplayRecorder >> recordEvent: anEvent [
 
 	anEvent isMouse ifTrue: [
 		self flushPendingKeyboardActions.
+		((self menuItemAtWorldPoint: anEvent position) ifNotNil: [ :item |
+			 self recordMouseEvent: anEvent onMenuItem: item ]) == true ifTrue: [ ^ self ].
 		(self shouldIgnoreMouseEvent: anEvent) ifTrue: [ ^ self clearMouseGesture ].
 		anEvent isMouseDown ifTrue: [ ^ self recordMouseDown: anEvent ].
 		anEvent isMouseMove ifTrue: [ ^ self recordMouseMove: anEvent ].
@@ -466,6 +480,22 @@ ReplayRecorder >> recordKeystroke: anEvent on: targetMorph [
 		text: character asString;
 		yourself.
 	self recordAction: action
+]
+
+{ #category : 'event handling' }
+ReplayRecorder >> recordMouseEvent: anEvent onMenuItem: aMenuItemMorph [
+	"Record a click on aMenuItemMorph, of a menu open in the World, as a Choose menu item. Answer whether anEvent is recorded this way, otherwise it is an event of a gesture that started outside the menu, such as the mouse up of the right click that opened it."
+
+	anEvent isMouseDown ifTrue: [
+		self clearMouseGesture.
+		menuItemDown := aMenuItemMorph.
+		^ true ].
+	menuItemDown ifNil: [ ^ false ].
+	anEvent isMouseUp ifTrue: [
+		(menuItemDown == aMenuItemMorph and: [ aMenuItemMorph subMenu isNil ]) ifTrue: [
+			self recordAction: (ReplayChooseMenuItem labels: (ReplayChooseMenuItem labelsOfItem: aMenuItemMorph)) ].
+		menuItemDown := nil ].
+	^ true
 ]
 
 { #category : 'event handling' }
