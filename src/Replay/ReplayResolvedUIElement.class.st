@@ -1,5 +1,7 @@
 "
-I carry a backend-resolved UI target: the original reference, optional native backend element, and optional Morphic element.
+I carry a backend-resolved UI target: the original reference, the native element of the backend (a Spec presenter for instance, or the morph itself for Morphic), and the Morphic widget, if it is rendered yet.
+
+Actions run on me through my backend with run:.
 "
 Class {
 	#name : 'ReplayResolvedUIElement',
@@ -49,28 +51,10 @@ ReplayResolvedUIElement >> boundsInSurface [
 	^ morph boundsIn: surface
 ]
 
-{ #category : 'running' }
-ReplayResolvedUIElement >> clickTarget [
-
-	^ self morphRequiredFor: 'click'
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> focusTarget [
-
-	^ nativeElement ifNil: [ morph ]
-]
-
 { #category : 'testing' }
 ReplayResolvedUIElement >> hasMorph [
 
-	^ morph notNil
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> keyboardTarget [
-
-	^ self morphRequiredFor: 'keyboard'
+	^ morph isNotNil
 ]
 
 { #category : 'accessing' }
@@ -86,12 +70,13 @@ ReplayResolvedUIElement >> morph: aMorph [
 ]
 
 { #category : 'running' }
-ReplayResolvedUIElement >> morphRequiredFor: interactionName [
+ReplayResolvedUIElement >> morphRequiredFor: anAction [
+	"My Morphic widget, which anAction needs"
 
 	morph ifNotNil: [ ^ morph ].
 	ReplayMissingUIError new
-		messageText: 'Resolved UI element has no Morphic ' , interactionName , ' target.';
-		tag: self;
+		messageText: anAction class displayName , ' needs a rendered Morphic widget, but ' , reference printString , ' has none.';
+		subject: self;
 		signal
 ]
 
@@ -129,55 +114,7 @@ ReplayResolvedUIElement >> reference: aReference [
 ]
 
 { #category : 'running' }
-ReplayResolvedUIElement >> runClick: aReplayClick [
+ReplayResolvedUIElement >> run: anAction [
 
-	^ backend runClick: aReplayClick on: self
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> runDeleteText: aReplayDeleteText [
-
-	^ backend runDeleteText: aReplayDeleteText on: self
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> runDrag: aReplayDrag [
-
-	^ backend runDrag: aReplayDrag on: self
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> runFocus: aReplayFocus [
-
-	^ backend runFocus: aReplayFocus on: self
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> runPressKey: aReplayPressKey [
-
-	^ backend runPressKey: aReplayPressKey on: self
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> runScroll: aReplayScroll [
-
-	^ backend runScroll: aReplayScroll on: self
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> runSelectText: aReplaySelectText [
-
-	^ backend runSelectText: aReplaySelectText on: self
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> runShortcut: aReplayShortcut [
-
-	^ backend runShortcut: aReplayShortcut on: self
-]
-
-{ #category : 'running' }
-ReplayResolvedUIElement >> runType: aReplayType [
-
-	^ backend runType: aReplayType on: self
+	^ backend run: anAction on: self
 ]

@@ -1,5 +1,7 @@
 "
-I add script storage, editing UI, and debugging support to actions that execute Smalltalk source.
+I add script storage, evaluation, and debugging support to actions that execute Smalltalk source.
+
+My users choose the receiver of the script with `scriptReceiverOn:` (the runner by default). The same receiver is used to run and to debug the script. Compilation errors, runtime errors, and unexpected results are all signaled as ReplayScriptError, keeping the original error as cause.
 "
 Trait {
 	#name : 'TReplayActionWithScript',
@@ -13,24 +15,62 @@ Trait {
 	#tag : 'Traits'
 }
 
+{ #category : 'evaluating' }
+TReplayActionWithScript >> compileScriptFor: receiver [
+	"Answer my script compiled as a doit for the receiver."
+
+	| compiler |
+	compiler := Smalltalk compiler
+		receiver: receiver;
+		isScripting: true;
+		permitFaulty: false;
+		permitUndeclared: false;
+		yourself.
+	^ [
+		compiler ast: (compiler parse: self script) asDoit.
+		compiler compile ]
+		on: Error
+		do: [ :error | self signalScriptError: error ]
+]
+
 { #category : 'debugging' }
-TReplayActionWithScript >> debugScript [
+TReplayActionWithScript >> debugScriptOn: runner [
+	"Open a debugger stopped at the start of my script, evaluated with the same receiver as when running."
 
-	| compiler method debugSession |
-	compiler := Smalltalk compiler.
-	compiler ast: (compiler parse: self script) asDoit.
-	method := compiler compile.
+	^ (self scriptDebugRequestOn: runner)
+		  submit;
+		  debugSession
+]
 
-	debugSession := self debug: [
-		                method valueWithReceiver: nil arguments: #(  ) ].
+{ #category : 'evaluating' }
+TReplayActionWithScript >> evaluateScriptOn: runner [
+	"Evaluate my script with the receiver chosen for the runner, and answer its result."
 
-	4 timesRepeat: [ debugSession stepInto ]
+	| receiver method |
+	receiver := self scriptReceiverOn: runner.
+	method := self compileScriptFor: receiver.
+	^ [ method valueWithReceiver: receiver arguments: #(  ) ]
+		  on: Error
+		  do: [ :error | self signalScriptError: error ]
+]
+
+{ #category : 'testing' }
+TReplayActionWithScript >> hasScript [
+
+	^ true
+]
+
+{ #category : 'printing' }
+TReplayActionWithScript >> printOn: stream [
+
+	super printOn: stream.
+	self printDetail: script on: stream
 ]
 
 { #category : 'accessing' }
 TReplayActionWithScript >> script [
 
-	^ script ifNil: [ script := '' ]
+	^ script ifNil: [ '' ]
 ]
 
 { #category : 'accessing' }
@@ -39,27 +79,49 @@ TReplayActionWithScript >> script: aString [
 	script := aString
 ]
 
-{ #category : 'editing' }
-TReplayActionWithScript >> scriptPresenterOn: editor labeled: label [
+{ #category : 'debugging' }
+TReplayActionWithScript >> scriptDebugRequestOn: runner [
+	"Answer a request to debug my script, evaluated with the same receiver as when running.
+	Once submitted, the debugger steps to the start of the script."
 
-	| codePresenter |
-	(codePresenter := editor newCode)
-		text: self script;
-		whenTextChangedDo: [ :aString |
-			self script: aString.
-			editor actions rebuildLayout ].
-	editor registerReplayPresenter: codePresenter named: 'Action script'.
-	editor registerReplayPresenter: codePresenter named: self scriptTargetName.
-
-	^ SpBoxLayout newTopToBottom
-		 add: label expand: false;
-		 add: codePresenter;
-		 yourself
+	| receiver method process |
+	receiver := self scriptReceiverOn: runner.
+	method := self compileScriptFor: receiver.
+	process := [ method valueWithReceiver: receiver arguments: #(  ) ] newProcess.
+	^ (OupsDebugRequest newForContext: process suspendedContext)
+		  process: process;
+		  compiledMethod: method;
+		  label: 'Debug script: ' , self class displayName;
+		  yourself
 ]
 
-{ #category : 'editing' }
-TReplayActionWithScript >> scriptTargetName [
+{ #category : 'evaluating' }
+TReplayActionWithScript >> scriptReceiverOn: runner [
+	"Answer the object my script is evaluated with as self, when run or debugged."
 
-	self class displayName = 'Script' ifTrue: [ ^ 'Script source' ].
-	^ self class displayName , ' script'
+	^ runner
+]
+
+{ #category : 'error handling' }
+TReplayActionWithScript >> signalScriptError: anError [
+	"Wrap an error raised while compiling or running my script, keeping it as the cause.
+	Replay errors are already meaningful and go through unchanged."
+
+	(anError isKindOf: ReplayError) ifTrue: [ ^ anError pass ].
+	^ ReplayScriptError new
+		  action: self;
+		  cause: anError;
+		  messageText: 'The script failed: ' , anError description;
+		  signal
+]
+
+{ #category : 'error handling' }
+TReplayActionWithScript >> unexpectedScriptResult: anObject expected: aString [
+
+	^ ReplayScriptError new
+		  action: self;
+		  subject: anObject;
+		  messageText: 'Expected the script to return ' , aString , ', but got an instance of '
+			  , anObject className , '.';
+		  signal
 ]

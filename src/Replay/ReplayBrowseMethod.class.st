@@ -1,5 +1,5 @@
 "
-I open a system browser focused on a configured method reference.
+I open a system browser focused on a configured method reference, stored as 'Class#selector' or 'Class class#selector'.
 "
 Class {
 	#name : 'ReplayBrowseMethod',
@@ -9,56 +9,37 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayBrowseMethod class >> editorClass [
+
+	^ ReplayBrowseMethodEditor
+]
+
 { #category : 'accessing' }
 ReplayBrowseMethod class >> displayName [
 
 	^ 'Browse Method'
 ]
 
-{ #category : 'editing' }
-ReplayBrowseMethod >> settingsPresenterOn: editor [
-
-	| presenter methodList |
-	(presenter := SpClassMethodBrowser new)
-		owner: editor;
-		classes: self class environment allClasses.
-	editor registerReplayPresenter: presenter named: 'Browse method browser'.
-
-	methodList := presenter instVarNamed: #methodListPresenter.
-	editor registerReplayPresenter: methodList named: 'Browse method target'.
-	self targetMethod: methodList items first.
-
-	methodList whenSelectedDo: [ :aMethod |
-		self targetMethod: aMethod.
-		editor actions rebuildLayout ].
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: presenter;
-				add: (self placementPresenterOn: editor) expand: false;
-				yourself);
-		yourself
-]
-
 { #category : 'accessing' }
 ReplayBrowseMethod >> targetMethod [
 
 	| parts class |
-	parts := $# split: target. "= '{class}#{selector}'"
-	class := self class environment at: parts first asSymbol.
-	^ class >> parts second asSymbol
+	target ifNil: [ self missingTarget: 'No method to browse is selected.' ].
+	parts := $# split: target. "= '{class}#{selector}', class can be 'Foo class'"
+	parts size = 2 ifFalse: [
+		self missingTarget: 'Invalid method to browse: ' , target , '.' ].
+	class := (self class environment classNamed: parts first) ifNil: [
+		self missingTarget: 'Cannot find the class of the method to browse: ' , target , '.' ].
+	^ class
+		  compiledMethodAt: parts second asSymbol
+		  ifAbsent: [ self missingTarget: 'Cannot find the method to browse: ' , target , '.' ]
 ]
 
 { #category : 'accessing' }
 ReplayBrowseMethod >> targetMethod: aMethod [
 
 	target := aMethod methodClass name , '#' , aMethod selector
-]
-
-{ #category : 'accessing' }
-ReplayBrowseMethod >> targetType [
-
-	^ CompiledMethod
 ]
 
 { #category : 'managing UI' }

@@ -1,5 +1,5 @@
 "
-I move keyboard focus to a resolved UI target.
+I move the keyboard focus to a resolved UI target. I give it to the native element when it takes keyboard focus, as Spec presenters do, otherwise to the Morphic widget.
 "
 Class {
 	#name : 'ReplayFocus',
@@ -15,21 +15,20 @@ ReplayFocus class >> displayName [
 	^ 'Focus'
 ]
 
-{ #category : 'running' }
-ReplayFocus >> runOn: runner onUI: ui [
+{ #category : 'testing' }
+ReplayFocus >> canRunNativelyOn: anObject [
 
-	ui takeKeyboardFocus
+	^ anObject respondsTo: #takeKeyboardFocus
 ]
 
 { #category : 'running' }
-ReplayFocus >> runOn: runner resolvedUI: resolvedUI [
+ReplayFocus >> runOnMorph: aMorph [
 
-	resolvedUI runFocus: self
+	aMorph takeKeyboardFocus
 ]
 
-{ #category : 'editing' }
-ReplayFocus >> settingsPresenterOn: editor [
-	"There's only the UI target to edit. Can target the World."
+{ #category : 'running' }
+ReplayFocus >> runOnNative: anObject [
 
-	^ self targetPresenterOn: editor
+	anObject takeKeyboardFocus
 ]

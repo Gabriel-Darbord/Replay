@@ -1,5 +1,7 @@
 "
 I am the abstract root of executable Replay scenario actions. Subclasses carry editable action state and know how to run themselves in a ReplayRunner.
+
+Actions are model objects, serialized with STON: they build no UI. The ReplayEditor edits an action with an instance of the class its class answers to editorClass (a ReplayActionEditor subclass).
 "
 Class {
 	#name : 'ReplayAction',
@@ -8,6 +10,13 @@ Class {
 	#package : 'Replay',
 	#tag : 'Actions'
 }
+
+{ #category : 'editing' }
+ReplayAction class >> editorClass [
+	"The class of the presenters that edit my instances in a ReplayEditor"
+
+	^ ReplayActionEditor
+]
 
 { #category : 'editing' }
 ReplayAction class >> actionsForDropList [
@@ -70,6 +79,13 @@ ReplayAction >> controlsRunnerContinuation [
 	^ false
 ]
 
+{ #category : 'running' }
+ReplayAction >> resolutionTimeout [
+	"How long to wait for my UI targets to be found and ready, a Duration, or nil for the default of resolvers"
+
+	^ nil
+]
+
 { #category : 'recording' }
 ReplayAction >> copyWithoutRecordedTiming [
 	| copy |
@@ -78,38 +94,11 @@ ReplayAction >> copyWithoutRecordedTiming [
 	^ copy
 ]
 
-{ #category : 'editing' }
-ReplayAction >> editionPresenterOn: editor [
-	"Build a presenter on the editor to configure the action"
+{ #category : 'testing' }
+ReplayAction >> hasScript [
+	"Whether I evaluate a script (see TReplayActionWithScript)"
 
-	^ self noEditionPresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayAction >> helpPresenterOn: editor about: error [
-	"If an error happens during editing, the action may present some help"
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (SpBoxLayout newLeftToRight
-						    spacing: 10;
-						    add: (self iconNamed: #error) expand: false;
-						    add:
-							    'Something went wrong, and this action is unable to help.';
-						    yourself)
-				   expand: false;
-				   add: (SpBoxLayout newTopToBottom
-						    add: ' Exception message:' expand: false;
-						    add: (editor newText beNotEditable text: error printString);
-						    yourself);
-				   add: (editor newButton
-						    icon: (self iconNamed: #bug);
-						    label: 'Debug exception';
-						    action: [ error debug ])
-				   withConstraints: [ :c | c height: 70 ];
-				   yourself);
-		  yourself
+	^ false
 ]
 
 { #category : 'testing' }
@@ -136,18 +125,21 @@ ReplayAction >> isUIOpener [
 	^ false
 ]
 
-{ #category : 'editing' }
-ReplayAction >> noEditionPresenterOn: editor [
-	"For actions that cannot be edited"
+{ #category : 'running' }
+ReplayAction >> previewOn: aReplayUIBuilder [
+	"Replay myself to rebuild an editor preview of the UI.
+	Actions with effects outside of the preview UI, or that take time, override me to skip them."
 
-	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   vAlignStart;
-				   spacing: 10;
-				   add: (self iconNamed: #info) expand: false;
-				   add: 'This action cannot be edited.';
-				   yourself);
-		  yourself
+	self runOn: aReplayUIBuilder
+]
+
+{ #category : 'printing' }
+ReplayAction >> printDetail: aString on: stream [
+	"Print a short configuration detail after my name, if there is one."
+
+	aString isEmptyOrNil ifTrue: [ ^ self ].
+	stream nextPutAll: ': '.
+	stream nextPutAll: (aString printStringLimitedTo: 100)
 ]
 
 { #category : 'printing' }

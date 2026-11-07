@@ -1,5 +1,7 @@
 "
-I am a named sequence of ReplayStep objects that can be edited, saved, and run.
+I am a named sequence of ReplayStep objects that can be edited, saved as STON, and run.
+
+My title and description have defaults that are answered but not stored, so they are not serialized.
 "
 Class {
 	#name : 'ReplayScenario',
@@ -19,9 +21,13 @@ ReplayScenario class >> example [
 	"Scenarios are conveniently stored as STON strings"
 
 	<example>
-	(STON fromString:
-		 'ReplayScenario{#title:''Example Scenario'',#steps:OrderedCollection[ReplayStep{#actions:OrderedCollection[ReplayBrowseClass{#target:#ReplayScenario},ReplayAnnotate{#path:[3,6,1,3,7,1,3],#text:''Where the magic happens.''}],#navigation:ReplayNavigate{#skip:false,#acceptLabel:''Next'',#cancelLabel:''Stop'',#text:''Thus concludes this example.''}}],#description:''''}')
-		run
+	(STON fromString: self exampleSton) run
+]
+
+{ #category : 'examples' }
+ReplayScenario class >> exampleSton [
+
+	^ 'ReplayScenario{#title:''Example Scenario'',#steps:OrderedCollection[ReplayStep{#actions:OrderedCollection[ReplayBrowseClass{#target:#ReplayScenario},ReplayAnnotate{#target:ReplayUIReference{#kind:#morphicPath,#value:[3,6,1,3,7,1,3]},#text:''Where the magic happens.''}],#navigation:ReplayNavigate{#skip:false,#text:''Thus concludes this example.''}}]}'
 ]
 
 { #category : 'adding' }
@@ -33,7 +39,7 @@ ReplayScenario >> addStep: step [
 { #category : 'accessing' }
 ReplayScenario >> description [
 
-	^ description ifNil: [ description := '' ]
+	^ description ifNil: [ '' ]
 ]
 
 { #category : 'accessing' }
@@ -45,31 +51,7 @@ ReplayScenario >> description: aString [
 { #category : 'editing' }
 ReplayScenario >> edit [
 
-	^ (ReplayEditor on: self) open
-]
-
-{ #category : 'editing' }
-ReplayScenario >> editionPresenterOn: editor [
-
-	| titlePresenter descriptionPresenter |
-	(titlePresenter := editor newText)
-		text: self title;
-		whenTextChangedDo: [ :aString | self title: aString ].
-	editor registerReplayPresenter: titlePresenter named: 'Scenario title'.
-
-	(descriptionPresenter := editor newText)
-		text: self description;
-		whenTextChangedDo: [ :aString | self description: aString ].
-	editor registerReplayPresenter: descriptionPresenter named: 'Scenario description'.
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   add: 'Title:' expand: false;
-				   add: titlePresenter expand: false;
-				   add: 'Description:' expand: false;
-				   add: descriptionPresenter;
-				   yourself);
-		  yourself
+	^ ReplayEditor openOn: self
 ]
 
 { #category : 'running' }
@@ -93,7 +75,7 @@ ReplayScenario >> steps: aCollection [
 { #category : 'accessing' }
 ReplayScenario >> title [
 
-	^ title ifNil: [ title := 'Unnamed Scenario' ]
+	^ title ifNil: [ 'Unnamed Scenario' ]
 ]
 
 { #category : 'accessing' }

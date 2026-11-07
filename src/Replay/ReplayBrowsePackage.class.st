@@ -9,52 +9,32 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayBrowsePackage class >> editorClass [
+
+	^ ReplayBrowsePackageEditor
+]
+
 { #category : 'accessing' }
 ReplayBrowsePackage class >> displayName [
 
 	^ 'Browse Package'
 ]
 
-{ #category : 'editing' }
-ReplayBrowsePackage >> settingsPresenterOn: editor [
-
-	| presenter |
-	(presenter := editor newList)
-		help: 'Select package browse';
-		items: self class packageOrganizer packages sorted;
-		display: [ :each | each name ];
-		whenSelectedDo: [ :aPackage |
-			self targetPackage: aPackage.
-			editor actions rebuildLayout ].
-	editor registerReplayPresenter: presenter named: 'Browse package target'.
-	target
-		ifNil: [ presenter selectFirst ]
-		ifNotNil: [ presenter selectItem: self targetPackage scrollToSelection: true ].
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: presenter;
-				add: (self placementPresenterOn: editor) expand: false;
-				yourself);
-		yourself
-]
-
 { #category : 'accessing' }
 ReplayBrowsePackage >> targetPackage [
 
-	^ target asPackage
+	target ifNil: [ self missingTarget: 'No package to browse is selected.' ].
+	^ self class packageOrganizer
+		  packageNamed: target
+		  ifAbsent: [
+		  self missingTarget: 'Cannot find the package to browse: ' , target , '.' ]
 ]
 
 { #category : 'accessing' }
 ReplayBrowsePackage >> targetPackage: aPackage [
 
 	target := aPackage name
-]
-
-{ #category : 'accessing' }
-ReplayBrowsePackage >> targetType [
-
-	^ Package
 ]
 
 { #category : 'managing UI' }

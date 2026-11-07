@@ -1,5 +1,5 @@
 "
-I show an informational UIManager dialog as a scenario action.
+I show an informational UIManager notification as a scenario action. Editor previews do not show it.
 "
 Class {
 	#name : 'ReplayInform',
@@ -11,41 +11,25 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayInform class >> editorClass [
+
+	^ ReplayInformEditor
+]
+
 { #category : 'accessing' }
 ReplayInform class >> displayName [
 
 	^ 'Inform'
 ]
 
-{ #category : 'editing' }
-ReplayInform >> editionPresenterOn: editor [
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout new
-				   add: (self
-						    textPresenterOn: editor
-						    labeled:
-							    'Write the rich text to display with an information event:');
-				   add: (editor newButton
-						    icon: (self iconNamed: #smallDoIt);
-						    label: 'Preview';
-						    action: [ self inform: self text ])
-				   expand: false;
-				   yourself);
-		  yourself
-]
-
-{ #category : 'printing' }
-ReplayInform >> printOn: stream [
-
-	super printOn: stream.
-	text isEmptyOrNil ifTrue: [ ^ self ].
-	stream nextPutAll: ': '.
-	stream nextPutAll: (text printStringLimitedTo: 100)
+{ #category : 'running' }
+ReplayInform >> previewOn: aReplayUIBuilder [
+	"Notifications are not part of the previewed UI."
 ]
 
 { #category : 'running' }
 ReplayInform >> runOn: runner [
 
-	self uiManager inform: (Microdown asRichText: self text)
+	UIManager default inform: (Microdown asRichText: self text)
 ]

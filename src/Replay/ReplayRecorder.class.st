@@ -1,5 +1,7 @@
 "
 I record live user input events into Replay actions. I can preserve inter-action timing as ReplayDelay actions or normalize recorded actions by stripping timing.
+
+I record from the time I start on a hand (startOnHand:) until I stop, which answers the recorded actions. I do not record the events on the morphs I ignore (ignoreMorph:), nor the key binding I ignore (ignoreKeyBinding:), such as the one that stops me.
 "
 Class {
 	#name : 'ReplayRecorder',
@@ -19,15 +21,12 @@ Class {
 		'mouseDownModifiers',
 		'mouseMoveCount',
 		'mouseMoved',
-		'ignoredShortcutText',
-		'ignoredShortcutFlags',
 		'ignoredMorphs',
-		'stopShortcutText',
-		'stopShortcutFlags',
-		'stopBlock',
+		'ignoredKeyBinding',
 		'prologueActions',
 		'pendingShortcutAction',
-		'pendingKeyPressAction'
+		'pendingKeyPressAction',
+		'menuItemDown'
 	],
 	#category : 'Replay-Recording',
 	#package : 'Replay',
@@ -46,13 +45,8 @@ ReplayRecorder >> actions: aCollection [
 
 { #category : 'recording' }
 ReplayRecorder >> actionsWithoutRecordedTiming [
-	| stripped |
-	stripped := OrderedCollection new.
-	self actions do: [ :action |
-		| copy |
-		copy := action copyWithoutRecordedTiming.
-		copy shouldRecordWhenTimingStripped ifTrue: [ stripped add: copy ] ].
-	^ stripped
+	^ (self actions collect: [ :action | action copyWithoutRecordedTiming ]) select: [ :copy |
+		  copy shouldRecordWhenTimingStripped ]
 ]
 
 { #category : 'recording' }
@@ -76,10 +70,10 @@ ReplayRecorder >> clearMouseGesture [
 ReplayRecorder >> clickActionFor: aReplayUIReference at: aPoint event: anEvent phase: aSymbol [
 
 	^ ReplayClick new
-		reference: aReplayUIReference;
+		target: aReplayUIReference;
 		position: aPoint;
-		flags: (mouseDownButtons ifNil: [ anEvent whichButton ]);
-		modifiers: (mouseDownModifiers ifNil: [ self modifierFlagsFrom: anEvent ]);
+		buttons: (mouseDownButtons ifNil: [ anEvent whichButton ]);
+		modifiers: (mouseDownModifiers ifNil: [ ReplayKeyModifiers fromEvent: anEvent ]);
 		mousePhase: aSymbol;
 		yourself
 ]
@@ -141,6 +135,20 @@ ReplayRecorder >> deleteDirectionFrom: anEvent [
 	^ nil
 ]
 
+{ #category : 'targeting' }
+ReplayRecorder >> anchorFor: aMorph handling: aSelector with: anEvent [
+	"The morph to target for anEvent on aMorph.
+	Replay sends the event to the first morph handling it up the owner chain of the target, so any morph from aMorph up to that one works as target: I answer the first of them that has a semantic name, which survives layout changes, or else aMorph."
+
+	| current |
+	current := aMorph.
+	[ current isNil or: [ current == manager managedUI ] ] whileFalse: [
+		(manager backend nameOfMorph: current) ifNotNil: [ ^ current ].
+		(current replayHandles: anEvent with: aSelector) ifTrue: [ ^ aMorph ].
+		current := current owner ].
+	^ aMorph
+]
+
 { #category : 'recording' }
 ReplayRecorder >> discardPendingKeyPress [
 
@@ -156,11 +164,11 @@ ReplayRecorder >> discardPendingShortcut [
 { #category : 'event handling' }
 ReplayRecorder >> dragActionFor: aReplayUIReference endingAt: endPosition [
 	^ ReplayDrag new
-		reference: aReplayUIReference;
+		target: aReplayUIReference;
 		startPosition: mouseDownPosition;
 		endPosition: endPosition;
 		steps: self mouseMoveCount;
-		flags: (mouseDownButtons ifNil: [ MouseEvent redButton ]);
+		buttons: (mouseDownButtons ifNil: [ MouseEvent redButton ]);
 		modifiers: (mouseDownModifiers ifNil: [ 0 ]);
 		yourself
 ]
@@ -194,19 +202,26 @@ ReplayRecorder >> flushPendingShortcut [
 
 { #category : 'testing' }
 ReplayRecorder >> hasManagedTarget [
-	^ manager notNil and: [ manager managedUI notNil ]
+	^ manager isNotNil and: [ manager managedUI isNotNil ]
 ]
 
 { #category : 'testing' }
 ReplayRecorder >> hasPendingKeyPress [
 
-	^ pendingKeyPressAction notNil
+	^ pendingKeyPressAction isNotNil
 ]
 
 { #category : 'testing' }
 ReplayRecorder >> hasPendingShortcut [
 
-	^ pendingShortcutAction notNil
+	^ pendingShortcutAction isNotNil
+]
+
+{ #category : 'accessing' }
+ReplayRecorder >> ignoreKeyBinding: aReplayKeyBinding [
+	"Do not record the presses of aReplayKeyBinding, such as the one that stops recording"
+
+	ignoredKeyBinding := aReplayKeyBinding
 ]
 
 { #category : 'accessing' }
@@ -215,14 +230,16 @@ ReplayRecorder >> ignoreMorph: aMorph [
 ]
 
 { #category : 'accessing' }
-ReplayRecorder >> ignoreShortcutText: aString flags: anInteger [
-	ignoredShortcutText := aString asLowercase.
-	ignoredShortcutFlags := anInteger
-]
-
-{ #category : 'accessing' }
 ReplayRecorder >> ignoredMorphs [
 	^ ignoredMorphs ifNil: [ ignoredMorphs := OrderedCollection new ]
+]
+
+{ #category : 'testing' }
+ReplayRecorder >> ignoresKeyboardEvent: anEvent [
+
+	ignoredKeyBinding ifNil: [ ^ false ].
+	(anEvent isKeyDown or: [ anEvent isKeystroke ]) ifFalse: [ ^ false ].
+	^ (ReplayKeyBinding fromKeyboardEvent: anEvent) = ignoredKeyBinding
 ]
 
 { #category : 'testing' }
@@ -233,28 +250,15 @@ ReplayRecorder >> ignoresMorph: aMorph [
 ]
 
 { #category : 'testing' }
-ReplayRecorder >> ignoresShortcutText: aString flags: anInteger [
-	ignoredShortcutText ifNil: [ ^ false ].
-	^ ignoredShortcutText = aString asLowercase and: [ ignoredShortcutFlags = anInteger ]
+ReplayRecorder >> isRecording [
+
+	^ hand isNotNil
 ]
 
 { #category : 'testing' }
 ReplayRecorder >> isKeyPressKeyboardEvent: anEvent [
 
-	^ (self keyPressSelectorFrom: anEvent) notNil
-]
-
-{ #category : 'testing' }
-ReplayRecorder >> isModifierOnlyShortcutEvent: anEvent [
-
-	^ (self modifierFlagsFrom: anEvent) ~= 0 and: [ anEvent keyValue = 0 ]
-]
-
-{ #category : 'testing' }
-ReplayRecorder >> isNullShortcutText: aString [
-
-	^ aString isEmpty or: [
-		aString allSatisfy: [ :character | character asInteger = 0 ] ]
+	^ (self keyPressSelectorFrom: anEvent) isNotNil
 ]
 
 { #category : 'testing' }
@@ -262,7 +266,7 @@ ReplayRecorder >> isTransientMouseTarget: aMorph [
 
 	| current |
 	current := aMorph.
-	[ current notNil ] whileTrue: [
+	[ current isNotNil ] whileTrue: [
 		current class name = #SpPopoverMorph ifTrue: [ ^ true ].
 		current := current owner ].
 	^ false
@@ -271,28 +275,21 @@ ReplayRecorder >> isTransientMouseTarget: aMorph [
 { #category : 'testing' }
 ReplayRecorder >> isUnmodifiedDeleteKeyboardEvent: anEvent [
 
-	^ (self shortcutModifierFlagsFrom: anEvent) = 0
-		and: [ (self deleteDirectionFrom: anEvent) notNil ]
+	^ (self isShortcutEvent: anEvent) not
+		and: [ (self deleteDirectionFrom: anEvent) isNotNil ]
 ]
 
 { #category : 'events' }
 ReplayRecorder >> keyPressSelectorFrom: anEvent [
 
-	| character |
+	"Backspace and Delete are recorded as text deletions, Space as typed text"
+
+	| character selector |
 	character := anEvent keyCharacter.
 	character ifNil: [ ^ nil ].
-	character = Character arrowLeft ifTrue: [ ^ #left ].
-	character = Character arrowRight ifTrue: [ ^ #right ].
-	character = Character arrowUp ifTrue: [ ^ #up ].
-	character = Character arrowDown ifTrue: [ ^ #down ].
-	character = Character home ifTrue: [ ^ #home ].
-	character = Character end ifTrue: [ ^ #end ].
-	character = Character pageUp ifTrue: [ ^ #pageUp ].
-	character = Character pageDown ifTrue: [ ^ #pageDown ].
-	character = Character cr ifTrue: [ ^ #enter ].
-	character = Character escape ifTrue: [ ^ #escape ].
-	character = Character tab ifTrue: [ ^ #tab ].
-	^ nil
+	selector := ReplayKeyChord keySelectorForCharacter: character.
+	(#( #backspace #delete #space ) includes: selector) ifTrue: [ ^ nil ].
+	^ selector
 ]
 
 { #category : 'targeting' }
@@ -309,7 +306,7 @@ ReplayRecorder >> listener [
 { #category : 'targeting' }
 ReplayRecorder >> managedIncludesMorph: aMorph [
 	self hasManagedTarget ifFalse: [ ^ false ].
-	^ aMorph notNil and: [ aMorph ownerChain includes: manager managedUI ]
+	^ aMorph isNotNil and: [ aMorph ownerChain includes: manager managedUI ]
 ]
 
 { #category : 'accessing' }
@@ -323,37 +320,26 @@ ReplayRecorder >> manager: aReplayUIManager [
 ]
 
 { #category : 'testing' }
-ReplayRecorder >> matchesStopShortcutEvent: anEvent [
+ReplayRecorder >> isShortcutEvent: anEvent [
+	"Whether anEvent holds a modifier that makes its key a shortcut instead of typing"
 
-	| flags text |
-	anEvent isKeyDown ifFalse: [ ^ false ].
-	flags := self modifierFlagsFrom: anEvent.
-	flags = 0 ifTrue: [ ^ false ].
-	text := self shortcutTextFrom: anEvent.
-	(self isNullShortcutText: text) ifTrue: [ ^ false ].
-	^ self matchesStopShortcutText: text flags: flags
-]
-
-{ #category : 'testing' }
-ReplayRecorder >> matchesStopShortcutText: aString flags: anInteger [
-	stopShortcutText ifNil: [ ^ false ].
-	^ stopShortcutText = aString asLowercase and: [ stopShortcutFlags = anInteger ]
-]
-
-{ #category : 'events' }
-ReplayRecorder >> modifierFlagsFrom: anEvent [
-	| modifiers |
-	modifiers := 0.
-	anEvent shiftPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent shiftKeyMask ].
-	anEvent controlKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent ctrlKeyMask ].
-	(anEvent optionKeyPressed or: [ anEvent altKeyPressed ]) ifTrue: [ modifiers := modifiers bitOr: UserInputEvent altKeyMask ].
-	anEvent commandKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent cmdKeyMask ].
-	^ modifiers
+	^ ReplayKeyModifiers hasShortcutModifier: (ReplayKeyModifiers fromEvent: anEvent)
 ]
 
 { #category : 'accessing' }
 ReplayRecorder >> mouseMoveCount [
 	^ mouseMoveCount ifNil: [ 0 ]
+]
+
+{ #category : 'targeting' }
+ReplayRecorder >> menuItemAtWorldPoint: aPoint [
+	"The item of a menu open in the World under aPoint, or nil. Menus open outside the managed UI, over it."
+
+	| morph |
+	morph := (self currentWorld morphsAt: aPoint) ifEmpty: [ ^ nil ] ifNotEmpty: #first.
+	^ morph withAllOwners
+		  detect: [ :each | each isMenuItemMorph and: [ each owner isMenuMorph ] ]
+		  ifNone: [ nil ]
 ]
 
 { #category : 'targeting' }
@@ -382,9 +368,9 @@ ReplayRecorder >> pathForMorph: aMorph [
 ReplayRecorder >> pendingKeyPressActionFor: anEvent [
 
 	^ ReplayPressKey new
-		reference: self keyboardFocusReference;
+		target: self keyboardFocusReference;
 		keySelector: (self keyPressSelectorFrom: anEvent);
-		flags: (self modifierFlagsFrom: anEvent);
+		modifiers: (ReplayKeyModifiers fromEvent: anEvent);
 		yourself
 ]
 
@@ -395,7 +381,7 @@ ReplayRecorder >> preserveTiming [
 
 { #category : 'accessing' }
 ReplayRecorder >> preserveTiming: aBoolean [
-	preserveTiming := aBoolean = true
+	preserveTiming := aBoolean == true
 ]
 
 { #category : 'accessing' }
@@ -429,7 +415,7 @@ ReplayRecorder >> recordDelayBeforeNextAction [
 { #category : 'event handling' }
 ReplayRecorder >> recordDeleteTextOn: aReplayUIReference direction: directionSymbol [
 	self recordAction: (ReplayDeleteText new
-		reference: aReplayUIReference;
+		target: aReplayUIReference;
 		direction: directionSymbol;
 		yourself)
 ]
@@ -439,6 +425,8 @@ ReplayRecorder >> recordEvent: anEvent [
 
 	anEvent isMouse ifTrue: [
 		self flushPendingKeyboardActions.
+		(self menuItemAtWorldPoint: anEvent position) ifNotNil: [ :item |
+			(self recordMouseEvent: anEvent onMenuItem: item) ifTrue: [ ^ self ] ].
 		(self shouldIgnoreMouseEvent: anEvent) ifTrue: [ ^ self clearMouseGesture ].
 		anEvent isMouseDown ifTrue: [ ^ self recordMouseDown: anEvent ].
 		anEvent isMouseMove ifTrue: [ ^ self recordMouseMove: anEvent ].
@@ -452,7 +440,7 @@ ReplayRecorder >> recordEvent: anEvent [
 ReplayRecorder >> recordKeyboardEvent: anEvent [
 
 	| target |
-	(self matchesStopShortcutEvent: anEvent) ifTrue: [ ^ self requestStop ].
+	(self ignoresKeyboardEvent: anEvent) ifTrue: [ ^ self ].
 	target := anEvent hand keyboardFocus.
 	(self managedIncludesMorph: target) ifFalse: [ ^ self ].
 	anEvent isKeystroke ifTrue: [
@@ -466,7 +454,7 @@ ReplayRecorder >> recordKeyboardEvent: anEvent [
 			self flushPendingShortcut.
 			pendingKeyPressAction := self pendingKeyPressActionFor: anEvent.
 			^ self ].
-	(anEvent isKeyDown and: [ (self shortcutModifierFlagsFrom: anEvent) ~= 0 ]) ifTrue: [
+	(anEvent isKeyDown and: [ self isShortcutEvent: anEvent ]) ifTrue: [
 			self flushPendingKeyPress.
 			^ self recordShortcut: anEvent on: target ].
 	anEvent isKeyUp ifTrue: [ ^ self flushPendingKeyboardActions ]
@@ -475,7 +463,7 @@ ReplayRecorder >> recordKeyboardEvent: anEvent [
 { #category : 'event handling' }
 ReplayRecorder >> recordKeystroke: anEvent on: targetMorph [
 	| character code reference action |
-	(self shortcutModifierFlagsFrom: anEvent) ~= 0 ifTrue: [ ^ self ].
+	(self isShortcutEvent: anEvent) ifTrue: [ ^ self ].
 	character := anEvent keyCharacter.
 	code := character asInteger.
 	reference := self keyboardFocusReference.
@@ -483,10 +471,26 @@ ReplayRecorder >> recordKeystroke: anEvent on: targetMorph [
 	code = 127 ifTrue: [ ^ self recordDeleteTextOn: reference direction: #forward ].
 	code = 0 ifTrue: [ ^ self ].
 	action := ReplayType new
-		reference: reference;
+		target: reference;
 		text: character asString;
 		yourself.
 	self recordAction: action
+]
+
+{ #category : 'event handling' }
+ReplayRecorder >> recordMouseEvent: anEvent onMenuItem: aMenuItemMorph [
+	"Record a click on aMenuItemMorph, of a menu open in the World, as a Choose menu item. Answer whether anEvent is recorded this way, otherwise it is an event of a gesture that started outside the menu, such as the mouse up of the right click that opened it."
+
+	anEvent isMouseDown ifTrue: [
+		self clearMouseGesture.
+		menuItemDown := aMenuItemMorph.
+		^ true ].
+	menuItemDown ifNil: [ ^ false ].
+	anEvent isMouseUp ifTrue: [
+		(menuItemDown == aMenuItemMorph and: [ aMenuItemMorph subMenu isNil ]) ifTrue: [
+			self recordAction: (ReplayChooseMenuItem labels: (ReplayChooseMenuItem labelsOfItem: aMenuItemMorph)) ].
+		menuItemDown := nil ].
+	^ true
 ]
 
 { #category : 'event handling' }
@@ -494,12 +498,13 @@ ReplayRecorder >> recordMouseDown: anEvent [
 	| target |
 	target := self targetMorphAtWorldPoint: anEvent position.
 	target ifNil: [ ^ self ].
+	target := self anchorFor: target handling: #handlesMouseDown: with: anEvent.
 	mouseDownTarget := target.
 	mouseDownReference := self referenceForMorph: target.
 	mouseDownReference ifNil: [ ^ self clearMouseGesture ].
 	mouseDownPosition := self offsetForWorldPoint: anEvent position inMorph: target.
 	mouseDownButtons := anEvent whichButton.
-	mouseDownModifiers := self modifierFlagsFrom: anEvent.
+	mouseDownModifiers := ReplayKeyModifiers fromEvent: anEvent.
 	mouseMoveCount := 0.
 	mouseMoved := false
 ]
@@ -521,7 +526,7 @@ ReplayRecorder >> recordMouseUp: anEvent [
 	reference := mouseDownReference ifNil: [ self referenceForMorph: target ].
 	reference ifNil: [ ^ self clearMouseGesture ].
 	endPosition := self offsetForWorldPoint: anEvent position inMorph: target.
-	mouseMoved = true ifTrue: [
+	mouseMoved ifTrue: [
 		action := self dragActionFor: reference endingAt: endPosition.
 		self clearMouseGesture.
 		^ self recordAction: action ].
@@ -546,12 +551,13 @@ ReplayRecorder >> recordMouseWheel: anEvent [
 	| target reference action |
 	target := self targetMorphAtWorldPoint: anEvent position.
 	target ifNil: [ ^ self ].
+	target := self anchorFor: target handling: #handlesMouseWheel: with: anEvent.
 	reference := self referenceForMorph: target.
 	reference ifNil: [ ^ self ].
 	action := ReplayScroll new
-		reference: reference;
+		target: reference;
 		direction: (self scrollDirectionFrom: anEvent);
-		modifiers: (self modifierFlagsFrom: anEvent);
+		modifiers: (ReplayKeyModifiers fromEvent: anEvent);
 		position: (self offsetForWorldPoint: anEvent position inMorph: target);
 		yourself.
 	self recordAction: action
@@ -560,14 +566,9 @@ ReplayRecorder >> recordMouseWheel: anEvent [
 { #category : 'event handling' }
 ReplayRecorder >> recordShortcut: anEvent on: targetMorph [
 
-	| flags text action |
-	flags := self modifierFlagsFrom: anEvent.
-	text := self shortcutTextFrom: anEvent.
-	(self isNullShortcutText: text) ifTrue: [ ^ self ].
-	(self matchesStopShortcutText: text flags: flags) ifTrue: [ ^ self requestStop ].
-	(self ignoresShortcutText: text flags: flags) ifTrue: [ ^ self ].
-	action := self shortcutFromEvent: anEvent.
-	(self shouldDeferShortcutWithFlags: flags) ifTrue: [
+	| action |
+	action := (self shortcutFromEvent: anEvent) ifNil: [ ^ self ].
+	(self shouldDeferShortcut: action keyBinding) ifTrue: [
 		self flushPendingShortcut.
 		pendingShortcutAction := action.
 		^ self ].
@@ -592,27 +593,21 @@ ReplayRecorder >> recordedActions [
 
 { #category : 'targeting' }
 ReplayRecorder >> referenceForMorph: aMorph [
+	"The semantic name of aMorph when it has one, which survives layout changes, or else its Morphic path from the managed UI"
+
 	| path |
+	(self managedIncludesMorph: aMorph) ifFalse: [ ^ nil ].
+	(manager backend nameOfMorph: aMorph) ifNotNil: [ :name |
+		^ ReplayUIReference named: name ].
 	path := self pathForMorph: aMorph.
 	path ifNil: [ ^ nil ].
 	^ ReplayUIReference morphicPath: path
 ]
 
-{ #category : 'recording' }
-ReplayRecorder >> requestStop [
-	stopBlock ifNotNil: [ stopBlock value ]
-]
-
 { #category : 'testing' }
 ReplayRecorder >> sameReferenceOf: firstAction and: secondAction [
 	(firstAction isUIHandler and: [ secondAction isUIHandler ]) ifFalse: [ ^ false ].
-	^ self sameUIReference: firstAction uiReference as: secondAction uiReference
-]
-
-{ #category : 'testing' }
-ReplayRecorder >> sameUIReference: firstReference as: secondReference [
-	firstReference class = secondReference class ifFalse: [ ^ false ].
-	^ firstReference kind = secondReference kind and: [ firstReference value = secondReference value ]
+	^ firstAction target = secondAction target
 ]
 
 { #category : 'event handling' }
@@ -627,64 +622,24 @@ ReplayRecorder >> scrollDirectionFrom: anEvent [
 ]
 
 { #category : 'events' }
-ReplayRecorder >> shortcutCharacterFallbackFrom: anEvent [
-
-	| value key |
-	value := anEvent keyValue.
-	((value between: 1 and: 26) and: [ (self modifierFlagsFrom: anEvent) ~= 0 ]) ifTrue: [
-		^ Character value: $a asInteger + value - 1 ].
-	key := anEvent key.
-	key ifNotNil: [
-			[ ^ key asCharacter ]
-				on: Error
-				do: [ nil ] ].
-	^ [ Character value: value ]
-		  on: Error
-		  do: [ nil ]
-]
-
-{ #category : 'events' }
 ReplayRecorder >> shortcutFromEvent: anEvent [
+	"The Shortcut action pressing the key of anEvent on the keyboard focus, or nil when it presses no key"
 
-	| text |
-	(self isModifierOnlyShortcutEvent: anEvent) ifTrue: [ ^ nil ].
-	text := self shortcutTextFrom: anEvent.
-	(self isNullShortcutText: text) ifTrue: [ ^ nil ].
-	^ ReplayShortcut new
-		  reference: self keyboardFocusReference;
-		  flags: (self modifierFlagsFrom: anEvent);
-		  text: text;
-		  yourself
-]
-
-{ #category : 'events' }
-ReplayRecorder >> shortcutModifierFlagsFrom: anEvent [
-	| modifiers |
-	modifiers := 0.
-	anEvent controlKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent ctrlKeyMask ].
-	(anEvent optionKeyPressed or: [ anEvent altKeyPressed ]) ifTrue: [ modifiers := modifiers bitOr: UserInputEvent altKeyMask ].
-	anEvent commandKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent cmdKeyMask ].
-	^ modifiers
-]
-
-{ #category : 'events' }
-ReplayRecorder >> shortcutTextFrom: anEvent [
-
-	| character |
-	character := [ anEvent modifiedCharacter ]
-		             on: Error
-		             do: [ self shortcutCharacterFallbackFrom: anEvent ].
-	character ifNil: [ ^ '' ].
-	^ character asString asLowercase
+	^ (ReplayKeyBinding fromKeyboardEvent: anEvent) ifNotNil: [ :binding |
+		  ReplayShortcut new
+			  target: self keyboardFocusReference;
+			  keyBinding: binding;
+			  yourself ]
 ]
 
 { #category : 'testing' }
-ReplayRecorder >> shouldDeferShortcutWithFlags: flags [
+ReplayRecorder >> shouldDeferShortcut: aReplayKeyBinding [
+	"Alt without Command or Control may type a character, as Option does on macOS: wait for the keystroke to tell"
 
-	| commandOrControlMask |
-	commandOrControlMask := UserInputEvent cmdKeyMask bitOr: UserInputEvent ctrlKeyMask.
-	^ ((flags bitAnd: UserInputEvent altKeyMask) ~= 0)
-		and: [ (flags bitAnd: commandOrControlMask) = 0 ]
+	| modifiers |
+	modifiers := aReplayKeyBinding chords first modifiers.
+	^ (modifiers bitAnd: ReplayKeyModifiers alt) ~= 0 and: [
+		  (modifiers bitAnd: (ReplayKeyModifiers command bitOr: ReplayKeyModifiers control)) = 0 ]
 ]
 
 { #category : 'testing' }
@@ -694,11 +649,6 @@ ReplayRecorder >> shouldIgnoreMouseEvent: anEvent [
 	target := self targetMorphAtWorldPoint: anEvent position.
 	^ (self ignoresMorph: target)
 		or: [ self isTransientMouseTarget: target ]
-]
-
-{ #category : 'recording' }
-ReplayRecorder >> start [
-	self startOnHand: World activeHand
 ]
 
 { #category : 'recording' }
@@ -714,14 +664,6 @@ ReplayRecorder >> stop [
 		hand removeEventListener: self listener.
 		hand := nil ].
 	^ self recordedActions
-]
-
-{ #category : 'accessing' }
-ReplayRecorder >> stopShortcutText: aString flags: anInteger do: aBlock [
-	stopShortcutText := aString asLowercase.
-	stopShortcutFlags := anInteger.
-	stopBlock := aBlock.
-	self ignoreShortcutText: aString flags: anInteger
 ]
 
 { #category : 'targeting' }

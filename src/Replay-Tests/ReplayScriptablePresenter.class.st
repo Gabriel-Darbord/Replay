@@ -11,6 +11,12 @@ Class {
 	#package : 'Replay-Tests'
 }
 
+{ #category : 'layout' }
+ReplayScriptablePresenter >> defaultLayout [
+
+	^ SpBoxLayout newTopToBottom
+]
+
 { #category : 'accessing' }
 ReplayScriptablePresenter >> log [
 

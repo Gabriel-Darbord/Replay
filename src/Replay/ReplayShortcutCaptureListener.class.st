@@ -1,26 +1,45 @@
 "
-I listen for one keyboard shortcut event on a Morphic hand, convert it through ReplayRecorder, and then uninstall myself.
+I listen for one key press on a Morphic hand, decode it as a ReplayKeyBinding, give it to my capture block, and then uninstall myself. Modifier keys pressed alone are not captured.
+
+A capture is cancelled, and my cancel block evaluated, when Escape is pressed, when cancel is sent, or when a key is pressed while my condition (captureWhile:) no longer holds: the presenter that asked for the binding is not shown anymore, and the key must not edit a binding nobody sees.
 "
 Class {
 	#name : 'ReplayShortcutCaptureListener',
 	#superclass : 'Object',
 	#instVars : [
 		'captureBlock',
-		'hand',
-		'recorder'
+		'cancelBlock',
+		'condition',
+		'hand'
 	],
-	#category : 'Replay-Editing',
+	#category : 'Replay-Keys',
 	#package : 'Replay',
-	#tag : 'Editing'
+	#tag : 'Keys'
 }
 
 { #category : 'instance creation' }
 ReplayShortcutCaptureListener class >> onHand: aHandMorph do: aBlock [
 
-	| listener |
-	listener := self new.
-	listener startOnHand: aHandMorph do: aBlock.
-	^ listener
+	^ self new
+		  whenCapturedDo: aBlock;
+		  startOnHand: aHandMorph;
+		  yourself
+]
+
+{ #category : 'capturing' }
+ReplayShortcutCaptureListener >> cancel [
+	"Stop listening without capturing"
+
+	self isActive ifFalse: [ ^ self ].
+	self stop.
+	cancelBlock ifNotNil: [ :block | block value ]
+]
+
+{ #category : 'initialization' }
+ReplayShortcutCaptureListener >> captureWhile: aBlock [
+	"Capture only while aBlock answers true, and cancel otherwise"
+
+	condition := aBlock
 ]
 
 { #category : 'accessing' }
@@ -32,33 +51,28 @@ ReplayShortcutCaptureListener >> hand [
 { #category : 'event handling' }
 ReplayShortcutCaptureListener >> handleListenEvent: anEvent [
 
-	| shortcut |
+	| binding |
 	anEvent isKeyboard ifFalse: [ ^ self ].
 	anEvent isKeyDown ifFalse: [ ^ self ].
-	shortcut := self recorder shortcutFromEvent: anEvent.
-	shortcut ifNil: [ ^ self ].
+	(condition isNil or: [ condition value ]) ifFalse: [ ^ self cancel ].
+	binding := ReplayKeyBinding fromKeyboardEvent: anEvent.
+	binding ifNil: [ ^ self ].
+	binding = (ReplayKeyBinding chords: { ReplayKeyChord namedKey: #escape }) ifTrue: [ ^ self cancel ].
 	self stop.
-	captureBlock ifNotNil: [ :block | block cull: shortcut ]
+	captureBlock ifNotNil: [ :block | block cull: binding ]
 ]
 
 { #category : 'testing' }
 ReplayShortcutCaptureListener >> isActive [
 
-	^ hand notNil
-]
-
-{ #category : 'accessing' }
-ReplayShortcutCaptureListener >> recorder [
-
-	^ recorder ifNil: [ recorder := ReplayRecorder new ]
+	^ hand isNotNil
 ]
 
 { #category : 'capturing' }
-ReplayShortcutCaptureListener >> startOnHand: aHandMorph do: aBlock [
+ReplayShortcutCaptureListener >> startOnHand: aHandMorph [
 
 	hand ifNotNil: [ self stop ].
 	hand := aHandMorph.
-	captureBlock := aBlock.
 	hand ifNotNil: [ hand addEventListener: self ]
 ]
 
@@ -68,4 +82,16 @@ ReplayShortcutCaptureListener >> stop [
 	hand ifNotNil: [
 		hand removeEventListener: self.
 		hand := nil ]
+]
+
+{ #category : 'initialization' }
+ReplayShortcutCaptureListener >> whenCancelledDo: aBlock [
+
+	cancelBlock := aBlock
+]
+
+{ #category : 'initialization' }
+ReplayShortcutCaptureListener >> whenCapturedDo: aBlock [
+
+	captureBlock := aBlock
 ]

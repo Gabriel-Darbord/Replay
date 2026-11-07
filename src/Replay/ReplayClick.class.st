@@ -1,21 +1,30 @@
 "
-I simulate mouse button interactions on a resolved UI target. My mousePhase controls whether I send a full synthetic click, only mouse-down, only mouse-up, or a down/up pair. I can click at a local offset, repeat double-clicks, and include mouse button and keyboard modifier flags.
+I simulate mouse button interactions on a resolved UI target. My mousePhase controls whether I send a full synthetic click, only mouse-down, only mouse-up, or a down/up pair. I can click at an offset from the top-left corner of the target, repeat to double-click, and hold several mouse buttons and keyboard modifiers.
+
+All my events go to the morph that handles the mouse down, found up the owner chain of the target, so the mouse down and mouse up of a split click reach the same morph.
+
+A simple left click on a Spec button, link or toolbar button that is enabled and visible runs natively, as the widget would on a click, even before the button is rendered.
 "
 Class {
 	#name : 'ReplayClick',
-	#superclass : 'ReplayUIHandler',
-	#traits : 'TReplayActionWithDebugging + TReplayActionWithFlags',
-	#classTraits : 'TReplayActionWithDebugging classTrait + TReplayActionWithFlags classTrait',
+	#superclass : 'ReplayPointerAction',
+	#traits : 'TReplayActionWithDebugging',
+	#classTraits : 'TReplayActionWithDebugging classTrait',
 	#instVars : [
 		'position',
 		'clickCount',
-		'modifiers',
 		'mousePhase'
 	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
 	#tag : 'Actions'
 }
+
+{ #category : 'editing' }
+ReplayClick class >> editorClass [
+
+	^ ReplayClickEditor
+]
 
 { #category : 'accessing' }
 ReplayClick class >> displayName [
@@ -33,27 +42,11 @@ ReplayClick class >> mousePhaseChoices [
 		#downUp -> 'Mouse down/up' }
 ]
 
-{ #category : 'adding' }
-ReplayClick >> addModifiers: anInteger [
+{ #category : 'testing' }
+ReplayClick >> canRunNativelyOn: anObject [
 
-	self modifiers: (self modifiers bitOr: anInteger).
-	^ anInteger
-]
-
-{ #category : 'editing' }
-ReplayClick >> buttonsPresenterOn: editor [
-	"Flags for the buttons to press, a combination of the left, right and middle clicks."
-
-	^ SpBoxLayout new
-		  add: 'Which buttons to press:';
-		  add: (self flagsPresenterOn: editor namesAndValues: {
-						   'Left click'.
-						   MouseEvent redButton.
-						   'Right click'.
-						   MouseEvent yellowButton.
-						   'Middle click'.
-						   MouseEvent blueButton });
-		  yourself
+	^ self isSimpleLeftClick and: [
+		  anObject isPresenter and: [ anObject replayCanClickNatively ] ]
 ]
 
 { #category : 'accessing' }
@@ -68,83 +61,38 @@ ReplayClick >> clickCount: anInteger [
 	clickCount := 1 max: anInteger asInteger
 ]
 
-{ #category : 'editing' }
-ReplayClick >> clickCountPresenterOn: editor [
-
-	| input |
-	input := editor newNumberInput.
-	input
-		minimum: 1;
-		numberType: Integer;
-		number: self clickCount;
-		whenNumberChangedDo: [ :number |
-			self clickCount: number.
-			editor actions rebuildLayout ].
-	editor registerReplayPresenter: input named: 'Action click count'.
-	editor registerReplayPresenter: input named: self class displayName , ' count'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Click count:' expand: false;
-		add: input expand: false;
-		yourself
-]
-
 { #category : 'running' }
-ReplayClick >> clickOn: ui [
+ReplayClick >> clickOn: aMorph [
 
-	| worldPoint hand |
-	worldPoint := self worldPositionIn: ui.
+	| worldPoint hand handler |
+	worldPoint := self worldPointAt: self position in: aMorph.
 	hand := self newHandAt: worldPoint.
+	handler := self
+		           targetStartingAt: aMorph
+		           handling: #handlesMouseDown:
+		           with: (self mouseDownEventAt: worldPoint hand: hand).
 	1 to: self clickCount do: [ :index |
-		| downEvent upEvent target |
+		| downEvent |
 		hand position: worldPoint.
+		downEvent := self mouseDownEventAt: worldPoint hand: hand.
 		self sendsMouseDown ifTrue: [
-			downEvent := self mouseDownEventAt: worldPoint hand: hand.
-			target := self targetStartingAt: ui handling: #handlesMouseDown: with: downEvent.
-			hand mouseFocus: target.
-			downEvent sentTo: target ].
+			hand mouseFocus: handler.
+			downEvent sentTo: handler ].
 		self sendsSyntheticClick ifTrue: [
-			target click: downEvent.
-			index = 2 ifTrue: [ target doubleClick: downEvent asPseudoDoubleClickEvent ] ].
+			handler click: downEvent.
+			index = 2 ifTrue: [ handler doubleClick: downEvent asPseudoDoubleClickEvent ] ].
 		self sendsMouseUp ifTrue: [
-			upEvent := self mouseUpEventAt: worldPoint hand: hand.
-			target ifNil: [ target := ui ].
-			upEvent sentTo: target ] ]
+			(self mouseUpEventAt: worldPoint hand: hand) sentTo: handler ] ]
 ]
 
 { #category : 'debugging' }
-ReplayClick >> debugClickOn: editor [
+ReplayClick >> debugClickIn: aReplayUIManager [
+	"Resolve my target in the managed UI, then open a debugger on my run"
 
-	| builder |
-	builder := ReplayUIBuilder on: editor model scenario.
-
-	builder whenDone: [
-		self findElementIn: builder manager managedUI thenDo: [ :ui |
-			| debugSession |
-			debugSession := self debug: [ self clickOn: ui ].
-			3 timesRepeat: [ debugSession stepInto ] ] ].
-
-	"We need to open the window for the UI to load correctly"
-	(SpMorphPresenter new morph:
-			 (builder uiForAction: self inStep: editor model currentStep))
-		asWindow
-		title: 'Debugging Click Event';
-		open;
-		maximize
-]
-
-{ #category : 'testing' }
-ReplayClick >> hasModifiers: anInteger [
-
-	^ (self modifiers bitAnd: anInteger) = anInteger
-]
-
-{ #category : 'initialization' }
-ReplayClick >> initialize [
-
-	flags := MouseEvent redButton.
-	clickCount := 1.
-	modifiers := 0.
-	mousePhase := #click
+	self
+		resolveTargetWith: aReplayUIManager
+		thenDo: [ :resolved | self debug: [ resolved run: self ] ]
+		onMissing: [ :error | error signal ]
 ]
 
 { #category : 'testing' }
@@ -157,67 +105,10 @@ ReplayClick >> isClick [
 ReplayClick >> isSimpleLeftClick [
 
 	^ self mousePhase = #click
-		and: [ self flags = MouseEvent redButton
+		and: [ self buttons = MouseEvent redButton
 			and: [ self modifiers = 0
 				and: [ self position isNil
 					and: [ self clickCount = 1 ] ] ] ]
-]
-
-{ #category : 'running' }
-ReplayClick >> localPositionIn: aMorph [
-
-	^ self position ifNil: [ aMorph center ] ifNotNil: [ :point | aMorph topLeft + point ]
-]
-
-{ #category : 'editing' }
-ReplayClick >> modifierFlagsPresenterOn: editor namesAndValues: pairs [
-
-	^ SpGridLayout build: [ :layout |
-		pairs pairsDo: [ :name :value |
-			| checkbox targetName |
-			targetName := self flagTargetNameFor: name.
-			checkbox := editor newCheckBox
-				label: name;
-				state: (self hasModifiers: value);
-				whenActivatedDo: [ self addModifiers: value ];
-				whenDeactivatedDo: [ self removeModifiers: value ];
-				yourself.
-			editor registerReplayPresenter: checkbox named: 'Action click ' , targetName.
-			editor registerReplayPresenter: checkbox named: self class displayName , ' ' , targetName.
-			layout add: checkbox ] ]
-]
-
-{ #category : 'accessing' }
-ReplayClick >> modifiers [
-
-	^ modifiers ifNil: [ 0 ]
-]
-
-{ #category : 'accessing' }
-ReplayClick >> modifiers: anInteger [
-
-	modifiers := anInteger
-]
-
-{ #category : 'editing' }
-ReplayClick >> modifiersPresenterOn: editor [
-
-	^ SpBoxLayout newTopToBottom
-		add: 'Keyboard modifiers:' expand: false;
-		add: (self modifierFlagsPresenterOn: editor namesAndValues: #(Shift 8 Control 16 'Alt/Option' 32 Command 64)) expand: false;
-		yourself
-]
-
-{ #category : 'running' }
-ReplayClick >> mouseDownEventAt: aPoint hand: aHand [
-
-	^ MouseButtonEvent new
-		setType: #mouseDown
-		position: aPoint
-		which: self flags
-		buttons: (self flags bitOr: self modifiers)
-		hand: aHand
-		stamp: Time millisecondClockValue
 ]
 
 { #category : 'accessing' }
@@ -244,53 +135,9 @@ ReplayClick >> mousePhaseLabel [
 		ifNone: [ self class mousePhaseChoices first ]) value
 ]
 
-{ #category : 'editing' }
-ReplayClick >> mousePhasePresenterOn: editor [
-
-	| dropList choices |
-	choices := self class mousePhaseChoices.
-	dropList := editor newDropList.
-	dropList
-		items: choices;
-		display: [ :association | association value ];
-		whenSelectedItemChangedDo: [ :association |
-			association ifNotNil: [
-				self mousePhase: association key.
-				editor actions rebuildLayout ] ].
-	dropList selectItem: (choices
-		detect: [ :association | association key = self mousePhase ]
-		ifNone: [ choices first ]).
-	editor registerReplayPresenter: dropList named: 'Action click phase'.
-	editor registerReplayPresenter: dropList named: self class displayName , ' phase'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Mouse phase:' expand: false;
-		add: dropList expand: false;
-		yourself
-]
-
-{ #category : 'running' }
-ReplayClick >> mouseUpEventAt: aPoint hand: aHand [
-
-	^ MouseButtonEvent new
-		setType: #mouseUp
-		position: aPoint
-		which: self flags
-		buttons: self modifiers
-		hand: aHand
-		stamp: Time millisecondClockValue
-]
-
-{ #category : 'running' }
-ReplayClick >> newHandAt: aPoint [
-
-	^ HandMorph new
-		position: aPoint;
-		privateOwner: self currentWorld;
-		yourself
-]
-
 { #category : 'accessing' }
 ReplayClick >> position [
+	"My offset from the top-left corner of the target, nil to click its center"
 
 	^ position
 ]
@@ -307,37 +154,6 @@ ReplayClick >> positionOrZero [
 	^ self position ifNil: [ 0 @ 0 ]
 ]
 
-{ #category : 'editing' }
-ReplayClick >> positionPresenterOn: editor [
-
-	| xInput yInput |
-	xInput := editor newNumberInput.
-	xInput
-		numberType: Float;
-		number: self positionOrZero x;
-		whenNumberChangedDo: [ :number |
-			self position: number @ self positionOrZero y.
-			editor actions rebuildLayout ].
-	yInput := editor newNumberInput.
-	yInput
-		numberType: Float;
-		number: self positionOrZero y;
-		whenNumberChangedDo: [ :number |
-			self position: self positionOrZero x @ number.
-			editor actions rebuildLayout ].
-	editor registerReplayPresenter: xInput named: 'Action click x'.
-	editor registerReplayPresenter: yInput named: 'Action click y'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Offset from target top-left:' expand: false;
-		add: (SpBoxLayout newLeftToRight
-			add: 'X' expand: false;
-			add: xInput;
-			add: 'Y' expand: false;
-			add: yInput;
-			yourself) expand: false;
-		yourself
-]
-
 { #category : 'printing' }
 ReplayClick >> printOn: stream [
 
@@ -348,27 +164,19 @@ ReplayClick >> printOn: stream [
 		stream nextPutAll: ' @ '; print: point ].
 	self clickCount = 1 ifFalse: [
 		stream nextPutAll: ' x'; print: self clickCount ].
-	self modifiers = 0 ifFalse: [
-		stream nextPutAll: ' modifiers='; print: self modifiers ]
-]
-
-{ #category : 'removing' }
-ReplayClick >> removeModifiers: anInteger [
-
-	self modifiers: (self modifiers bitClear: anInteger).
-	^ anInteger
+	self printButtonsAndModifiersOn: stream
 ]
 
 { #category : 'running' }
-ReplayClick >> runOn: runner onUI: ui [
+ReplayClick >> runOnMorph: aMorph [
 
-	self clickOn: ui
+	self clickOn: aMorph
 ]
 
 { #category : 'running' }
-ReplayClick >> runOn: runner resolvedUI: resolvedUI [
+ReplayClick >> runOnNative: aPresenter [
 
-	resolvedUI runClick: self
+	aPresenter replayClickNatively
 ]
 
 { #category : 'testing' }
@@ -387,45 +195,4 @@ ReplayClick >> sendsMouseUp [
 ReplayClick >> sendsSyntheticClick [
 
 	^ self mousePhase = #click
-]
-
-{ #category : 'editing' }
-ReplayClick >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-			spacing: 10;
-			add: (self targetPresenterOn: editor) expand: false;
-			add: (self mousePhasePresenterOn: editor) expand: false;
-			add: (self buttonsPresenterOn: editor) expand: false;
-			add: (self modifiersPresenterOn: editor) expand: false;
-			add: (self positionPresenterOn: editor) expand: false;
-			add: (self clickCountPresenterOn: editor) expand: false;
-			in: [ :layout |
-				self hasSpecificTarget ifTrue: [
-					layout add: (self debugButtonPresenterOn: editor labeled: ' Debug click event' action: [ self debugClickOn: editor ]) expand: false ] ];
-			yourself);
-		yourself
-]
-
-{ #category : 'accessing' }
-ReplayClick >> settingsViewName [
-
-	^ 'Click settings'
-]
-
-{ #category : 'running' }
-ReplayClick >> targetStartingAt: aMorph handling: selector with: anEvent [
-
-	| target |
-	target := aMorph.
-	[ target notNil and: [ (target perform: selector with: anEvent) not ] ]
-		whileTrue: [ target := target owner ].
-	^ target ifNil: [ aMorph ]
-]
-
-{ #category : 'running' }
-ReplayClick >> worldPositionIn: aMorph [
-
-	^ aMorph pointInWorld: (self localPositionIn: aMorph)
 ]

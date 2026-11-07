@@ -1,40 +1,30 @@
 "
-I attach a replay runner to the currently active Morphic window without adding an overlay. I resolve the active window at run time, falling back to the World when no window can be found.
+I attach a replay runner to the currently active Morphic window without adding an overlay. I resolve the active window at run time: the window of the keyboard focus, or else the frontmost window, falling back to the World when there is no window.
+
+The windows of Replay tools (see ReplayToolPresenter) are skipped: they edit, record and run scenarios, and are not their subject. The scenario editor records the same window I attach to, so that a scenario recorded from the editor also replays when run from it.
 "
 Class {
 	#name : 'ReplayAttachActiveWindow',
-	#superclass : 'ReplayAction',
+	#superclass : 'ReplayAttach',
 	#category : 'Replay-Actions',
 	#package : 'Replay',
 	#tag : 'Actions'
 }
 
 { #category : 'resolving' }
-ReplayAttachActiveWindow class >> activeSystemWindow [
-
-	| systemWindowClass |
-	systemWindowClass := self systemWindowClass.
-	systemWindowClass ifNil: [ ^ nil ].
-	^ World submorphs
-		detect: [ :morph | (morph isKindOf: systemWindowClass) and: [ morph isActive ] ]
-		ifNone: [ nil ]
-]
-
-{ #category : 'resolving' }
 ReplayAttachActiveWindow class >> activeWindowMorph [
 
-	^ self activeWindowMorphFromHand: World activeHand
+	^ self activeWindowMorphFromHand: self currentWorld activeHand
 ]
 
 { #category : 'resolving' }
 ReplayAttachActiveWindow class >> activeWindowMorphFromHand: aHandMorph [
+	"The window of the keyboard focus of aHandMorph, or else the frontmost window, or else the World. Replay tool windows are skipped."
 
-	| focus window |
-	focus := aHandMorph ifNotNil: [ aHandMorph keyboardFocus ].
-	focus ifNotNil: [
-		window := self windowMorphFor: focus.
-		window ifNotNil: [ ^ window ] ].
-	^ self activeSystemWindow ifNil: [ World ]
+	(aHandMorph ifNotNil: [ aHandMorph keyboardFocus ]) ifNotNil: [ :focus |
+		(self windowMorphFor: focus) ifNotNil: [ :window |
+			(ReplayToolPresenter isToolWindow: window) ifFalse: [ ^ window ] ] ].
+	^ self frontmostWindow ifNil: [ self currentWorld ]
 ]
 
 { #category : 'accessing' }
@@ -44,30 +34,24 @@ ReplayAttachActiveWindow class >> displayName [
 ]
 
 { #category : 'resolving' }
-ReplayAttachActiveWindow class >> systemWindowClass [
+ReplayAttachActiveWindow class >> frontmostWindow [
+	"The frontmost window of the World that is not a Replay tool, or nil"
 
-	^ Smalltalk globals at: #SystemWindow ifAbsent: [ nil ]
+	^ self currentWorld submorphs
+		  detect: [ :morph | (morph isKindOf: SystemWindow) and: [ (ReplayToolPresenter isToolWindow: morph) not ] ]
+		  ifNone: [ nil ]
 ]
 
 { #category : 'resolving' }
 ReplayAttachActiveWindow class >> windowMorphFor: aMorph [
 
-	| systemWindowClass |
-	systemWindowClass := self systemWindowClass.
-	systemWindowClass ifNil: [ ^ nil ].
 	^ aMorph ownerChain
-		detect: [ :each | each isKindOf: systemWindowClass ]
+		detect: [ :each | each isKindOf: SystemWindow ]
 		ifNone: [ nil ]
 ]
 
-{ #category : 'testing' }
-ReplayAttachActiveWindow >> isUIOpener [
+{ #category : 'managing UI' }
+ReplayAttachActiveWindow >> uiManagerOn: runner [
 
-	^ true
-]
-
-{ #category : 'running' }
-ReplayAttachActiveWindow >> runOn: runner [
-
-	runner manager: (ReplayUIManager new observe: self class activeWindowMorph)
+	^ ReplayUIManager new observe: self class activeWindowMorph
 ]

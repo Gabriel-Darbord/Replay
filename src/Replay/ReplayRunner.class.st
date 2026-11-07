@@ -1,15 +1,23 @@
 "
 I execute a ReplayScenario step by step, managing action dispatch, UI manager state, and navigation.
+
+My cursor is a step index and an action index; past the last action of a step, the cursor is on the step navigation. Actions run one after the other in a loop. An action that controls the runner continuation (it waits for the UI, a delay, or the user) sends `nextAction` or `nextStep` when it is done, possibly later from a deferred block. When it does so synchronously, the running loop goes on instead of nesting a new one, so the stack does not grow with the scenario.
+
+Any error raised while running actions or deferred continuations stops me: the managed UI is closed (or detached when it is not owned), then the error goes on to the usual handlers.
+
+My focus is free for scenario scripts to remember an object between actions.
 "
 Class {
 	#name : 'ReplayRunner',
 	#superclass : 'Object',
 	#instVars : [
 		'scenario',
-		'uiManager',
+		'manager',
 		'stepIndex',
 		'actionIndex',
-		'focus'
+		'focus',
+		'proceeding',
+		'advanced'
 	],
 	#category : 'Replay-Core',
 	#package : 'Replay',
@@ -23,9 +31,23 @@ ReplayRunner class >> on: scenario [
 ]
 
 { #category : 'accessing' }
-ReplayRunner >> currentAction [
+ReplayRunner >> backend [
+	"Answer the backend of the managed UI, or a default one when no UI is managed."
 
-	^ self currentStep actions at: actionIndex
+	^ manager
+		  ifNil: [ ReplayUIBackend new ]
+		  ifNotNil: [ manager backend ]
+]
+
+{ #category : 'accessing' }
+ReplayRunner >> currentAction [
+	"Answer the action under the cursor: an action of the current step, or its navigation once they are done."
+
+	| step |
+	step := self currentStep.
+	^ actionIndex > step actions size
+		  ifTrue: [ step navigation ]
+		  ifFalse: [ step actions at: actionIndex ]
 ]
 
 { #category : 'accessing' }
@@ -36,14 +58,14 @@ ReplayRunner >> currentStep [
 
 { #category : 'running' }
 ReplayRunner >> defer: aBlock [
+	"Evaluate aBlock later in the UI process. Errors there stop me like errors of synchronous actions."
 
-	uiManager
-		ifNil: [ ReplayUIBackend new defer: aBlock ]
-		ifNotNil: [ uiManager defer: aBlock ]
+	self backend defer: [ self protect: aBlock ]
 ]
 
 { #category : 'accessing' }
 ReplayRunner >> focus [
+	"Answer the object scenario scripts chose to remember."
 
 	^ focus
 ]
@@ -52,6 +74,14 @@ ReplayRunner >> focus [
 ReplayRunner >> focus: anObject [
 
 	focus := anObject
+]
+
+{ #category : 'initialization' }
+ReplayRunner >> initialize [
+
+	super initialize.
+	proceeding := false.
+	advanced := false
 ]
 
 { #category : 'testing' }
@@ -63,72 +93,101 @@ ReplayRunner >> isStopped [
 { #category : 'accessing' }
 ReplayRunner >> manager [
 
-	^ uiManager
+	^ manager
 ]
 
 { #category : 'accessing' }
 ReplayRunner >> manager: aReplayUIManager [
+	"Replace the managed UI. The previous manager is closed so its UI or overlay does not leak."
 
-	uiManager := aReplayUIManager
+	(manager isNotNil and: [ manager ~~ aReplayUIManager ]) ifTrue: [
+		manager close ].
+	manager := aReplayUIManager
 ]
 
 { #category : 'running' }
 ReplayRunner >> nextAction [
+	"Continue after the current action.
+	Actions that control the runner continuation send me once they are done."
 
-	| step |
-	actionIndex ifNil: [ ^ self ].
+	self isStopped ifTrue: [ ^ self ].
 	actionIndex := actionIndex + 1.
-	step := self currentStep.
-
-	actionIndex > step actions size ifTrue: [ "End of step"
-		^ step navigation runOn: self ].
-
-	self runAction
+	self proceed
 ]
 
 { #category : 'running' }
 ReplayRunner >> nextStep [
+	"Continue with the first action of the next step, or stop after the last step."
 
 	(stepIndex isNil or: [ stepIndex >= scenario steps size ]) ifTrue: [
 		^ self stop ].
-
 	stepIndex := stepIndex + 1.
-	actionIndex := 0.
-	self nextAction
+	actionIndex := 1.
+	self proceed
 ]
 
-{ #category : 'enumerating' }
-ReplayRunner >> previousAction [
+{ #category : 'running' }
+ReplayRunner >> proceed [
+	"Run the actions from the cursor. When the loop is already running, an action continued
+	synchronously: the loop goes on from the moved cursor instead of nesting another loop."
 
-	actionIndex = 1 ifFalse: [
-		^ self currentStep actions at: actionIndex - 1 ].
+	proceeding ifTrue: [ ^ advanced := true ].
+	proceeding := true.
+	[ self protect: [ self runFromCursor ] ] ensure: [ proceeding := false ]
+]
 
-	self shouldBeImplemented
+{ #category : 'running' }
+ReplayRunner >> protect: aBlock [
+	"Evaluate aBlock. If it fails, stop the scenario, closing or detaching the managed UI, then let the error through."
+
+	^ aBlock
+		  on: Error
+		  do: [ :error |
+			  self stop.
+			  error pass ]
 ]
 
 { #category : 'running' }
 ReplayRunner >> run [
 
 	stepIndex := 0.
+	actionIndex := 0.
 	self nextStep
 ]
 
 { #category : 'running' }
-ReplayRunner >> runAction [
+ReplayRunner >> runAction: action [
 
-	| action |
-	action := self currentAction.
+	action runOn: self
+]
 
-	action runOn: self.
+{ #category : 'running' }
+ReplayRunner >> runFromCursor [
+	"Run actions until one takes control of the continuation or the scenario ends."
 
-	action controlsRunnerContinuation ifFalse: [
-		self nextAction ]
+	[ self isStopped ] whileFalse: [
+		| action |
+		advanced := false.
+		action := self currentAction.
+		self runAction: action.
+		(advanced or: [ self isStopped ]) ifFalse: [
+			action controlsRunnerContinuation ifTrue: [ ^ self ].
+			actionIndex := actionIndex + 1 ] ]
 ]
 
 { #category : 'running' }
 ReplayRunner >> runStep: step [
+	"Run the scenario from the given step."
 
-	stepIndex := (scenario steps indexOf: step) - 1.
+	| index |
+	index := scenario steps indexOf: step.
+	index = 0 ifTrue: [
+		ReplayError new
+			messageText: 'Cannot run a step that is not in the scenario.';
+			subject: step;
+			signal ].
+	stepIndex := index - 1.
+	actionIndex := 0.
 	self nextStep
 ]
 
@@ -147,9 +206,8 @@ ReplayRunner >> scenario: aScenario [
 { #category : 'running' }
 ReplayRunner >> settleUI [
 
-	uiManager
-		ifNil: [ ReplayUIBackend new settleUI ]
-		ifNotNil: [ uiManager settleUI ]
+	manager ifNil: [ ^ self backend settleUI ].
+	manager settleUI
 ]
 
 { #category : 'running' }
@@ -158,7 +216,5 @@ ReplayRunner >> stop [
 
 	stepIndex := nil.
 	actionIndex := nil.
-	uiManager ifNotNil: [ :manager |
-		manager close.
-		uiManager := nil ]
+	self manager: nil
 ]

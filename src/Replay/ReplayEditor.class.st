@@ -1,23 +1,37 @@
 "
 I am the Spec editor for Replay scenarios. I edit scenario metadata, step navigation, action ordering, and per-action settings.
+
+The current step and the current action are the selections of my step and action lists. The action chooser picks the kind of action that the + button of the action list adds to the current step. The right pane (the action editor) shows the settings of the current action, or the scenario data, the navigation of the current step, or the macro settings, and then no action is selected.
+
+Recording: Record and Stop recording, or the recording key binding (Cmd + R, see recordingKeyBinding) pressed anywhere, record the user's input into actions appended to the current step (a ReplayRecorder). I record the active window, the World when there is none, and never the window that shows me: the window of a Replay tool is skipped (see ReplayAttachActiveWindow), so the Record button records the window used last. While I am shown (between openSession and closeSession), a ReplayRecordingToggleListener shared by all editors toggles recording on the key binding.
+
+Library: a standalone editor offers to add its scenario to the macro library (Add to library), which hands it over to the library window. The library window embeds one of me on the scenario of its selected macro (see onMacro:inLibrary:) and opens and closes my session. Then my Edit shortcut button shows a ReplayMacroEditor on the macro settings, and I notify the library window when those settings or the scenario title, which names the macro, change.
+
+Action editor: the right pane shows the presenter that buildActionEditor: builds: an editor of the current action or of the navigation of the current step (a ReplayActionEditor, of the class that the action class answers to editorClass), the scenario data (a ReplayScenarioDataEditor), the macro settings (a ReplayMacroEditor), or a home message. Action editors notify me after each edit with actionChanged:, and I show the new label of the action.
+
+Semantic names: replayPresenterAt:ifAbsent: answers my widgets by stable names for Replay actions ('Step list', 'Action list', 'Action chooser', 'Record button', 'Action editor', ...), then the names of the pane shown in the action editor, such as 'Action text' or 'Scenario title', which are forgotten when the pane is replaced.
 "
 Class {
 	#name : 'ReplayEditor',
-	#superclass : 'SpPresenter',
+	#superclass : 'ReplayToolPresenter',
 	#instVars : [
-		'model',
-		'actionDropList',
-		'actionEditor',
+		'scenario',
 		'stepList',
 		'actionList',
-		'replayPresenters',
-		'recorder',
+		'actionDropList',
+		'actionEditor',
 		'recordTimingCheckBox',
 		'recordButton',
 		'stopRecordingButton',
 		'recordingStatusPresenter',
-		'recordingShortcutListener',
-		'recordingTargetDescription'
+		'shortcutButton',
+		'namedPresenters',
+		'recorder',
+		'macro',
+		'macroLibrary',
+		'macroEditor',
+		'macroChangeBlock',
+		'titleChangeBlock'
 	],
 	#category : 'Replay-Editing',
 	#package : 'Replay',
@@ -37,6 +51,18 @@ ReplayEditor class >> on: scenario [
 ]
 
 { #category : 'instance creation' }
+ReplayEditor class >> onMacro: aReplayMacro inLibrary: aReplayMacroLibrary [
+	"An editor for the scenario of a library macro, as shown in the library window.
+	It also edits the shortcut of the macro."
+
+	^ self basicNew
+		  setMacro: aReplayMacro library: aReplayMacroLibrary;
+		  initialize;
+		  scenario: aReplayMacro scenario;
+		  yourself
+]
+
+{ #category : 'instance creation' }
 ReplayEditor class >> onSton: aScenarioSTONString [
 
 	^ self on: (STON fromString: aScenarioSTONString)
@@ -49,108 +75,145 @@ ReplayEditor class >> open [
 	^ self new open
 ]
 
+{ #category : 'instance creation' }
+ReplayEditor class >> openOn: aScenario [
+	"Show the editor of aScenario, never a second one.
+	A scenario of the default macro library is edited in the library window."
+
+	ReplayMacroRegistry hasDefault ifTrue: [
+		| registry |
+		registry := ReplayMacroRegistry default.
+		(registry library macroWithScenario: aScenario) ifNotNil: [ :macro |
+			^ (ReplayMacroLibraryEditor openOnRegistry: registry)
+				  showMacro: macro;
+				  yourself ] ].
+	^ self
+		  openInstanceSuchThat: [ :editor | editor scenario == aScenario ]
+		  ifNone: [ self on: aScenario ]
+]
+
+{ #category : 'recording' }
+ReplayEditor class >> recordingKeyBinding [
+	"The binding that starts and stops recording: Cmd + R, or Ctrl + R where Control is the default modifier"
+
+	^ ReplayKeyBinding character: $r modifiers: OSPlatform current defaultModifier replayModifiers
+]
+
+{ #category : 'editing' }
+ReplayEditor >> actionChanged: anAction [
+	"Sent by the editor of anAction after each edit: show its new label"
+
+	actionList list refresh
+]
+
 { #category : 'accessing' }
 ReplayEditor >> actionEditor [
+	"The presenter shown in the right pane"
 
 	^ actionEditor presenterAt: 1
 ]
 
 { #category : 'accessing' }
-ReplayEditor >> actionEditor: aPresenter [
-	"Sent by a replay model class that knows how to present itself"
-
-	actionEditor replaceAtIndex: 1 with: aPresenter.
-	aPresenter takeKeyboardFocus
-]
-
-{ #category : 'accessing' }
-ReplayEditor >> actions [
+ReplayEditor >> actionList [
 	"The action list presenter"
 
 	^ actionList
 ]
 
-{ #category : 'event handling' }
+{ #category : 'editing' }
 ReplayEditor >> addAction [
-	"When creating an action with the editable list"
+	"The + button of the action list adds an action of the kind shown by the action chooser"
 
-	self addActionLast: actionDropList selectedItem new.
-	^ nil "Do not let the editable list event add something"
+	actionDropList selectedItem ifNotNil: [ :actionClass | self addActionLast: actionClass new ].
+	^ nil "The action is already in the list"
 ]
 
-{ #category : 'adding' }
+{ #category : 'editing' }
 ReplayEditor >> addAction: action after: another [
+	"Add action after another in the current step, or last when another is not in it"
 
 	self ensureStep.
-	self model currentStep actions add: action after: another.
-	actionList selectItem: action.
-	actionList rebuildLayout
+	(self currentStep actions includes: another) ifFalse: [ ^ self addActionLast: action ].
+	self currentStep actions add: action after: another.
+	self showActionsSelecting: action
 ]
 
-{ #category : 'adding' }
+{ #category : 'editing' }
 ReplayEditor >> addAction: action before: another [
+	"Add action before another in the current step, or last when another is not in it"
 
 	self ensureStep.
-	self model currentStep actions add: action before: another.
-	actionList selectItem: action.
-	actionList rebuildLayout
+	(self currentStep actions includes: another) ifFalse: [ ^ self addActionLast: action ].
+	self currentStep actions add: action before: another.
+	self showActionsSelecting: action
 ]
 
-{ #category : 'adding' }
+{ #category : 'editing' }
 ReplayEditor >> addActionLast: action [
 
 	self ensureStep.
-	self model addAction: action.
-	actionList selectIndex: actionList items size
+	self currentStep addAction: action.
+	self showActionsSelecting: action
 ]
 
 { #category : 'recording' }
 ReplayEditor >> addRecordedActions: aCollectionOfActions [
+
+	aCollectionOfActions ifEmpty: [ ^ self ].
 	self ensureStep.
-	aCollectionOfActions do: [ :action | self model addAction: action ].
-	actionList items: self model currentStep actions.
-	actionList rebuildLayout.
-	aCollectionOfActions ifNotEmpty: [ actionList selectItem: aCollectionOfActions last ]
+	aCollectionOfActions do: [ :action | self currentStep addAction: action ].
+	self showActionsSelecting: aCollectionOfActions last
 ]
 
-{ #category : 'recording' }
-ReplayEditor >> bindRecordingShortcut [
-	"Recording shortcuts are handled by a hand listener while the editor window is open."
+{ #category : 'action editor' }
+ReplayEditor >> buildActionEditor: aBlock [
+	"Show in the right pane the presenter that aBlock builds, which replaces the previous pane and its semantic names"
+
+	| pane |
+	self stopShortcutCaptures.
+	pane := aBlock value.
+	actionEditor presenters
+		ifEmpty: [ actionEditor add: pane ]
+		ifNotEmpty: [ actionEditor replaceAtIndex: 1 with: pane ].
+	pane takeKeyboardFocus.
+	^ pane
 ]
 
-{ #category : 'replay' }
-ReplayEditor >> clearReplayPresenterTargets [
+{ #category : 'session' }
+ReplayEditor >> closeSession [
+	"I am no longer shown: stop recording, stop listening to the recording key binding and to captured shortcuts"
 
-	replayPresenters := Dictionary new
-]
-
-{ #category : 'recording' }
-ReplayEditor >> closeRecordingSession [
-
-	self isRecording ifTrue: [ self stopRecording ].
-	self uninstallRecordingShortcutListener
+	self stopRecording.
+	ReplayRecordingToggleListener unregister: self.
+	self stopShortcutCaptures
 ]
 
 { #category : 'initialization' }
 ReplayEditor >> connectPresenters [
-	stepList
-		addItemBlock: [ self model newStep ];
-		removeItemBlock: [ :step | self removeStep: step ];
-		whenSelectionChangedDo: [ :selection |
-			selection selectedItem ifNotNil: [ :step | self selectStep: step ] ].
 
+	stepList
+		addItemBlock: [ ReplayStep new ];
+		removeItemBlock: [ :step | self removeStep: step ];
+		whenSelectionChangedDo: [ :selection | self selectStep: selection selectedItem ].
 	actionList
 		addItemBlock: [ self addAction ];
-		removeItemBlock: [ :item | self removeAction: item ];
+		removeItemBlock: [ :action | self removeAction: action ];
 		whenSelectionChangedDo: [ :selection |
-			selection selectedItem ifNotNil: [ :action |
-				self selectAction: action ] ].
+			selection selectedItem ifNotNil: [ :action | self selectAction: action ] ]
+]
 
-	"Create an action when it is selected in drop list"
-	actionDropList whenSelectedItemChangedDo: [ :actionClass |
-		self addActionLast: actionClass new ].
+{ #category : 'accessing' }
+ReplayEditor >> currentAction [
+	"The action selected in the action list, or nil"
 
-	self bindRecordingShortcut
+	^ actionList selectedItem
+]
+
+{ #category : 'accessing' }
+ReplayEditor >> currentStep [
+	"The step selected in the step list, or nil"
+
+	^ stepList selectedItem
 ]
 
 { #category : 'layout' }
@@ -163,6 +226,7 @@ ReplayEditor >> defaultLayout [
 			add: (SpBoxLayout newLeftToRight
 				add: (SpBoxLayout newTopToBottom
 					add: self editScenarioButton expand: false;
+					add: shortcutButton expand: false;
 					add: stepList;
 					yourself);
 				add: (SpBoxLayout newTopToBottom
@@ -187,29 +251,47 @@ ReplayEditor >> editScenarioButton [
 		  action: [ self editScenarioData ]
 ]
 
-{ #category : 'tools' }
+{ #category : 'action editor' }
 ReplayEditor >> editScenarioData [
 
-	self clearReplayPresenterTargets.
-	self actionEditor: (self model scenario editionPresenterOn: self)
+	self unselectAction.
+	self buildActionEditor: [
+		(self instantiate: ReplayScenarioDataEditor on: self scenario)
+			whenTitleChangedDo: [ self isInLibrary ifTrue: [ self scenarioTitleChanged ] ];
+			yourself ]
 ]
 
-{ #category : 'layout' }
+{ #category : 'macro' }
+ReplayEditor >> editShortcut [
+
+	self unselectAction.
+	self buildActionEditor: [ self macroEditor ]
+]
+
+{ #category : 'action editor' }
 ReplayEditor >> editStepNavigation [
 
-	self clearReplayPresenterTargets.
-	self actionEditor:
-		(model currentStep navigation editionPresenterOn: self)
+	self currentStep ifNil: [ ^ self ].
+	self unselectAction.
+	self editAction: self currentStep navigation
 ]
 
-{ #category : 'event handling' }
-ReplayEditor >> ensureStep [
-	"Create a step if necessary"
+{ #category : 'action editor' }
+ReplayEditor >> editAction: anAction [
+	"Show the editor of anAction, an action or a step navigation, in the right pane"
 
-	self model currentStep ifNil: [
-		actionList items: model addStep actions.
-		stepList selectIndex: 1.
-		stepList rebuildLayout ]
+	^ self buildActionEditor: [ anAction class editorClass on: anAction in: self ]
+]
+
+{ #category : 'editing' }
+ReplayEditor >> ensureStep [
+	"Select a step, the first one, created when the scenario has none"
+
+	self currentStep ifNotNil: [ ^ self ].
+	self scenario steps ifEmpty: [
+		self scenario addStep: ReplayStep new.
+		stepList items: self scenario steps ].
+	stepList selectIndex: 1
 ]
 
 { #category : 'layout' }
@@ -229,116 +311,166 @@ ReplayEditor >> homePresenter [
 		  yourself
 ]
 
-{ #category : 'recording' }
-ReplayEditor >> ignoreRecordingControlsOn: aReplayRecorder [
-	{ recordButton. stopRecordingButton. recordTimingCheckBox } do: [ :presenter |
-		self ignoreRecordingPresenter: presenter on: aReplayRecorder ]
-]
-
-{ #category : 'recording' }
-ReplayEditor >> ignoreRecordingPresenter: aPresenter on: aReplayRecorder [
-	| presenterAdapter widget |
-	aPresenter ifNil: [ ^ self ].
-	presenterAdapter := aPresenter adapter.
-	presenterAdapter ifNil: [ ^ self ].
-	widget := presenterAdapter widget.
-	widget ifNotNil: [ aReplayRecorder ignoreMorph: widget ]
-]
-
 { #category : 'tools' }
 ReplayEditor >> importScenario [
 
-	(self uiManager
-		 request: 'Paste the STON string of a scenario to edit it.'
-		 initialAnswer: ''
-		 title: 'Import Scenario') ifNotEmpty: [ :string |
-		self scenario: (STON fromString: string) ]
+	(self
+		 requestSton: 'Paste the STON string of a scenario to edit it.'
+		 title: 'Import Scenario') ifNotNil: [ :string | self importString: string ]
+]
+
+{ #category : 'actions' }
+ReplayEditor >> importString: aString [
+	"Edit the scenario of the STON aString. Anything else is reported, and changes nothing."
+
+	| imported |
+	imported := [ STON fromString: aString ]
+		            on: Error
+		            do: [ :error |
+			            self inform: 'This is not a valid STON string: ' , error messageText.
+			            ^ nil ].
+	(imported isKindOf: ReplayScenario) ifFalse: [
+		self inform: 'This STON string holds a ' , imported class name , ', not a scenario.'.
+		^ nil ].
+	self scenario: imported.
+	^ imported
 ]
 
 { #category : 'initialization' }
 ReplayEditor >> initializePresenters [
+
+	| shortcut |
+	shortcut := self recordingShortcutDescription.
 	stepList := SpEditableListPresenter new.
 	actionList := SpEditableListPresenter new.
-
 	(actionDropList := self newDropList)
 		items: ReplayAction actionsForDropList;
 		display: [ :action | action displayName ];
-		help: 'Choose an action to add current step.'.
-
+		help: 'Choose the kind of action that the + button of the action list adds to the current step.'.
 	recordTimingCheckBox := self newCheckBox
 		label: 'Preserve timing';
 		state: false;
 		help: 'Record delays between captured actions.';
 		yourself.
 	recordButton := self newButton
-		label: 'Record World';
-		help: 'Record at World scope. Use ' , self recordingShortcutDescription , ' from another window to record the active window.';
+		label: 'Record';
+		help: 'Record the window used last, or the World when no other window is open. Press ' , shortcut , ' in a window to record it.';
 		action: [ self startRecording ];
 		yourself.
 	stopRecordingButton := self newButton
-		label: 'Stop';
-		help: 'Stop recording with ' , self recordingShortcutDescription , ' and add captured actions to current step.';
+		label: 'Stop recording';
+		help: 'Stop recording, also with ' , shortcut , ', and add the recorded actions to the current step.';
 		action: [ self stopRecording ];
 		yourself.
 	recordingStatusPresenter := self newLabel
 		label: self recordingStatusText;
 		yourself.
-
+	shortcutButton := self newShortcutButton.
+	namedPresenters := Dictionary new
+		at: 'Step list' put: stepList;
+		at: 'Action list' put: actionList;
+		at: 'Action chooser' put: actionDropList;
+		at: 'Record button' put: recordButton;
+		at: 'Stop recording button' put: stopRecordingButton;
+		at: 'Preserve timing checkbox' put: recordTimingCheckBox;
+		at: 'Recording status' put: recordingStatusPresenter;
+		at: (self isInLibrary
+				 ifTrue: [ 'Edit shortcut button' ]
+				 ifFalse: [ 'Add to library button' ])
+		put: shortcutButton;
+		yourself.
 	actionEditor := SpBoxLayout newLeftToRight.
-	actionEditor add: self homePresenter
+	self showHome
 ]
 
 { #category : 'initialization' }
 ReplayEditor >> initializeWindow: aWindow [
 
 	super initializeWindow: aWindow.
-	aWindow title: 'Scenario Editor'.
-	aWindow initialExtent: 1200 @ 675.
-	self installRecordingShortcutListener.
-	aWindow whenClosedDo: [ self closeRecordingSession ]
+	aWindow
+		title: 'Replay Scenario Editor';
+		initialExtent: 1200 @ 675;
+		whenOpenedDo: [ self openSession ];
+		whenClosedDo: [ self closeSession ]
 ]
 
-{ #category : 'recording' }
-ReplayEditor >> installRecordingShortcutListener [
+{ #category : 'macro' }
+ReplayEditor >> isInLibrary [
 
-	recordingShortcutListener ifNotNil: [ ^ self ].
-	recordingShortcutListener := ReplayRecordingToggleListener on: self.
-	World activeHand addEventListener: recordingShortcutListener
+	^ macro isNotNil
 ]
 
 { #category : 'recording' }
 ReplayEditor >> isRecording [
-	^ recorder notNil
+	^ recorder isNotNil
 ]
 
-{ #category : 'tools' }
-ReplayEditor >> macroForCurrentScenario [
+{ #category : 'macro' }
+ReplayEditor >> macro [
+	"The library macro whose scenario I edit, or nil when my scenario is not in a library"
 
-	^ self macroForCurrentScenarioIn: ReplayMacroRegistry default
-]
-
-{ #category : 'tools' }
-ReplayEditor >> macroForCurrentScenarioIn: aReplayMacroRegistry [
-
-	^ aReplayMacroRegistry library macroForScenario: self model scenario
+	^ macro
 ]
 
 { #category : 'accessing' }
-ReplayEditor >> model [
+ReplayEditor >> macroEditor [
+	"The settings of my macro, shown by the Edit shortcut button, or nil when my scenario is not in a library"
 
-	^ model ifNil: [ model := ReplayEditorModel new ]
+	macro ifNil: [ ^ nil ].
+	^ macroEditor ifNil: [
+		  macroEditor := (ReplayMacroEditor on: macro inLibrary: macroLibrary)
+			                 whenMacroChangedDo: [ macroChangeBlock ifNotNil: [ macroChangeBlock value ] ];
+			                 yourself ]
 ]
 
-{ #category : 'recording' }
-ReplayEditor >> modifierFlagsFromEvent: anEvent [
+{ #category : 'macro' }
+ReplayEditor >> moveToLibrary [
 
-	| modifiers |
-	modifiers := 0.
-	anEvent shiftPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent shiftKeyMask ].
-	anEvent controlKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent ctrlKeyMask ].
-	(anEvent optionKeyPressed or: [ anEvent altKeyPressed ]) ifTrue: [ modifiers := modifiers bitOr: UserInputEvent altKeyMask ].
-	anEvent commandKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent cmdKeyMask ].
-	^ modifiers
+	^ [ self moveToLibraryOf: ReplayMacroRegistry default ]
+		  on: ReplayError
+		  do: [ :error |
+			  self inform: error messageText.
+			  nil ]
+]
+
+{ #category : 'macro' }
+ReplayEditor >> moveToLibraryOf: aReplayMacroRegistry [
+	"Hand my scenario over to the library window, which saves it, and close: a scenario has a single editor.
+	A recording ends first, so that its actions are in the scenario that the library window shows."
+
+	| libraryMacro |
+	self closeSession.
+	libraryMacro := (ReplayMacroLibraryEditor openOnRegistry: aReplayMacroRegistry) showScenario: self scenario.
+	self withWindowDo: [ :window | window close ].
+	^ libraryMacro
+]
+
+{ #category : 'initialization' }
+ReplayEditor >> newShortcutButton [
+	"In a library, my scenario can be bound to a shortcut. Otherwise, it must move to a library first."
+
+	^ self isInLibrary
+		  ifTrue: [
+				  self newButton
+					  icon: (self iconNamed: #scriptManager);
+					  label: 'Edit shortcut';
+					  help: 'Edit the key binding and contexts that run this scenario as a macro.';
+					  action: [ self editShortcut ];
+					  yourself ]
+		  ifFalse: [
+				  self newButton
+					  icon: (self iconNamed: #add);
+					  label: 'Add to library';
+					  help: 'Move this scenario to the macro library window, which saves it and can bind it to a shortcut.';
+					  action: [ self moveToLibrary ];
+					  yourself ]
+]
+
+{ #category : 'session' }
+ReplayEditor >> openSession [
+	"I am shown: toggle recording with the recording key binding"
+
+	ReplayRecordingToggleListener register: self
 ]
 
 { #category : 'layout' }
@@ -353,228 +485,197 @@ ReplayEditor >> recordingControls [
 ]
 
 { #category : 'recording' }
-ReplayEditor >> recordingShortcut [
-	^ ReplayShortcut new
-		text: 'r';
-		flags: self recordingShortcutFlags;
-		asKMShortcut
+ReplayEditor >> recorder [
+	"The recorder of the current recording, or nil"
+
+	^ recorder
+]
+
+{ #category : 'recording' }
+ReplayEditor >> recordingKeyBinding [
+
+	^ self class recordingKeyBinding
 ]
 
 { #category : 'recording' }
 ReplayEditor >> recordingShortcutDescription [
 
-	^ self recordingShortcut asString
-]
-
-{ #category : 'recording' }
-ReplayEditor >> recordingShortcutFlags [
-	^ OSPlatform current defaultModifier eventCode
-]
-
-{ #category : 'recording' }
-ReplayEditor >> recordingShortcutMatchesEvent: anEvent [
-
-	| flags text |
-	anEvent isKeyboard ifFalse: [ ^ false ].
-	anEvent isKeyDown ifFalse: [ ^ false ].
-	flags := self modifierFlagsFromEvent: anEvent.
-	flags = self recordingShortcutFlags ifFalse: [ ^ false ].
-	text := anEvent modifiedCharacter asString asLowercase.
-	^ text = 'r'
-]
-
-{ #category : 'recording' }
-ReplayEditor >> recordingStatusForTargetMorph: aMorph [
-
-	aMorph == World ifTrue: [ ^ 'Recording World.' ].
-	^ 'Recording active window.'
+	^ self recordingKeyBinding displayString
 ]
 
 { #category : 'recording' }
 ReplayEditor >> recordingStatusText [
 
-	| shortcut |
+	| shortcut target |
 	shortcut := self recordingShortcutDescription.
-	^ self isRecording
-		ifTrue: [ (recordingTargetDescription ifNil: [ 'Recording.' ]) , ' Stop with ' , shortcut , '.' ]
-		ifFalse: [ 'Not recording. Record or stop with ' , shortcut , '.' ]
+	recorder ifNil: [ ^ 'Press ' , shortcut , ' to record the active window.' ].
+	target := recorder manager managedUI.
+	^ 'Recording ' , ((target isKindOf: SystemWindow)
+		   ifTrue: [ '"' , target label , '"' ]
+		   ifFalse: [ 'the World' ]) , '. Stop with ' , shortcut , '.'
 ]
 
 { #category : 'recording' }
 ReplayEditor >> recordingTargetMorph [
-	^ World
+	"The active window, never mine, or the World when there is none"
+
+	^ ReplayAttachActiveWindow activeWindowMorphFromHand: self hand
 ]
 
-{ #category : 'recording' }
-ReplayEditor >> recordingTargetMorphForShortcutEvent: anEvent [
-
-	^ ReplayAttachActiveWindow activeWindowMorphFromHand: anEvent hand
-]
-
-{ #category : 'replay' }
-ReplayEditor >> registerReplayPresenter: aPresenter named: aString [
-
-	self replayPresenters at: aString put: aPresenter.
-	^ aPresenter
-]
-
-{ #category : 'event handling' }
+{ #category : 'editing' }
 ReplayEditor >> removeAction: action [
 	"When removing an action with the editable list"
 
+	action ifNil: [ ^ self ].
 	self removeItem: action from: actionList.
-	actionList items ifEmpty: [
-		self clearReplayPresenterTargets.
-		self actionEditor: self homePresenter ]
+	actionList selectedItem ifNil: [ self showHome ]
 ]
 
-{ #category : 'event handling' }
+{ #category : 'editing' }
 ReplayEditor >> removeItem: item from: specList [
-	"Elegantly remove an item from a Spec list"
+	"Remove item from a list, and select the next item, or the previous one when item is the last"
 
-	| items nextIndex |
-	(items := specList items) ifEmpty: [ ^ self ].
-
-	items size = 1 ifTrue: [ "Delete the only step in the list"
-		^ specList removeItem: item "Also unselects! `items remove:` when it matters" ].
-
-	"Select the next element, or the previous if deleted is last"
-	nextIndex := (items indexOf: item) min: items size - 1.
-	specList items remove: item.
-	specList selectIndex: nextIndex.
-	specList rebuildLayout
+	| items index |
+	items := specList items.
+	index := items indexOf: item.
+	index = 0 ifTrue: [ ^ self ].
+	items removeIndex: index.
+	specList items: items.
+	items ifNotEmpty: [ specList selectIndex: (index min: items size) ]
 ]
 
-{ #category : 'event handling' }
+{ #category : 'editing' }
 ReplayEditor >> removeStep: step [
 	"When removing a step with the editable list"
 
 	step ifNil: [ ^ self ].
 	self removeItem: step from: stepList.
-	stepList items
-		ifEmpty: [ "There are no more steps"
-			self model currentStep: nil.
-			actionList items: #(  ) "Should never try to add to this array" ]
-		ifNotEmpty: [ "The selected step was changed"
-			| selectedStep |
-			selectedStep := stepList selectedItem.
-			self model currentStep: selectedStep.
-			actionList items: selectedStep actions ]
+	stepList selectedItem ifNil: [ self selectStep: nil ]
 ]
 
 { #category : 'replay' }
 ReplayEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
-	aPresenterName = 'Step list' ifTrue: [ ^ stepList ].
-	aPresenterName = 'Action list' ifTrue: [ ^ actionList ].
-	aPresenterName = 'Action chooser' ifTrue: [ ^ actionDropList ].
+	"My own widgets, then the names of the pane shown in the action editor"
+
 	aPresenterName = 'Action editor' ifTrue: [ ^ self actionEditor ].
-	aPresenterName = 'Record button' ifTrue: [ ^ recordButton ].
-	aPresenterName = 'Stop recording button' ifTrue: [ ^ stopRecordingButton ].
-	aPresenterName = 'Preserve timing checkbox' ifTrue: [ ^ recordTimingCheckBox ].
-	aPresenterName = 'Recording status' ifTrue: [ ^ recordingStatusPresenter ].
-	^ self replayPresenters
-		at: aPresenterName
-		ifAbsent: [ super replayPresenterAt: aPresenterName ifAbsent: absentBlock ]
-]
-
-{ #category : 'replay' }
-ReplayEditor >> replayPresenters [
-
-	^ replayPresenters ifNil: [ replayPresenters := Dictionary new ]
+	^ namedPresenters
+		  at: aPresenterName
+		  ifAbsent: [ self actionEditor replayPresenterAt: aPresenterName ifAbsent: absentBlock ]
 ]
 
 { #category : 'tools' }
 ReplayEditor >> runScenario [
 
-	model scenario run
+	scenario run
 ]
 
 { #category : 'tools' }
 ReplayEditor >> runStep [
 
-	(ReplayRunner on: model scenario) runStep: model currentStep
+	self currentStep ifNotNil: [ :step | (ReplayRunner on: scenario) runStep: step ]
 ]
 
 { #category : 'tools' }
 ReplayEditor >> saveScenario [
 
 	Clipboard
-		clipboardText: (STON toString: model scenario)
+		clipboardText: (STON toString: scenario)
 		informing: 'Scenario copied to clipboard!'
 ]
 
 { #category : 'accessing' }
-ReplayEditor >> scenario: scenario [
+ReplayEditor >> scenario [
 
-	| steps |
-	self model scenario: scenario.
-	steps := scenario steps.
-	steps ifEmpty: [ self model addStep ].
-	stepList items: steps.
-	stepList selectItem: steps first
+	^ scenario
 ]
 
-{ #category : 'event handling' }
+{ #category : 'accessing' }
+ReplayEditor >> scenario: aScenario [
+	"In a library, my scenario is the one of my macro: replacing one replaces the other, and renames the macro"
+
+	scenario := aScenario.
+	aScenario steps ifEmpty: [ aScenario addStep: ReplayStep new ].
+	stepList items: aScenario steps.
+	stepList selectIndex: 1.
+	(macro isNotNil and: [ macro scenario ~~ aScenario ]) ifTrue: [
+		macro scenario: aScenario.
+		self scenarioTitleChanged ]
+]
+
+{ #category : 'macro' }
+ReplayEditor >> scenarioTitleChanged [
+	"My macro is named after my scenario"
+
+	macro updateKeymapDescriptions.
+	titleChangeBlock ifNotNil: [ titleChangeBlock value ]
+]
+
+{ #category : 'editing' }
 ReplayEditor >> selectAction: action [
 	"When an action has been selected in the action list"
 
-	self model currentAction: action.
-	self clearReplayPresenterTargets.
-	self actionEditor: (action editionPresenterOn: self)
+	self editAction: action
 ]
 
-{ #category : 'event handling' }
-ReplayEditor >> selectStep: step [
-	"When a step has been selected in the step list"
+{ #category : 'editing' }
+ReplayEditor >> selectStep: aStepOrNil [
+	"When the selection of the step list changed: show the actions of the selected step and select the first one"
 
-	model currentStep: step.
-	actionList items: step actions.
-	step actions
-		ifEmpty: [
-			self clearReplayPresenterTargets.
-			self actionEditor: self homePresenter ]
-		ifNotEmpty: [ actionList selectIndex: 1 ]
+	actionList items: (aStepOrNil ifNil: [ #(  ) ] ifNotNil: [ aStepOrNil actions ]).
+	(aStepOrNil isNil or: [ aStepOrNil actions isEmpty ]) ifTrue: [ ^ self showHome ].
+	actionList selectIndex: 1
+]
+
+{ #category : 'macro' }
+ReplayEditor >> setMacro: aReplayMacro library: aReplayMacroLibrary [
+
+	macro := aReplayMacro.
+	macroLibrary := aReplayMacroLibrary
+]
+
+{ #category : 'accessing' }
+ReplayEditor >> shortcutButton [
+
+	^ shortcutButton
+]
+
+{ #category : 'editing' }
+ReplayEditor >> showActionsSelecting: anAction [
+	"Show the actions of the current step after they changed, and select anAction"
+
+	actionList items: self currentStep actions.
+	actionList selectItem: anAction
+]
+
+{ #category : 'action editor' }
+ReplayEditor >> showHome [
+
+	^ self buildActionEditor: [ self homePresenter ]
 ]
 
 { #category : 'recording' }
 ReplayEditor >> startRecording [
+	"Record the active window, never mine, or the World when there is none"
 
-	self
-		startRecordingOn: self recordingTargetMorph
-		attachAction: ReplayAttachWorld new
-		status: 'Recording World.'
+	self startRecordingOn: self recordingTargetMorph
 ]
 
 { #category : 'recording' }
-ReplayEditor >> startRecordingFromShortcutEvent: anEvent [
+ReplayEditor >> startRecordingOn: aMorph [
+	"Record the user input in aMorph, a window or the World. The recorded actions attach to the same kind of target when replayed."
 
-	| target attachAction |
-	target := self recordingTargetMorphForShortcutEvent: anEvent.
-	attachAction := target == World
-		ifTrue: [ ReplayAttachWorld new ]
-		ifFalse: [ ReplayAttachActiveWindow new ].
-	self
-		startRecordingOn: target
-		attachAction: attachAction
-		status: (self recordingStatusForTargetMorph: target)
-]
-
-{ #category : 'recording' }
-ReplayEditor >> startRecordingOn: targetMorph attachAction: attachAction status: statusString [
-
-	| manager |
 	self isRecording ifTrue: [ ^ self ].
 	self ensureStep.
-	manager := ReplayUIManager new observe: targetMorph.
 	recorder := ReplayRecorder new
-		manager: manager;
+		manager: (ReplayUIManager new observe: aMorph);
 		preserveTiming: recordTimingCheckBox state;
-		prologueActions: { attachAction };
+		prologueActions: { aMorph isWorldMorph
+				ifTrue: [ ReplayAttachWorld new ]
+				ifFalse: [ ReplayAttachActiveWindow new ] };
+		ignoreKeyBinding: self recordingKeyBinding;
+		ignoreMorph: self windowMorph;
 		yourself.
-	recordingTargetDescription := statusString.
-	recorder stopShortcutText: 'r' flags: self recordingShortcutFlags do: [ self stopRecording ].
-	self ignoreRecordingControlsOn: recorder.
-	recorder start.
+	recorder startOnHand: self hand.
 	self updateRecordingStatus
 ]
 
@@ -590,7 +691,7 @@ ReplayEditor >> stepNavigationEditor [
 ]
 
 { #category : 'accessing' }
-ReplayEditor >> steps [
+ReplayEditor >> stepList [
 	"The step list presenter"
 
 	^ stepList
@@ -598,32 +699,26 @@ ReplayEditor >> steps [
 
 { #category : 'recording' }
 ReplayEditor >> stopRecording [
+	"Answer the recorded actions, which I add to the current step"
 
-	| recordedActions activeRecorder |
-	recorder ifNil: [ ^ #() ].
-	activeRecorder := recorder.
-	recordedActions := activeRecorder stop.
-	activeRecorder manager close.
+	| recordedActions |
+	recorder ifNil: [ ^ #(  ) ].
+	recordedActions := recorder stop.
+	recorder manager close.
 	recorder := nil.
-	recordingTargetDescription := nil.
 	self updateRecordingStatus.
 	self addRecordedActions: recordedActions.
 	^ recordedActions
 ]
 
-{ #category : 'recording' }
-ReplayEditor >> toggleRecording [
-	self isRecording
-		ifTrue: [ self stopRecording ]
-		ifFalse: [ self startRecording ]
-]
+{ #category : 'action editor' }
+ReplayEditor >> stopShortcutCaptures [
+	"A shortcut capture must not outlive the pane that shows it"
 
-{ #category : 'recording' }
-ReplayEditor >> toggleRecordingFromShortcutEvent: anEvent [
-
-	self isRecording
-		ifTrue: [ self stopRecording ]
-		ifFalse: [ self startRecordingFromShortcutEvent: anEvent ]
+	actionEditor presenters do: [ :pane |
+		(pane isKindOf: SpPresenter) ifTrue: [
+			(pane allPresenters copyWith: pane) do: [ :each |
+				(each isKindOf: ReplayKeyBindingPresenter) ifTrue: [ each stopShortcutCapture ] ] ] ]
 ]
 
 { #category : 'layout' }
@@ -635,12 +730,12 @@ ReplayEditor >> toolbar [
 		add: (self newToolbarButton
 			label: 'Copy';
 			icon: (self iconNamed: #smallCopy);
-			help: 'Copy the current scenario as a clipboard STON string.';
+			help: 'Copy the current scenario to the clipboard as a STON string.';
 			action: [ self saveScenario ]);
 		add: (self newToolbarButton
 			label: 'Import';
 			icon: (self iconNamed: #smallLoadProject);
-			help: 'Import a scenario from a clipboard STON string.';
+			help: 'Replace the current scenario by one pasted as a STON string.';
 			action: [ self importScenario ]);
 		add: (self newToolbarButton
 			label: 'Run';
@@ -652,20 +747,14 @@ ReplayEditor >> toolbar [
 			icon: (self iconNamed: #smallForward);
 			help: 'Execute currently selected step.';
 			action: [ self runStep ]);
-		add: (self newToolbarButton
-			label: 'Macro';
-			icon: (self iconNamed: #scriptManager);
-			help: 'Create or edit a macro backed by current scenario.';
-			action: [ self useScenarioAsMacro ]);
 		yourself
 ]
 
-{ #category : 'recording' }
-ReplayEditor >> uninstallRecordingShortcutListener [
+{ #category : 'editing' }
+ReplayEditor >> unselectAction [
+	"The action editor shows something else than the current action: selecting the action again shows it"
 
-	recordingShortcutListener ifNil: [ ^ self ].
-	World activeHand removeEventListener: recordingShortcutListener.
-	recordingShortcutListener := nil
+	actionList selectIndex: 0
 ]
 
 { #category : 'recording' }
@@ -675,14 +764,16 @@ ReplayEditor >> updateRecordingStatus [
 	recordingStatusPresenter label: self recordingStatusText
 ]
 
-{ #category : 'tools' }
-ReplayEditor >> useScenarioAsMacro [
+{ #category : 'macro' }
+ReplayEditor >> whenMacroChangedDo: aBlock [
+	"Evaluate aBlock after an edit of the settings of my macro"
 
-	| registry editor macro |
-	registry := ReplayMacroRegistry default.
-	macro := self macroForCurrentScenarioIn: registry.
-	editor := ReplayMacroLibraryEditor onRegistry: registry.
-	editor addMacroForScenario: self model scenario.
-	editor open.
-	^ macro
+	macroChangeBlock := aBlock
+]
+
+{ #category : 'macro' }
+ReplayEditor >> whenTitleChangedDo: aBlock [
+	"Evaluate aBlock after my scenario title, which names my macro, changes"
+
+	titleChangeBlock := aBlock
 ]

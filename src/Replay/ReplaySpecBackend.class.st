@@ -1,5 +1,7 @@
 "
-I adapt Replay UI management and target resolution for Spec presenters rendered through Morphic.
+I adapt Replay UI management and target resolution for Spec presenters rendered through Morphic: my presenter is the managed presenter, which exposes semantic names, and my morph, its rendered widget, is the managed UI. The native element of targets resolved by name is their presenter.
+
+buildMorphFromSpec: renders a Spec presenter as the Morphic content of a window, without the window, so that a ReplayUIManager can manage it.
 "
 Class {
 	#name : 'ReplaySpecBackend',
@@ -13,6 +15,58 @@ Class {
 	#tag : 'Backends'
 }
 
+{ #category : 'building' }
+ReplaySpecBackend class >> windowHasStatusbar: aWindowPresenter [
+	"Pharo 14 renamed hasStatusBar to hasStatusbar and deprecated the old name, while Pharo 13 only has the old one.
+	Sending the deprecated name is not harmless: with automatic rewrites on, it rewrites this method; with them off, the deprecation log keeps every window presenter it was sent to."
+
+	^ (aWindowPresenter respondsTo: #hasStatusbar)
+		  ifTrue: [ aWindowPresenter hasStatusbar ]
+		  ifFalse: [ aWindowPresenter hasStatusBar ]
+]
+
+{ #category : 'building' }
+ReplaySpecBackend class >> buildMorphFromSpec: aSpecPresenter [
+	"Build the Morphic content for a Spec presenter without embedding a nested Spec window."
+
+	| presenter |
+	aSpecPresenter isWindowPresenter
+		ifTrue: [ presenter := aSpecPresenter ]
+		ifFalse: [
+			presenter := aSpecPresenter asWindow.
+			presenter extent: aSpecPresenter extent ].
+	presenter extent ifNil: [ presenter extent: presenter initialExtent ].
+	^ SpBindings value: presenter application adapterBindings during: [
+		| adapter widget container |
+		adapter := presenter defaultLayout
+			buildAdapterFor: presenter
+			bindings: SpBindings value.
+		presenter adapter: adapter.
+		adapter widget extent: presenter extent.
+		widget := presenter presenter buildWithLayout: presenter presenter layout.
+		presenter presenter adapter applyStyle.
+		container := adapter newContainerMorph.
+		container
+			layoutFrame: widget layoutFrame;
+			extent: presenter extent.
+		container addMorphBack: widget.
+		widget
+			hResizing: #spaceFill;
+			vResizing: #spaceFill.
+		(self windowHasStatusbar: adapter model) ifTrue: [ adapter addStatusBarTo: container ].
+		adapter add: container toWindow: adapter widget.
+		presenter updateTitle.
+		container delete.
+		container
+			hResizing: #spaceFill;
+			vResizing: #spaceFill;
+			extent: presenter extent;
+			layoutChanged;
+			doLayoutIn: container bounds.
+		container fullBounds.
+		container ]
+]
+
 { #category : 'instance creation' }
 ReplaySpecBackend class >> presenter: aSpecPresenter morph: aMorph [
 
@@ -20,29 +74,6 @@ ReplaySpecBackend class >> presenter: aSpecPresenter morph: aMorph [
 		  presenter: aSpecPresenter;
 		  morph: aMorph;
 		  yourself
-]
-
-{ #category : 'testing' }
-ReplaySpecBackend >> canPerformNativeClickOn: aPresenter [
-
-	aPresenter ifNil: [ ^ false ].
-	^ (aPresenter isKindOf: SpButtonPresenter)
-		or: [ (aPresenter isKindOf: SpLinkPresenter)
-				or: [ (aPresenter isKindOf: SpToolbarButtonPresenter)
-						or: [ aPresenter isKindOf: SpToolbarToggleButtonPresenter ] ] ]
-]
-
-{ #category : 'testing' }
-ReplaySpecBackend >> canRun: anAction nativelyOn: nativeElement [
-
-	(anAction isKindOf: ReplayClick) ifTrue: [
-		^ anAction isSimpleLeftClick
-			and: [ self canPerformNativeClickOn: nativeElement ] ].
-	(anAction isKindOf: ReplayFocus) ifTrue: [
-		^ nativeElement isKindOf: SpAbstractPresenter ].
-	(anAction isKindOf: ReplaySelectText) ifTrue: [
-		^ anAction canSelectTextIn: nativeElement ].
-	^ false
 ]
 
 { #category : 'accessing' }
@@ -82,6 +113,14 @@ ReplaySpecBackend >> presenter: aSpecPresenter [
 ]
 
 { #category : 'resolving' }
+ReplaySpecBackend >> nameOfMorph: aMorph [
+	"The shortest semantic name of the presenter rendered by aMorph, or nil"
+
+	presenter ifNil: [ ^ nil ].
+	^ presenter replayNameOfPresenterWith: aMorph
+]
+
+{ #category : 'resolving' }
 ReplaySpecBackend >> presenterNamed: aString ifAbsent: absentBlock [
 
 	presenter ifNil: [ ^ absentBlock value ].
@@ -95,35 +134,7 @@ ReplaySpecBackend >> resolver [
 ]
 
 { #category : 'accessing' }
-ReplaySpecBackend >> root [
-
-	^ presenter
-]
-
-{ #category : 'running' }
-ReplaySpecBackend >> runClick: aReplayClick on: aResolvedUI [
-
-	| targetPresenter |
-	targetPresenter := aResolvedUI nativeElement.
-	(aReplayClick isSimpleLeftClick and: [ self canPerformNativeClickOn: targetPresenter ])
-		ifTrue: [ targetPresenter performAction ]
-		ifFalse: [ super runClick: aReplayClick on: aResolvedUI ]
-]
-
-{ #category : 'accessing' }
 ReplaySpecBackend >> semanticScriptReceiver [
 
 	^ presenter
-]
-
-{ #category : 'accessing' }
-ReplaySpecBackend >> surfaceMorph [
-
-	^ morph
-]
-
-{ #category : 'accessing' }
-ReplaySpecBackend >> surfaceRoot [
-
-	^ morph
 ]

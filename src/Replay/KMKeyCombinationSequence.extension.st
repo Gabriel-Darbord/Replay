@@ -1,8 +1,14 @@
 Extension { #name : 'KMKeyCombinationSequence' }
 
 { #category : '*Replay' }
-KMKeyCombinationSequence >> configureReplayShortcut: aReplayShortcut [
+KMKeyCombinationSequence >> replayKeyBindings [
+	"Every sequence of the bindings of my combinations"
 
-	self sequence do: [ :shortcut |
-		shortcut configureReplayShortcut: aReplayShortcut ]
+	^ self sequence
+		  inject: { ReplayKeyBinding new }
+		  into: [ :prefixes :combination |
+			  | suffixes |
+			  suffixes := combination replayKeyBindings.
+			  prefixes flatCollect: [ :prefix |
+				  suffixes collect: [ :suffix | prefix , suffix ] ] ]
 ]

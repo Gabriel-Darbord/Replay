@@ -1,5 +1,5 @@
 "
-I close the active managed UI and clear it from the runner.
+I close the active managed UI and clear it from the runner. Owned UI is closed, attached UI is only detached from Replay.
 "
 Class {
 	#name : 'ReplayCloseUI',
@@ -23,8 +23,7 @@ ReplayCloseUI >> isUICloser [
 
 { #category : 'running' }
 ReplayCloseUI >> runOn: runner [
+	"The runner closes the manager it replaces."
 
-	runner manager ifNotNil: [ :manager |
-		manager close.
-		runner manager: nil ]
+	runner manager: nil
 ]

@@ -1,32 +1,39 @@
+"
+I test the macro library demo scenario and the actions it runs.
+"
 Class {
 	#name : 'ReplayMacroEditorDemoTest',
-	#superclass : 'TestCase',
+	#superclass : 'ReplayMacroTestCase',
 	#category : 'Replay-Demo-Tests',
 	#package : 'Replay-Demo-Tests'
 }
 
+{ #category : 'running' }
+ReplayMacroEditorDemoTest >> tearDown [
+
+	[ Smalltalk globals removeKey: #ReplayMacroEditorDemoTriggered ifAbsent: [  ] ] ensure: [
+		super tearDown ]
+]
+
 { #category : 'tests' }
-ReplayMacroEditorDemoTest >> testMacroEditorSemanticTargets [
+ReplayMacroEditorDemoTest >> testAnnotatedTargetsExist [
+	"Every target the demo annotates is a semantic name of the library window once a macro is configured"
 
-	| library editor macroEditor |
-	library := ReplayMacroLibrary new.
-	library addNewMacro.
-	editor := ReplayMacroLibraryEditor on: library.
-	editor macroList selectIndex: 1.
-	macroEditor := editor macroEditorPresenter.
+	| demo editor runner names |
+	demo := ReplayMacroEditorDemo new.
+	editor := ReplayMacroLibraryEditor on: ReplayMacroLibrary new.
+	editor addMacro.
+	runner := ReplayRunner on: ReplayScenario new.
+	runner focus: editor.
+	demo configureFindMacroAction runOn: runner.
+	names := (demo scenario steps flatCollect: [ :step | step actions ])
+		         select: [ :action | action isKindOf: ReplayAnnotate ]
+		         thenCollect: [ :action | action targetName ].
 
-	self assert: (editor replayPresenterAt: 'Macro list' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Macro editor' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Installation summary' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Startup policy' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Enable startup button' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Disable startup button' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Shortcut keys' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Install macro button' ifAbsent: [ nil ]) notNil.
-	self assert: (macroEditor replayPresenterAt: 'Active UI context status' ifAbsent: [ nil ]) notNil.
-	self assert: (macroEditor replayPresenterAt: 'Refresh active UI button' ifAbsent: [ nil ]) notNil.
-	self assert: (macroEditor replayPresenterAt: 'Install active UI button' ifAbsent: [ nil ]) notNil.
-	self assert: (macroEditor replayPresenterAt: 'Uninstall macro button' ifAbsent: [ nil ]) notNil
+	names do: [ :name |
+		self
+			assert: (editor replayPresenterAt: name ifAbsent: [ nil ]) isNotNil
+			description: 'Missing demo target: ' , name ]
 ]
 
 { #category : 'tests' }
@@ -52,13 +59,9 @@ ReplayMacroEditorDemoTest >> testTriggerShortcutActionRunsInstalledMacroPayload 
 	runner := ReplayRunner on: ReplayScenario new.
 	runner focus: editor.
 
-	[
-		demo configureFindMacroAction runOn: runner.
-		demo installMacroAction runOn: runner.
-		demo triggerInstalledShortcutAction runOn: runner.
-		self assert: (Smalltalk globals at: #ReplayMacroEditorDemoTriggered ifAbsent: [ false ]) ]
-
-		ensure: [
-			editor macroEditorPresenter macro uninstall.
-			Smalltalk globals removeKey: #ReplayMacroEditorDemoTriggered ifAbsent: [ ] ]
+	demo configureFindMacroAction runOn: runner.
+	self assert: editor selectedMacro name equals: 'Find helper'.
+	demo installMacroAction runOn: runner.
+	demo triggerInstalledShortcutAction runOn: runner.
+	self assert: (Smalltalk globals at: #ReplayMacroEditorDemoTriggered ifAbsent: [ false ])
 ]

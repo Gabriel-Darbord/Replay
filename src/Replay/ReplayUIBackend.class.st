@@ -1,5 +1,7 @@
 "
-I define the backend protocol used by ReplayUIManager to resolve targets, dispatch UI actions, and settle the active UI framework.
+I define the backend protocol used by ReplayUIManager to resolve targets, run UI actions on them, and settle the active UI framework.
+
+I run an action on a resolved target by asking it to run on the native element first (runNativelyOn:), then on the Morphic widget (runOnMorph:). I am also the default backend, without managed UI, of runners and managers.
 "
 Class {
 	#name : 'ReplayUIBackend',
@@ -8,12 +10,6 @@ Class {
 	#package : 'Replay',
 	#tag : 'Backends'
 }
-
-{ #category : 'testing' }
-ReplayUIBackend >> canRun: anAction nativelyOn: nativeElement [
-
-	^ false
-]
 
 { #category : 'running' }
 ReplayUIBackend >> defer: aBlock [
@@ -31,6 +27,17 @@ ReplayUIBackend >> managedPresenter [
 ReplayUIBackend >> managedUI [
 
 	^ nil
+]
+
+{ #category : 'resolving' }
+ReplayUIBackend >> resolve: aReference forAction: anAction readyWhen: readyBlock thenDo: foundBlock onMissing: missingBlock [
+
+	^ self resolver
+		  resolve: aReference
+		  forAction: anAction
+		  readyWhen: readyBlock
+		  thenDo: foundBlock
+		  onMissing: missingBlock
 ]
 
 { #category : 'resolving' }
@@ -52,83 +59,25 @@ ReplayUIBackend >> resolve: aReference thenDo: foundBlock onMissing: missingBloc
 		onMissing: missingBlock
 ]
 
+{ #category : 'resolving' }
+ReplayUIBackend >> nameOfMorph: aMorph [
+	"A semantic name that resolves to aMorph, or nil when there is none"
+
+	^ nil
+]
+
 { #category : 'accessing' }
 ReplayUIBackend >> resolver [
 
-	^ ReplayUIResolver on: self
-]
-
-{ #category : 'accessing' }
-ReplayUIBackend >> root [
-
-	^ self managedUI
+	^ ReplayMorphicResolver on: self
 ]
 
 { #category : 'running' }
-ReplayUIBackend >> runClick: aReplayClick on: aResolvedUI [
+ReplayUIBackend >> run: anAction on: aResolvedUI [
+	"Run anAction on the native element of aResolvedUI when it can, otherwise on its Morphic widget"
 
-	aReplayClick clickOn: aResolvedUI clickTarget
-]
-
-{ #category : 'running' }
-ReplayUIBackend >> runDeleteText: aReplayDeleteText on: aResolvedUI [
-
-	| native |
-	native := aResolvedUI nativeElement.
-	(aReplayDeleteText canDeleteTextIn: native) ifTrue: [
-		^ aReplayDeleteText deleteTextIn: native ].
-	aReplayDeleteText deleteTextIn:
-		(aResolvedUI morphRequiredFor: aReplayDeleteText class displayName)
-]
-
-{ #category : 'running' }
-ReplayUIBackend >> runDrag: aReplayDrag on: aResolvedUI [
-
-	aReplayDrag dragOn: (aResolvedUI morphRequiredFor: aReplayDrag class displayName)
-]
-
-{ #category : 'running' }
-ReplayUIBackend >> runFocus: aReplayFocus on: aResolvedUI [
-
-	| target |
-	target := aResolvedUI focusTarget.
-	target ifNil: [ target := aResolvedUI morphRequiredFor: 'focus' ].
-	target takeKeyboardFocus
-]
-
-{ #category : 'running' }
-ReplayUIBackend >> runPressKey: aReplayPressKey on: aResolvedUI [
-
-	aReplayPressKey pressKeyOn: aResolvedUI keyboardTarget
-]
-
-{ #category : 'running' }
-ReplayUIBackend >> runScroll: aReplayScroll on: aResolvedUI [
-
-	aReplayScroll scrollOn: (aResolvedUI morphRequiredFor: aReplayScroll class displayName)
-]
-
-{ #category : 'running' }
-ReplayUIBackend >> runSelectText: aReplaySelectText on: aResolvedUI [
-
-	| native |
-	native := aResolvedUI nativeElement.
-	(aReplaySelectText canSelectTextIn: native) ifTrue: [
-		^ aReplaySelectText selectTextIn: native ].
-	aReplaySelectText selectTextIn:
-		(aResolvedUI morphRequiredFor: aReplaySelectText class displayName)
-]
-
-{ #category : 'running' }
-ReplayUIBackend >> runShortcut: aReplayShortcut on: aResolvedUI [
-
-	aReplayShortcut shortcutOn: aResolvedUI keyboardTarget
-]
-
-{ #category : 'running' }
-ReplayUIBackend >> runType: aReplayType on: aResolvedUI [
-
-	aReplayType typeOn: aResolvedUI keyboardTarget
+	(anAction runNativelyOn: aResolvedUI nativeElement) ifTrue: [ ^ self ].
+	anAction runOnMorph: (aResolvedUI morphRequiredFor: anAction)
 ]
 
 { #category : 'accessing' }
@@ -145,6 +94,7 @@ ReplayUIBackend >> settleUI [
 
 { #category : 'accessing' }
 ReplayUIBackend >> surfaceMorph [
+	"The morph that Morphic paths start from and that bounds are relative to"
 
 	^ self managedUI
 ]

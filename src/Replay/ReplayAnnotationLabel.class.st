@@ -67,5 +67,5 @@ ReplayAnnotationLabel >> morphicLayerNumber [
 { #category : 'modes' }
 ReplayAnnotationLabel >> overlay [
 
-	^ submorphs at: 1
+	^ submorphs first
 ]

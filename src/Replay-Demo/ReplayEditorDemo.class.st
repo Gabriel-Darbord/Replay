@@ -35,7 +35,7 @@ ReplayEditorDemo >> addScriptActionInEditor [
 action := ReplayScript new.
 action script: ', self placeholderScript storeString, '.
 self focus addActionLast: action.
-self focus actions selectIndex: self focus actions items size'
+self focus actionList selectIndex: self focus actionList items size'
 ]
 
 { #category : 'actions' }
@@ -247,7 +247,7 @@ ReplayEditorDemo >> stepNamed: aString with: actions [
 	actions do: [ :action | step addAction: action ].
 	step navigation
 		text: aString;
-		position: self navigationPosition;
+		placement: (ReplayPlacement position: self navigationPosition);
 		skip: false.
 	^ step
 ]

@@ -12,6 +12,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayDelay class >> editorClass [
+
+	^ ReplayDelayEditor
+]
+
 { #category : 'accessing' }
 ReplayDelay class >> displayName [
 
@@ -32,12 +38,11 @@ ReplayDelay >> controlsRunnerContinuation [
 	^ true
 ]
 
-{ #category : 'editing' }
-ReplayDelay >> editionPresenterOn: editor [
+{ #category : 'running' }
+ReplayDelay >> previewOn: aReplayUIBuilder [
+	"Previews do not wait."
 
-	^ editor newPresenter
-		layout: (self secondsPresenterOn: editor labeled: 'Delay in seconds:');
-		yourself
+	aReplayUIBuilder nextAction
 ]
 
 { #category : 'printing' }
@@ -67,26 +72,6 @@ ReplayDelay >> seconds [
 ReplayDelay >> seconds: aNumber [
 
 	seconds := aNumber
-]
-
-{ #category : 'editing' }
-ReplayDelay >> secondsPresenterOn: editor labeled: label [
-
-	| textPresenter |
-	(textPresenter := editor newNumberInput)
-		minimum: 0;
-		numberType: Float;
-		number: self seconds;
-		whenNumberChangedDo: [ :aNumber |
-				self seconds: aNumber.
-				editor actions rebuildLayout ].
-	editor registerReplayPresenter: textPresenter named: 'Action seconds'.
-	editor registerReplayPresenter: textPresenter named: 'Delay seconds'.
-
-	^ SpBoxLayout newTopToBottom
-		 add: label expand: false;
-		 add: textPresenter expand: false;
-		 yourself
 ]
 
 { #category : 'recording' }

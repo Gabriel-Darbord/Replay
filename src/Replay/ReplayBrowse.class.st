@@ -1,5 +1,5 @@
 "
-I am the abstract open action for code browsers. Concrete subclasses provide the class, method, or package browser target.
+I am the abstract open action for code browsers. Concrete subclasses provide the class, method, or package browser target, stored by name in my target. A missing or unknown target signals a ReplayError.
 "
 Class {
 	#name : 'ReplayBrowse',
@@ -26,6 +26,15 @@ ReplayBrowse >> browser [
 	^ ClyFullBrowserMorph onDefaultEnvironment
 ]
 
+{ #category : 'error handling' }
+ReplayBrowse >> missingTarget: aString [
+
+	^ ReplayError new
+		  messageText: aString;
+		  subject: target;
+		  signal
+]
+
 { #category : 'printing' }
 ReplayBrowse >> printOn: stream [
 
@@ -34,13 +43,21 @@ ReplayBrowse >> printOn: stream [
 ]
 
 { #category : 'accessing' }
-ReplayBrowse >> settingsViewName [
+ReplayBrowse >> target [
+	"Answer the name of the browsed class, method, or package, or nil when none is chosen."
 
-	^ 'Select ' , self targetType name
+	^ target
 ]
 
-{ #category : 'accessing' }
-ReplayBrowse >> targetType [
+{ #category : 'managing UI' }
+ReplayBrowse >> uiManagerOn: runner [
+
+	^ ReplayUIManager new manage: (self uiOn: runner)
+]
+
+{ #category : 'managing UI' }
+ReplayBrowse >> uiOn: runner [
+	"The browser to open, a Morph"
 
 	self subclassResponsibility
 ]

@@ -1,5 +1,7 @@
 "
-I am installed on a Morphic hand while recording. I forward copied input events to a ReplayRecorder without consuming the original events.
+I am installed on a Morphic hand while a ReplayRecorder records. I forward copies of the input events to my recorder without consuming the original events.
+
+A hand may still give me the event during which my recorder stopped: I forward events only while my recorder is recording.
 "
 Class {
 	#name : 'ReplayRecorderListener',
@@ -19,7 +21,8 @@ ReplayRecorderListener class >> on: aReplayRecorder [
 
 { #category : 'event handling' }
 ReplayRecorderListener >> handleListenEvent: anEvent [
-	recorder ifNotNil: [ recorder recordEvent: anEvent ]
+
+	recorder isRecording ifTrue: [ recorder recordEvent: anEvent ]
 ]
 
 { #category : 'accessing' }

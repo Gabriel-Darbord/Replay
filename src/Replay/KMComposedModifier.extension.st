@@ -1,8 +1,7 @@
 Extension { #name : 'KMComposedModifier' }
 
 { #category : '*Replay' }
-KMComposedModifier >> configureReplayShortcut: aReplayShortcut [
+KMComposedModifier >> replayModifiers [
 
-	modifiers do: [ :modifier |
-		modifier configureReplayShortcut: aReplayShortcut ]
+	^ modifiers inject: 0 into: [ :mask :modifier | mask bitOr: modifier replayModifiers ]
 ]

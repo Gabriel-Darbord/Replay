@@ -3,7 +3,7 @@ I attach a replay runner to the Morphic World without adding an overlay or takin
 "
 Class {
 	#name : 'ReplayAttachWorld',
-	#superclass : 'ReplayAction',
+	#superclass : 'ReplayAttach',
 	#category : 'Replay-Actions',
 	#package : 'Replay',
 	#tag : 'Actions'
@@ -15,14 +15,8 @@ ReplayAttachWorld class >> displayName [
 	^ 'Attach World'
 ]
 
-{ #category : 'testing' }
-ReplayAttachWorld >> isUIOpener [
+{ #category : 'managing UI' }
+ReplayAttachWorld >> uiManagerOn: runner [
 
-	^ true
-]
-
-{ #category : 'running' }
-ReplayAttachWorld >> runOn: runner [
-
-	runner manager: (ReplayUIManager new observe: World)
+	^ ReplayUIManager new observe: self currentWorld
 ]

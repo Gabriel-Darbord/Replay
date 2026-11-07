@@ -1,18 +1,21 @@
 "
-I attach Replay to an existing Morphic morph or already-rendered Spec presenter. Unlike open actions, I do not take ownership of the target UI.
+I attach Replay to an existing Morphic morph or already-rendered Spec presenter, answered by my script evaluated with the runner as self. Unlike open actions, I do not take ownership of the target UI: I only add an overlay on it, removed when the runner stops.
 "
 Class {
 	#name : 'ReplayAttachUI',
-	#superclass : 'ReplayOpenUI',
+	#superclass : 'ReplayAttach',
 	#traits : 'TReplayActionWithScript',
 	#classTraits : 'TReplayActionWithScript classTrait',
-	#instVars : [
-		'script'
-	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
 	#tag : 'Actions'
 }
+
+{ #category : 'editing' }
+ReplayAttachUI class >> editorClass [
+
+	^ ReplayAttachUIEditor
+]
 
 { #category : 'accessing' }
 ReplayAttachUI class >> displayName [
@@ -20,51 +23,14 @@ ReplayAttachUI class >> displayName [
 	^ 'Attach UI'
 ]
 
-{ #category : 'printing' }
-ReplayAttachUI >> printOn: stream [
-
-	super printOn: stream.
-	script isEmptyOrNil ifTrue: [ ^ self ].
-	stream << ': '.
-	stream nextPutAll: (script printStringLimitedTo: 100)
-]
-
-{ #category : 'running' }
-ReplayAttachUI >> runOn: runner [
-
-	runner manager: (self uiManagerOn: runner)
-]
-
-{ #category : 'editing' }
-ReplayAttachUI >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (self scriptPresenterOn: editor labeled: 'Write script returning an existing Morph or rendered Spec presenter:');
-		yourself
-]
-
-{ #category : 'accessing' }
-ReplayAttachUI >> settingsViewName [
-
-	^ 'Attach UI settings'
-]
-
-{ #category : 'editing' }
-ReplayAttachUI >> uiEditionPresenterOn: editor [
-
-	^ self noEditionPresenterOn: editor
-]
-
-{ #category : 'running' }
+{ #category : 'managing UI' }
 ReplayAttachUI >> uiManagerOn: runner [
 
 	| target manager |
 	target := self uiTargetOn: runner.
 	manager := ReplayUIManager new.
-	(target isKindOf: Morph)
-		ifTrue: [ manager attachTo: target ]
-		ifFalse: [ manager attachToPresenter: target ].
-	^ manager
+	(target isKindOf: Morph) ifTrue: [ ^ manager attachTo: target ].
+	^ manager attachToPresenter: target
 ]
 
 { #category : 'managing UI' }
@@ -72,20 +38,8 @@ ReplayAttachUI >> uiTargetOn: runner [
 	"Evaluate script to obtain an existing Morph or rendered Spec presenter."
 
 	| target |
-	target := Smalltalk compiler
-		receiver: runner;
-		isScripting: true;
-		evaluate: self script.
+	target := self evaluateScriptOn: runner.
 	((target isKindOf: Morph) or: [ target isKindOf: SpAbstractPresenter ]) ifFalse: [
-		self unexpectedResult: target ].
+		self unexpectedScriptResult: target expected: 'an existing Morph or Spec presenter' ].
 	^ target
-]
-
-{ #category : 'error handling' }
-ReplayAttachUI >> unexpectedResult: anObject [
-
-	ReplayScriptError new
-		messageText: 'Expected script to return an existing Morph or Spec presenter, but got instance ' , anObject className , '.';
-		tag: anObject;
-		signal
 ]

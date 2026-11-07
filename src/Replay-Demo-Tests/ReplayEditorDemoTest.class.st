@@ -64,7 +64,7 @@ ReplayEditorDemoTest >> testReplayEditorExposesDemoSemanticTargets [
 	| editor missing |
 	editor := ReplayEditor on: ReplayScenario new.
 	#('Step list' 'Action list' 'Action chooser' 'Action editor') do: [ :targetName |
-		self assert: (editor replayPresenterAt: targetName ifAbsent: [ nil ]) notNil ].
+		self assert: (editor replayPresenterAt: targetName ifAbsent: [ nil ]) isNotNil ].
 	missing := editor replayPresenterAt: 'Missing target' ifAbsent: [ #missing ].
 	self assert: missing equals: #missing
 ]
@@ -102,9 +102,7 @@ ReplayEditorDemoTest >> testScenarioStructure [
 		step actions anySatisfy: [ :action | action isKindOf: ReplayDelay ] ]).
 	self assert: (scenario steps noneSatisfy: [ :step | step navigation skip ]).
 	self assert: (scenario steps allSatisfy: [ :step |
-		step navigation position = expectedNavigationPosition ]).
-	self assert: (scenario steps allSatisfy: [ :step | step navigation extent isNil ]).
-	self assert: (scenario steps allSatisfy: [ :step | step navigation bounds isNil ])
+		step navigation placement = (ReplayPlacement position: expectedNavigationPosition) ])
 ]
 
 { #category : 'tests' }

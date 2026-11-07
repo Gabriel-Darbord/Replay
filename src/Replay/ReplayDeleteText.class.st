@@ -1,5 +1,7 @@
 "
 I delete text around the current caret or selection in a resolved text target. I use editor deletion APIs so selection and forward/backward deletion match user behavior.
+
+I find the text editor of Rubric editing areas, and of the text morphs holding one (such as the widgets of Spec text inputs and text presenters), natively or in the Morphic widget.
 "
 Class {
 	#name : 'ReplayDeleteText',
@@ -12,6 +14,12 @@ Class {
 	#package : 'Replay',
 	#tag : 'Actions'
 }
+
+{ #category : 'editing' }
+ReplayDeleteText class >> editorClass [
+
+	^ ReplayDeleteTextEditor
+]
 
 { #category : 'accessing' }
 ReplayDeleteText class >> directionChoices [
@@ -28,12 +36,18 @@ ReplayDeleteText class >> displayName [
 ]
 
 { #category : 'testing' }
+ReplayDeleteText >> canRunNativelyOn: anObject [
+
+	^ self canDeleteTextIn: anObject
+]
+
+{ #category : 'testing' }
 ReplayDeleteText >> canDeleteTextIn: anObject [
 
 	| editor |
 	anObject ifNil: [ ^ false ].
 	editor := self textEditorFor: anObject.
-	^ editor notNil and: [ editor respondsTo: self deleteSelector ]
+	^ editor isNotNil and: [ editor respondsTo: self deleteSelector ]
 ]
 
 { #category : 'accessing' }
@@ -46,26 +60,6 @@ ReplayDeleteText >> count [
 ReplayDeleteText >> count: anInteger [
 
 	count := 1 max: anInteger asInteger
-]
-
-{ #category : 'editing' }
-ReplayDeleteText >> countPresenterOn: editor [
-
-	| input |
-	input := editor newNumberInput.
-	input
-		minimum: 1;
-		numberType: Integer;
-		number: self count;
-		whenNumberChangedDo: [ :number |
-			self count: number.
-			editor actions rebuildLayout ].
-	editor registerReplayPresenter: input named: 'Action delete count'.
-	editor registerReplayPresenter: input named: self class displayName , ' count'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Delete count:' expand: false;
-		add: input expand: false;
-		yourself
 ]
 
 { #category : 'private' }
@@ -118,32 +112,8 @@ ReplayDeleteText >> direction [
 ReplayDeleteText >> direction: aSymbol [
 
 	(#(#backward #forward) includes: aSymbol)
-		ifFalse: [ ReplayError new messageText: 'Unsupported delete direction: ', aSymbol asString; tag: aSymbol; signal ].
+		ifFalse: [ ReplayError new messageText: 'Unsupported delete direction: ', aSymbol asString; subject: aSymbol; signal ].
 	direction := aSymbol
-]
-
-{ #category : 'editing' }
-ReplayDeleteText >> directionPresenterOn: editor [
-
-	| dropList choices |
-	choices := self class directionChoices.
-	dropList := editor newDropList.
-	dropList
-		items: choices;
-		display: [ :association | association value ];
-		whenSelectedItemChangedDo: [ :association |
-			association ifNotNil: [
-				self direction: association key.
-				editor actions rebuildLayout ] ].
-	dropList selectItem: (choices
-		detect: [ :association | association key = self direction ]
-		ifNone: [ choices first ]).
-	editor registerReplayPresenter: dropList named: 'Action delete direction'.
-	editor registerReplayPresenter: dropList named: self class displayName , ' direction'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Delete direction:' expand: false;
-		add: dropList expand: false;
-		yourself
 ]
 
 { #category : 'printing' }
@@ -157,34 +127,23 @@ ReplayDeleteText >> printOn: stream [
 ]
 
 { #category : 'running' }
-ReplayDeleteText >> runOn: runner onUI: ui [
+ReplayDeleteText >> runOnMorph: aMorph [
 
-	self deleteTextIn: ui
+	self deleteTextIn: aMorph
 ]
 
 { #category : 'running' }
-ReplayDeleteText >> runOn: runner resolvedUI: resolvedUI [
+ReplayDeleteText >> runOnNative: anObject [
 
-	resolvedUI runDeleteText: self
-]
-
-{ #category : 'editing' }
-ReplayDeleteText >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-			spacing: 10;
-			add: (self targetPresenterOn: editor) expand: false;
-			add: (self directionPresenterOn: editor) expand: false;
-			add: (self countPresenterOn: editor) expand: false;
-			yourself);
-		yourself
+	self deleteTextIn: anObject
 ]
 
 { #category : 'private' }
 ReplayDeleteText >> textEditorFor: anObject [
+	"The text editor of anObject: its own, the one of its text area for scrolled text morphs and text fields, or anObject itself"
 
 	(anObject respondsTo: #editor) ifTrue: [ ^ anObject editor ].
+	(anObject respondsTo: #textArea) ifTrue: [ ^ self textEditorFor: anObject textArea ].
 	^ anObject
 ]
 
@@ -193,6 +152,6 @@ ReplayDeleteText >> unsupportedTarget: anObject [
 
 	ReplayError new
 		messageText: 'Target ', anObject className, ' does not support text deletion.';
-		tag: anObject;
+		subject: anObject;
 		signal
 ]

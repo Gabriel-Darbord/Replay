@@ -10,7 +10,7 @@ Class {
 }
 
 { #category : 'editing' }
-ReplayMissingUIError >> helpPresenterOn: editor for: action [
+ReplayMissingUIError >> helpPresenterFor: aReplayUIActionEditor [
 
-	^ action helpPresenterOn: editor aboutMissingUI: self
+	^ aReplayUIActionEditor helpAboutMissingUI: self
 ]
