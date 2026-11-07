@@ -68,6 +68,16 @@ ReplayToolPresenter >> hand: aHandMorph [
 	hand := aHandMorph
 ]
 
+{ #category : 'dialogs' }
+ReplayToolPresenter >> requestSton: aLabel title: aTitle [
+	"Ask for a pasted STON string. Answer it, or nil when the request is cancelled or left empty."
+
+	^ (self application newRequestText
+		   title: aTitle;
+		   label: aLabel;
+		   openModal) ifNotNil: [ :string | string trimBoth ifEmpty: [ nil ] ]
+]
+
 { #category : 'accessing' }
 ReplayToolPresenter >> windowMorph [
 	"The system window that shows me, my own or the one of the tool that embeds me, or nil when I am not shown"

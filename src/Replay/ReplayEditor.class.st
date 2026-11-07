@@ -314,11 +314,26 @@ ReplayEditor >> homePresenter [
 { #category : 'tools' }
 ReplayEditor >> importScenario [
 
-	(self uiManager
-		 request: 'Paste the STON string of a scenario to edit it.'
-		 initialAnswer: ''
-		 title: 'Import Scenario') ifNotEmpty: [ :string |
-		self scenario: (STON fromString: string) ]
+	(self
+		 requestSton: 'Paste the STON string of a scenario to edit it.'
+		 title: 'Import Scenario') ifNotNil: [ :string | self importString: string ]
+]
+
+{ #category : 'tools' }
+ReplayEditor >> importString: aString [
+	"Edit the scenario of the STON aString. Anything else is reported, and changes nothing."
+
+	| scenario |
+	scenario := [ STON fromString: aString ]
+		            on: Error
+		            do: [ :error |
+			            self inform: 'This is not a valid STON string: ' , error messageText.
+			            ^ nil ].
+	(scenario isKindOf: ReplayScenario) ifFalse: [
+		self inform: 'This STON string holds a ' , scenario class name , ', not a scenario.'.
+		^ nil ].
+	self scenario: scenario.
+	^ scenario
 ]
 
 { #category : 'initialization' }

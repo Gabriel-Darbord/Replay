@@ -31,5 +31,5 @@ ReplayInform >> previewOn: aReplayUIBuilder [
 { #category : 'running' }
 ReplayInform >> runOn: runner [
 
-	self uiManager inform: (Microdown asRichText: self text)
+	UIManager default inform: (Microdown asRichText: self text)
 ]

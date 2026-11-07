@@ -255,3 +255,18 @@ ReplayEditorTest >> testSettingsEditsRefreshTheActionLabel [
 	self assert: editor currentAction identicalTo: type.
 	self assert: editor actionList items asArray equals: { type }
 ]
+
+{ #category : 'tests' }
+ReplayEditorTest >> testImportStringEditsAScenarioAndReportsAnythingElse [
+
+	| editor imported original |
+	original := ReplayScenario new title: 'Original'; yourself.
+	editor := ReplayEditor on: original.
+	imported := ReplayScenario new title: 'Imported'; yourself.
+
+	self assert: (editor importString: (STON toString: imported)) title equals: 'Imported'.
+	self assert: editor scenario title equals: 'Imported'.
+	self assert: (editor importString: 'ReplayScenario {') isNil.
+	self assert: (editor importString: (STON toString: ReplayStep new)) isNil.
+	self assert: editor scenario title equals: 'Imported'
+]

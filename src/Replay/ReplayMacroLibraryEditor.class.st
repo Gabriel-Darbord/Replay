@@ -151,11 +151,9 @@ ReplayMacroLibraryEditor >> exportSelectedMacro [
 { #category : 'actions' }
 ReplayMacroLibraryEditor >> import [
 
-	(self uiManager
-		 request: 'Paste the STON string of a macro or of a macro library to add its macros to this library.'
-		 initialAnswer: ''
-		 title: 'Import Macros') ifNotEmpty: [ :string |
-		self importString: string ]
+	(self
+		 requestSton: 'Paste the STON string of a macro or of a macro library to add its macros to this library.'
+		 title: 'Import Macros') ifNotNil: [ :string | self importString: string ]
 ]
 
 { #category : 'actions' }
