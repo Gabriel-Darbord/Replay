@@ -116,9 +116,14 @@ ReplayMacroLibrary >> internalConflictsForMacro: aReplayMacro [
 { #category : 'accessing' }
 ReplayMacroLibrary >> macroForScenario: aReplayScenario [
 
-	^ self macros
-		detect: [ :macro | macro scenario == aReplayScenario ]
-		ifNone: [ self addMacroForScenario: aReplayScenario ]
+	^ (self macroWithScenario: aReplayScenario) ifNil: [ self addMacroForScenario: aReplayScenario ]
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibrary >> macroWithScenario: aReplayScenario [
+	"The macro running aReplayScenario, or nil if none does"
+
+	^ self macros detect: [ :macro | macro scenario == aReplayScenario ] ifNone: [ nil ]
 ]
 
 { #category : 'accessing' }

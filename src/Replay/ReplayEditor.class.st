@@ -17,7 +17,12 @@ Class {
 		'stopRecordingButton',
 		'recordingStatusPresenter',
 		'recordingShortcutListener',
-		'recordingTargetDescription'
+		'recordingTargetDescription',
+		'macro',
+		'macroLibrary',
+		'macroEditor',
+		'macroChangeBlock',
+		'shortcutButton'
 	],
 	#category : 'Replay-Editing',
 	#package : 'Replay',
@@ -37,6 +42,18 @@ ReplayEditor class >> on: scenario [
 ]
 
 { #category : 'instance creation' }
+ReplayEditor class >> onMacro: aReplayMacro inLibrary: aReplayMacroLibrary [
+	"An editor for the scenario of a library macro, as shown in the library window.
+	It also edits the shortcut of the macro."
+
+	^ self basicNew
+		  setMacro: aReplayMacro library: aReplayMacroLibrary;
+		  initialize;
+		  scenario: aReplayMacro scenario;
+		  yourself
+]
+
+{ #category : 'instance creation' }
 ReplayEditor class >> onSton: aScenarioSTONString [
 
 	^ self on: (STON fromString: aScenarioSTONString)
@@ -47,6 +64,37 @@ ReplayEditor class >> open [
 
 	<script>
 	^ self new open
+]
+
+{ #category : 'accessing' }
+ReplayEditor class >> openInstances [
+	"Editors of my kind open in their own window"
+
+	^ (self currentWorld systemWindows collect: [ :window | window model ])
+		  select: [ :model | (model isKindOf: SpWindowPresenter) and: [ model presenter isKindOf: self ] ]
+		  thenCollect: [ :model | model presenter ]
+]
+
+{ #category : 'instance creation' }
+ReplayEditor class >> openOn: aScenario [
+	"Show the editor of aScenario, never a second one.
+	A scenario of the default macro library is edited in the library window."
+
+	| registry |
+	registry := ReplayMacroRegistry default.
+	(registry library macroWithScenario: aScenario) ifNotNil: [ :macro |
+			^ (ReplayMacroLibraryEditor openOnRegistry: registry)
+				  showMacro: macro;
+				  yourself ].
+	^ self openInstances
+		  detect: [ :editor | editor scenario == aScenario ]
+		  ifFound: [ :editor |
+				  editor window activate.
+				  editor ]
+		  ifNone: [
+				  (self on: aScenario)
+					  open;
+					  yourself ]
 ]
 
 { #category : 'accessing' }
@@ -163,6 +211,7 @@ ReplayEditor >> defaultLayout [
 			add: (SpBoxLayout newLeftToRight
 				add: (SpBoxLayout newTopToBottom
 					add: self editScenarioButton expand: false;
+					add: shortcutButton expand: false;
 					add: stepList;
 					yourself);
 				add: (SpBoxLayout newTopToBottom
@@ -192,6 +241,13 @@ ReplayEditor >> editScenarioData [
 
 	self clearReplayPresenterTargets.
 	self actionEditor: (self model scenario editionPresenterOn: self)
+]
+
+{ #category : 'macro' }
+ReplayEditor >> editShortcut [
+
+	self clearReplayPresenterTargets.
+	self actionEditor: self macroEditor
 ]
 
 { #category : 'layout' }
@@ -283,6 +339,7 @@ ReplayEditor >> initializePresenters [
 	recordingStatusPresenter := self newLabel
 		label: self recordingStatusText;
 		yourself.
+	shortcutButton := self newShortcutButton.
 
 	actionEditor := SpBoxLayout newLeftToRight.
 	actionEditor add: self homePresenter
@@ -306,21 +363,45 @@ ReplayEditor >> installRecordingShortcutListener [
 	World activeHand addEventListener: recordingShortcutListener
 ]
 
+{ #category : 'macro' }
+ReplayEditor >> isInLibrary [
+
+	^ macro isNotNil
+]
+
 { #category : 'recording' }
 ReplayEditor >> isRecording [
 	^ recorder notNil
 ]
 
-{ #category : 'tools' }
-ReplayEditor >> macroForCurrentScenario [
+{ #category : 'macro' }
+ReplayEditor >> macro [
+	"The library macro whose scenario I edit, or nil when my scenario is not in a library"
 
-	^ self macroForCurrentScenarioIn: ReplayMacroRegistry default
+	^ macro
+]
+
+{ #category : 'macro' }
+ReplayEditor >> macroEditor [
+	"The shortcut settings of my macro, shown by the Edit shortcut button"
+
+	macro ifNil: [ ^ nil ].
+	^ macroEditor ifNil: [
+			  macroEditor := (ReplayMacroEditor on: macro inLibrary: macroLibrary)
+				                 whenMacroChangedDo: [ macroChangeBlock ifNotNil: [ macroChangeBlock value ] ];
+				                 yourself ]
 ]
 
 { #category : 'tools' }
 ReplayEditor >> macroForCurrentScenarioIn: aReplayMacroRegistry [
 
 	^ aReplayMacroRegistry library macroForScenario: self model scenario
+]
+
+{ #category : 'macro' }
+ReplayEditor >> macroLibrary [
+
+	^ macroLibrary
 ]
 
 { #category : 'accessing' }
@@ -339,6 +420,44 @@ ReplayEditor >> modifierFlagsFromEvent: anEvent [
 	(anEvent optionKeyPressed or: [ anEvent altKeyPressed ]) ifTrue: [ modifiers := modifiers bitOr: UserInputEvent altKeyMask ].
 	anEvent commandKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent cmdKeyMask ].
 	^ modifiers
+]
+
+{ #category : 'macro' }
+ReplayEditor >> moveToLibrary [
+
+	^ self moveToLibraryOf: ReplayMacroRegistry default
+]
+
+{ #category : 'macro' }
+ReplayEditor >> moveToLibraryOf: aReplayMacroRegistry [
+	"Hand my scenario over to the library window and close: a scenario has a single editor"
+
+	| libraryMacro |
+	libraryMacro := aReplayMacroRegistry library macroForScenario: self scenario.
+	(ReplayMacroLibraryEditor openOnRegistry: aReplayMacroRegistry) showMacro: libraryMacro.
+	self withWindowDo: [ :window | window close ].
+	^ libraryMacro
+]
+
+{ #category : 'initialization' }
+ReplayEditor >> newShortcutButton [
+	"In a library, my scenario can be bound to a shortcut. Otherwise, it must move to a library first."
+
+	^ self isInLibrary
+		  ifTrue: [
+				  self newButton
+					  icon: (self iconNamed: #scriptManager);
+					  label: 'Edit shortcut';
+					  help: 'Edit the key binding and contexts that run this scenario as a macro.';
+					  action: [ self editShortcut ];
+					  yourself ]
+		  ifFalse: [
+				  self newButton
+					  icon: (self iconNamed: #add);
+					  label: 'Add to library';
+					  help: 'Move this scenario into the macro library window, where it is saved and can be bound to a shortcut.';
+					  action: [ self moveToLibrary ];
+					  yourself ]
 ]
 
 { #category : 'layout' }
@@ -472,9 +591,14 @@ ReplayEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 	aPresenterName = 'Stop recording button' ifTrue: [ ^ stopRecordingButton ].
 	aPresenterName = 'Preserve timing checkbox' ifTrue: [ ^ recordTimingCheckBox ].
 	aPresenterName = 'Recording status' ifTrue: [ ^ recordingStatusPresenter ].
+	(#('Edit shortcut button' 'Add to library button') includes: aPresenterName)
+		ifTrue: [ ^ shortcutButton ].
 	^ self replayPresenters
 		at: aPresenterName
-		ifAbsent: [ super replayPresenterAt: aPresenterName ifAbsent: absentBlock ]
+		ifAbsent: [
+			(self macroEditor ifNotNil: [ :editor |
+				editor replayPresenterAt: aPresenterName ifAbsent: [ nil ] ])
+				ifNil: [ super replayPresenterAt: aPresenterName ifAbsent: absentBlock ] ]
 ]
 
 { #category : 'replay' }
@@ -504,9 +628,17 @@ ReplayEditor >> saveScenario [
 ]
 
 { #category : 'accessing' }
+ReplayEditor >> scenario [
+
+	^ self model scenario
+]
+
+{ #category : 'accessing' }
 ReplayEditor >> scenario: scenario [
+	"In a library, my scenario is the one of my macro: replacing one replaces the other"
 
 	| steps |
+	macro ifNotNil: [ macro scenario: scenario ].
 	self model scenario: scenario.
 	steps := scenario steps.
 	steps ifEmpty: [ self model addStep ].
@@ -534,6 +666,19 @@ ReplayEditor >> selectStep: step [
 			self clearReplayPresenterTargets.
 			self actionEditor: self homePresenter ]
 		ifNotEmpty: [ actionList selectIndex: 1 ]
+]
+
+{ #category : 'macro' }
+ReplayEditor >> setMacro: aReplayMacro library: aReplayMacroLibrary [
+
+	macro := aReplayMacro.
+	macroLibrary := aReplayMacroLibrary
+]
+
+{ #category : 'accessing' }
+ReplayEditor >> shortcutButton [
+
+	^ shortcutButton
 ]
 
 { #category : 'recording' }
@@ -652,11 +797,6 @@ ReplayEditor >> toolbar [
 			icon: (self iconNamed: #smallForward);
 			help: 'Execute currently selected step.';
 			action: [ self runStep ]);
-		add: (self newToolbarButton
-			label: 'Macro';
-			icon: (self iconNamed: #scriptManager);
-			help: 'Create or edit a macro backed by current scenario.';
-			action: [ self useScenarioAsMacro ]);
 		yourself
 ]
 
@@ -675,14 +815,8 @@ ReplayEditor >> updateRecordingStatus [
 	recordingStatusPresenter label: self recordingStatusText
 ]
 
-{ #category : 'tools' }
-ReplayEditor >> useScenarioAsMacro [
+{ #category : 'macro' }
+ReplayEditor >> whenMacroChangedDo: aBlock [
 
-	| registry editor macro |
-	registry := ReplayMacroRegistry default.
-	macro := self macroForCurrentScenarioIn: registry.
-	editor := ReplayMacroLibraryEditor onRegistry: registry.
-	editor addMacroForScenario: self model scenario.
-	editor open.
-	^ macro
+	macroChangeBlock := aBlock
 ]

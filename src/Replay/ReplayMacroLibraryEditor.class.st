@@ -9,7 +9,6 @@ Class {
 		'library',
 		'macroList',
 		'macroEditorPane',
-		'macroEditorPresenter',
 		'installationSummaryPresenter',
 		'startupPolicyPresenter',
 		'startupPolicyIconPresenter',
@@ -17,7 +16,8 @@ Class {
 		'startupPolicyButton',
 		'installedMacroIconPresenter',
 		'installedKeymapIconPresenter',
-		'installedKeymapSummaryPresenter'
+		'installedKeymapSummaryPresenter',
+		'scenarioEditor'
 	],
 	#category : 'Replay-Macros',
 	#package : 'Replay',
@@ -60,7 +60,31 @@ ReplayMacroLibraryEditor class >> open [
 ReplayMacroLibraryEditor class >> openDefault [
 	<script>
 
-	^ (self onRegistry: ReplayMacroRegistry default) open
+	^ self openOnRegistry: ReplayMacroRegistry default
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibraryEditor class >> openInstances [
+	"Library editors open in their own window"
+
+	^ (self currentWorld systemWindows collect: [ :window | window model ])
+		  select: [ :model | (model isKindOf: SpWindowPresenter) and: [ model presenter isKindOf: self ] ]
+		  thenCollect: [ :model | model presenter ]
+]
+
+{ #category : 'instance creation' }
+ReplayMacroLibraryEditor class >> openOnRegistry: aReplayMacroRegistry [
+	"Show the library window of aReplayMacroRegistry, never a second one"
+
+	^ self openInstances
+		  detect: [ :editor | editor registry == aReplayMacroRegistry ]
+		  ifFound: [ :editor |
+				  editor window activate.
+				  editor ]
+		  ifNone: [
+				  (self onRegistry: aReplayMacroRegistry)
+					  open;
+					  yourself ]
 ]
 
 { #category : 'tools' }
@@ -155,21 +179,17 @@ ReplayMacroLibraryEditor >> defaultLayout [
 			add: (SpBoxLayout newLeftToRight
 				spacing: 8;
 				vAlignCenter;
-				add: startupPolicyButton width: 145;
-				add: startupPolicyStatusPresenter width: 120;
+				add: startupPolicyButton withConstraints: [ :c |
+					c width: 145.
+					c height: self class buttonHeight ];
+				add: startupPolicyStatusPresenter expand: false;
 				yourself) expand: false;
 			yourself)
 		expand: false;
 		add: (SpBoxLayout newLeftToRight
 			spacing: 8;
-			add: macroList withConstraints: [ :c | c width: 300 ];
-			add: (SpScrollableLayout new
-				vAlignStart;
-				hAlignStart;
-				child: (SpBoxLayout newLeftToRight
-					add: macroEditorPane withConstraints: [ :c | c padding: 10 ];
-					yourself);
-				yourself);
+			add: macroList withConstraints: [ :c | c width: 240 ];
+			add: macroEditorPane;
 			yourself);
 		yourself
 ]
@@ -276,8 +296,11 @@ ReplayMacroLibraryEditor >> initializePresenters [
 { #category : 'initialization' }
 ReplayMacroLibraryEditor >> initializeWindow: aWindow [
 
-	aWindow title: 'Macro Library Editor'.
-	aWindow initialExtent: 1200 @ 720
+	super initializeWindow: aWindow.
+	aWindow title: 'Replay Library'.
+	aWindow initialExtent: 1500 @ 820.
+	aWindow whenOpenedDo: [ scenarioEditor ifNotNil: [ scenarioEditor installRecordingShortcutListener ] ].
+	aWindow whenClosedDo: [ scenarioEditor ifNotNil: [ scenarioEditor closeRecordingSession ] ]
 ]
 
 { #category : 'actions' }
@@ -371,8 +394,9 @@ ReplayMacroLibraryEditor >> macroEditorPane [
 
 { #category : 'accessing' }
 ReplayMacroLibraryEditor >> macroEditorPresenter [
+	"The shortcut settings of the selected macro"
 
-	^ macroEditorPresenter
+	^ scenarioEditor ifNotNil: [ scenarioEditor macroEditor ]
 ]
 
 { #category : 'accessing' }
@@ -400,10 +424,9 @@ ReplayMacroLibraryEditor >> refreshFromLibrary [
 { #category : 'updating' }
 ReplayMacroLibraryEditor >> refreshMacroEditorStatus [
 
-	self selectedMacro ifNil: [ ^ self ].
-	macroEditorPresenter ifNil: [ ^ self ].
-	macroEditorPresenter updateInstallationStatus.
-	macroEditorPresenter updateConflicts
+	self macroEditorPresenter ifNotNil: [ :editor |
+		editor updateInstallationStatus.
+		editor updateConflicts ]
 ]
 
 { #category : 'accessing' }
@@ -443,14 +466,15 @@ ReplayMacroLibraryEditor >> removeSelectedMacro [
 ReplayMacroLibraryEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 
 	aPresenterName = 'Macro list' ifTrue: [ ^ macroList ].
-	aPresenterName = 'Macro editor' ifTrue: [ ^ macroEditorPresenter ifNil: [ macroEditorPane ] ].
+	(#('Macro editor' 'Scenario editor') includes: aPresenterName) ifTrue: [
+		^ macroEditorPane presenterAt: 1 ].
 	aPresenterName = 'Installation summary' ifTrue: [ ^ installationSummaryPresenter ].
 	aPresenterName = 'Startup policy' ifTrue: [ ^ startupPolicyPresenter ].
 	aPresenterName = 'Startup policy icon' ifTrue: [ ^ startupPolicyIconPresenter ].
 	aPresenterName = 'Startup policy status' ifTrue: [ ^ startupPolicyStatusPresenter ].
 	(#('Startup policy button' 'Enable startup button' 'Disable startup button') includes: aPresenterName) ifTrue: [ ^ startupPolicyButton ].
-	macroEditorPresenter ifNotNil: [
-		^ macroEditorPresenter replayPresenterAt: aPresenterName ifAbsent: absentBlock ].
+	scenarioEditor ifNotNil: [
+		^ scenarioEditor replayPresenterAt: aPresenterName ifAbsent: absentBlock ].
 	^ absentBlock value
 ]
 
@@ -468,6 +492,13 @@ ReplayMacroLibraryEditor >> saveLibrary [
 		informing: 'Macro library copied to clipboard!'
 ]
 
+{ #category : 'accessing' }
+ReplayMacroLibraryEditor >> scenarioEditor [
+	"The editor of the selected macro scenario, or nil without selection"
+
+	^ scenarioEditor
+]
+
 { #category : 'updating' }
 ReplayMacroLibraryEditor >> selectFirstMacroIfNeeded [
 
@@ -477,16 +508,18 @@ ReplayMacroLibraryEditor >> selectFirstMacroIfNeeded [
 
 { #category : 'updating' }
 ReplayMacroLibraryEditor >> selectMacro: aReplayMacro [
+	"Show the scenario of aReplayMacro in an embedded scenario editor, which also edits its shortcut"
 
-	macroEditorPresenter := aReplayMacro
-		ifNil: [ self emptyMacroPresenter ]
-		ifNotNil: [
-			(ReplayMacroEditor on: aReplayMacro inLibrary: self library)
-				whenMacroChangedDo: [
-					self refreshMacroEditorStatus.
-					self updateInstallationSummary ];
-				yourself ].
-	macroEditorPane replaceAtIndex: 1 with: macroEditorPresenter.
+	scenarioEditor ifNotNil: [ scenarioEditor closeRecordingSession ].
+	scenarioEditor := aReplayMacro ifNotNil: [
+		(ReplayEditor onMacro: aReplayMacro inLibrary: self library)
+			whenMacroChangedDo: [
+				self refreshMacroEditorStatus.
+				self updateInstallationSummary ];
+			yourself ].
+	macroEditorPane replaceAtIndex: 1 with: (scenarioEditor ifNil: [ self emptyMacroPresenter ]).
+	(scenarioEditor isNotNil and: [ self isDisplayed ]) ifTrue: [
+		scenarioEditor installRecordingShortcutListener ].
 	self updateInstallationSummary
 ]
 
@@ -494,6 +527,12 @@ ReplayMacroLibraryEditor >> selectMacro: aReplayMacro [
 ReplayMacroLibraryEditor >> selectedMacro [
 
 	^ macroList selectedItem
+]
+
+{ #category : 'updating' }
+ReplayMacroLibraryEditor >> showMacro: aReplayMacro [
+
+	macroList selectItem: aReplayMacro
 ]
 
 { #category : 'accessing' }

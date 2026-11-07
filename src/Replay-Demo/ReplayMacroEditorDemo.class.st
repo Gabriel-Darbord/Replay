@@ -28,7 +28,8 @@ ReplayMacroEditorDemo class >> scenario [
 { #category : 'actions' }
 ReplayMacroEditorDemo >> addMacroAction [
 
-	^ self script: 'self focus macroList addButton click'
+	^ self script: 'self focus macroList addButton click.
+self focus scenarioEditor editShortcut'
 ]
 
 { #category : 'actions' }
@@ -63,7 +64,7 @@ ReplayMacroEditorDemo >> clearTriggeredFlagAction [
 { #category : 'actions' }
 ReplayMacroEditorDemo >> configureFindMacroAction [
 
-	^ self script: '| editor context macro payload step |
+	^ self script: '| editor context payload step |
 editor := self focus macroEditorPresenter.
 editor namePresenter text: ''Find helper''.
 editor shortcutTextPresenter text: ''f''.
@@ -71,13 +72,12 @@ editor controlCheckBox state ifFalse: [ editor controlCheckBox toggleState ].
 context := editor contextDropList items detect: [ :each | each identifier = #textEditors ].
 editor contextDropList selectItem: context.
 editor addSelectedContext.
-macro := editor macro.
 payload := ReplayScenario new title: ''Find helper macro payload''; yourself.
 step := ReplayStep new.
 step navigation skip: true.
 step addAction: (ReplayScript new script: ''Smalltalk globals at: #ReplayMacroEditorDemoTriggered put: true'').
 payload addStep: step.
-macro scenario: payload'
+self focus scenarioEditor scenario: payload; editShortcut'
 ]
 
 { #category : 'steps' }
@@ -147,7 +147,7 @@ ReplayMacroEditorDemo >> openEditorStep [
 		self attachMacroEditorAction.
 		self clearAnnotationsAction.
 		self annotate: 'Macro list' text: 'The library holds user macros. Use built-in plus and trash buttons to add or remove macros.'.
-		self annotate: 'Macro editor' text: 'Selecting a macro opens its editable details here.' }
+		self annotate: 'Macro editor' text: 'Selecting a macro opens its scenario here. Edit shortcut shows its key binding and contexts.' }
 ]
 
 { #category : 'steps' }
@@ -234,7 +234,7 @@ ReplayMacroEditorDemo >> triggerShortcutStep [
 		self clearAnnotationsAction.
 		self triggerInstalledShortcutAction.
 		self annotate: 'Installation status' text: 'A Control+F event was dispatched through the text editor context, and the macro payload ran.'.
-		self annotate: 'Run macro button' text: 'Run macro executes the same scenario directly from the editor.' }
+		self annotate: 'Edit shortcut button' text: 'The shortcut runs the scenario of this macro, as Run in the toolbar does.' }
 ]
 
 { #category : 'actions' }

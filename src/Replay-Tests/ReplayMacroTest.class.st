@@ -179,6 +179,23 @@ ReplayMacroTest >> testInstalledTextEditorMacroIsVisibleToCategoryBinding [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testLibraryScenarioEditorReplacesMacroScenario [
+
+	| library macro editor imported |
+	library := ReplayMacroLibrary new.
+	macro := library addNewMacro.
+	editor := ReplayMacroLibraryEditor on: library.
+	editor showMacro: macro.
+	imported := ReplayScenario new
+		            title: 'Imported';
+		            yourself.
+	editor scenarioEditor scenario: imported.
+
+	self assert: macro scenario identicalTo: imported.
+	self assert: editor scenarioEditor scenario identicalTo: imported
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroContextAvailableContextsKeepIndividualFallbackContexts [
 
 	| contexts everywhere simpleList |
@@ -407,8 +424,6 @@ ReplayMacroTest >> testMacroEditorBottomButtonsUseActionIcons [
 	editor := ReplayMacroEditor on: macro.
 
 	[
-		self assert: editor editScenarioButton icon equals: (editor iconNamed: #edit).
-		self assert: editor runMacroButton icon equals: (editor iconNamed: #go).
 		self assert: editor macroInstallationButton icon equals: (editor iconNamed: #accept).
 		editor installMacro.
 		self assert: editor macroInstallationButton icon equals: (editor iconNamed: #cancel).
@@ -1426,6 +1441,22 @@ ReplayMacroTest >> testMacroLibraryEditorClearsInstalledReplayKeymaps [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorEditsSelectedMacroScenario [
+
+	| library macro editor |
+	library := ReplayMacroLibrary new.
+	macro := library addNewMacro.
+	editor := ReplayMacroLibraryEditor on: library.
+	editor showMacro: macro.
+
+	self assert: editor scenarioEditor isInLibrary.
+	self assert: editor scenarioEditor macro identicalTo: macro.
+	self assert: editor scenarioEditor scenario identicalTo: macro scenario.
+	self assert: editor scenarioEditor shortcutButton label equals: 'Edit shortcut'.
+	self assert: editor macroEditorPresenter macro identicalTo: macro
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testMacroLibraryEditorImportsSingleMacroFromSTON [
 
 	| library editor macro imported |
@@ -1630,6 +1661,23 @@ ReplayMacroTest >> testMacroLibraryEditorShowsContextualStartupButton [
 		self assert: editor startupPolicyButton label equals: 'Enable startup'.
 		self assert: editor startupPolicyButton icon isNil ]
 		ensure: [ ReplayMacroRegistry disableStartupInstallation ]
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testMacroLibraryEditorShowsShortcutInScenarioEditor [
+
+	| library macro editor |
+	library := ReplayMacroLibrary new.
+	macro := library addNewMacro.
+	editor := ReplayMacroLibraryEditor on: library.
+	editor showMacro: macro.
+	editor scenarioEditor editShortcut.
+
+	self assert: editor scenarioEditor actionEditor identicalTo: editor macroEditorPresenter.
+	self
+		assert: (editor replayPresenterAt: 'Edit shortcut button' ifAbsent: [ nil ])
+		identicalTo: editor scenarioEditor shortcutButton.
+	self assert: (editor replayPresenterAt: 'Macro name' ifAbsent: [ nil ]) identicalTo: editor macroEditorPresenter namePresenter
 ]
 
 { #category : 'tests' }
@@ -2153,6 +2201,32 @@ ReplayMacroTest >> testMacroUpdateInstalledKeymapsUninstallsWhenBindingRemoved [
 ]
 
 { #category : 'tests' }
+ReplayMacroTest >> testMovingScenarioToLibraryKeepsOneEditor [
+
+	| registry scenario editor macro libraryEditors |
+	registry := ReplayMacroRegistry new.
+	scenario := ReplayScenario new
+		            title: 'Moved scenario';
+		            yourself.
+	editor := ReplayEditor on: scenario.
+	editor open.
+	[
+		macro := editor moveToLibraryOf: registry.
+		libraryEditors := ReplayMacroLibraryEditor openInstances select: [ :each | each registry == registry ].
+
+		self assert: macro scenario identicalTo: scenario.
+		self assert: registry library macros asArray equals: { macro }.
+		self deny: (ReplayEditor openInstances includes: editor).
+		self assert: libraryEditors size equals: 1.
+		self assert: libraryEditors first selectedMacro identicalTo: macro.
+		self assert: (ReplayMacroLibraryEditor openOnRegistry: registry) identicalTo: libraryEditors first.
+		self assert: (editor moveToLibraryOf: registry) identicalTo: macro.
+		self assert: registry library macros size equals: 1 ] ensure: [
+			(ReplayEditor openInstances includes: editor) ifTrue: [ editor window close ].
+			(ReplayMacroLibraryEditor openInstances select: [ :each | each registry == registry ]) do: [ :each | each window close ] ]
+]
+
+{ #category : 'tests' }
 ReplayMacroTest >> testReplayMacroReportsInstalledKeymapEntries [
 
 	| macro entries |
@@ -2232,6 +2306,18 @@ ReplayMacroTest >> testReplayShortcutMatchesKeymapCaseInsensitively [
 		                             yourself.
 
 	self assert: (shortcut sameShortcutAs: sameShortcutDifferentCase)
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testScenarioEditorOpensOncePerScenario [
+
+	| scenario editor |
+	scenario := ReplayScenario new.
+	editor := ReplayEditor openOn: scenario.
+	[
+		self assert: (ReplayEditor openOn: scenario) identicalTo: editor.
+		self assert: (ReplayEditor openInstances select: [ :each | each scenario == scenario ]) size equals: 1 ] ensure: [
+		editor window close ]
 ]
 
 { #category : 'tests' }
@@ -2369,6 +2455,18 @@ ReplayMacroTest >> testShortcutKeysPresenterUsesShortcut [
 	presenter useShortcut: captured.
 	self assert: shortcut text equals: 'f'.
 	self assert: shortcut flags equals: 64
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testStandaloneScenarioEditorOffersToMoveToLibrary [
+
+	| editor |
+	editor := ReplayEditor on: ReplayScenario new.
+
+	self deny: editor isInLibrary.
+	self assert: editor macroEditor isNil.
+	self assert: editor shortcutButton label equals: 'Add to library'.
+	self assert: (editor replayPresenterAt: 'Add to library button' ifAbsent: [ nil ]) identicalTo: editor shortcutButton
 ]
 
 { #category : 'support' }

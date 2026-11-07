@@ -163,7 +163,7 @@ ReplayMacroRegistry >> loadFromFile: aFileReference [
 { #category : 'editing' }
 ReplayMacroRegistry >> openEditor [
 
-	^ (ReplayMacroLibraryEditor onRegistry: self) open
+	^ ReplayMacroLibraryEditor openOnRegistry: self
 ]
 
 { #category : 'persistence' }

@@ -18,8 +18,6 @@ Class {
 		'installationStatusPresenter',
 		'conflictStatusPresenter',
 		'conflictList',
-		'editScenarioButton',
-		'runMacroButton',
 		'macroInstallationButton',
 		'installationRequirementsLabelPresenter',
 		'keyBindingRequirementIconPresenter',
@@ -85,9 +83,9 @@ ReplayMacroEditor class >> defaultLayout [
 		  add: (SpBoxLayout newLeftToRight
 				   spacing: 8;
 				   vAlignCenter;
-				   add: #editScenarioButton expand: false;
-				   add: #runMacroButton expand: false;
-				   add: #macroInstallationButton width: 132;
+				   add: #macroInstallationButton withConstraints: [ :c |
+					   c width: 132.
+					   c height: self buttonHeight ];
 				   add: #installationRequirementsLabelPresenter expand: false;
 				   add: #keyBindingRequirementIconPresenter width: 18;
 				   add: 'Contexts:' expand: false;
@@ -123,13 +121,6 @@ ReplayMacroEditor class >> on: aReplayMacro inLibrary: aReplayMacroLibrary [
 	editor initialize.
 	editor refreshFromMacro.
 	^ editor
-]
-
-{ #category : 'opening' }
-ReplayMacroEditor class >> open [
-
-	<script>
-	^ self new open
 ]
 
 { #category : 'active context' }
@@ -379,18 +370,6 @@ ReplayMacroEditor >> displayNameForInstalledCategory: aKMCategory [
 	^ ReplayShortcutConflict displayNameForCategoryName: aKMCategory name
 ]
 
-{ #category : 'actions' }
-ReplayMacroEditor >> editScenario [
-
-	self macro scenario edit
-]
-
-{ #category : 'accessing' }
-ReplayMacroEditor >> editScenarioButton [
-
-	^ editScenarioButton
-]
-
 { #category : 'initialization' }
 ReplayMacroEditor >> initializeModel: aReplayMacro library: aReplayMacroLibrary [
 
@@ -491,16 +470,6 @@ ReplayMacroEditor >> initializePresenters [
 			width: 220;
 			yourself);
 		beResizable.
-	editScenarioButton := self newButton
-		label: 'Edit scenario';
-		icon: (self iconNamed: #edit);
-		action: [ self editScenario ];
-		yourself.
-	runMacroButton := self newButton
-		label: 'Run macro';
-		icon: (self iconNamed: #go);
-		action: [ self macro run ];
-		yourself.
 	macroInstallationButton := self newButton
 		action: [ self toggleMacroInstallation ];
 		yourself.
@@ -813,16 +782,8 @@ ReplayMacroEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 	(#('Refresh focus button' 'Refresh active UI button') includes: aPresenterName) ifTrue: [ ^ refreshActiveContextButton ].
 	(#('Install focused contexts button' 'Install active contexts button' 'Install active UI button') includes: aPresenterName) ifTrue: [ ^ installActiveContextButton ].
 	aPresenterName = 'Conflict list' ifTrue: [ ^ conflictList ].
-	aPresenterName = 'Edit scenario button' ifTrue: [ ^ editScenarioButton ].
-	aPresenterName = 'Run macro button' ifTrue: [ ^ runMacroButton ].
 	(#('Macro installation button' 'Install macro button' 'Uninstall macro button' 'Install selected context button') includes: aPresenterName) ifTrue: [ ^ macroInstallationButton ].
 	^ absentBlock value
-]
-
-{ #category : 'accessing' }
-ReplayMacroEditor >> runMacroButton [
-
-	^ runMacroButton
 ]
 
 { #category : 'accessing' }

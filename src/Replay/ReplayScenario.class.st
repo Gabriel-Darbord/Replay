@@ -45,7 +45,7 @@ ReplayScenario >> description: aString [
 { #category : 'editing' }
 ReplayScenario >> edit [
 
-	^ (ReplayEditor on: self) open
+	^ ReplayEditor openOn: self
 ]
 
 { #category : 'editing' }

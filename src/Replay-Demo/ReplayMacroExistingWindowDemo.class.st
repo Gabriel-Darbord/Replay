@@ -31,7 +31,8 @@ ReplayMacroExistingWindowDemo class >> scenario [
 { #category : 'actions' }
 ReplayMacroExistingWindowDemo >> addMacroAction [
 
-	^ self script: 'self focus macroList addButton click'
+	^ self script: 'self focus macroList addButton click.
+self focus scenarioEditor editShortcut'
 ]
 
 { #category : 'actions' }
@@ -90,7 +91,7 @@ Smalltalk globals removeKey: ', self targetEditorKey storeString, ' ifAbsent: [ 
 { #category : 'actions' }
 ReplayMacroExistingWindowDemo >> configureMacroAction [
 
-	^ self script: '| editor context macro payload step |
+	^ self script: '| editor context payload step |
 editor := self focus macroEditorPresenter.
 editor namePresenter text: ''Insert script helper''.
 editor shortcutTextPresenter text: ''m''.
@@ -98,14 +99,13 @@ editor controlCheckBox state ifFalse: [ editor controlCheckBox toggleState ].
 context := editor contextDropList items detect: [ :each | each identifier = #textEditors ].
 editor contextDropList selectItem: context.
 editor addSelectedContext.
-macro := editor macro.
 payload := ReplayScenario new title: ''Existing window macro payload''; yourself.
 step := ReplayStep new.
 step navigation skip: true.
 step addAction: (ReplayAttachUI new script: ''Smalltalk globals at: #ReplayMacroExistingWindowDemoTarget'').
 step addAction: (ReplayScript new script: ' , self targetPayloadScript storeString , ').
 payload addStep: step.
-macro scenario: payload'
+self focus scenarioEditor scenario: payload; editShortcut'
 ]
 
 { #category : 'steps' }
@@ -263,7 +263,7 @@ ReplayMacroExistingWindowDemo >> triggerStep [
 	^ self stepNamed: 'Trigger the macro' with: {
 		self clearAnnotationsAction.
 		self triggerInstalledShortcutAction.
-		self annotate: 'Run macro button' text: 'The shortcut fired the same macro payload that Run macro would execute directly.'.
+		self annotate: 'Edit shortcut button' text: 'The shortcut ran the scenario of this macro, as Run in the toolbar would.'.
 		self annotate: 'Installation status' text: 'The existing target editor now has a Script action inserted by the macro.' }
 ]
 
