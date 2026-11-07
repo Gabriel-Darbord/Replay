@@ -50,7 +50,7 @@ ReplayOpenUI >> placementPresenterOn: editor [
 		targetPrefixes: { 'Action'. self class displayName }
 		whenChangedDo: [ :aPlacement |
 			self placement: aPlacement.
-			editor actions rebuildLayout ]
+			editor actionChanged: self ]
 ]
 
 { #category : 'managing UI' }
@@ -73,7 +73,7 @@ ReplayOpenUI >> runOn: runner [
 ReplayOpenUI >> uiEditionPresenterOn: editor [
 
 	| manager |
-	manager := (self uiManagerOn: (ReplayRunner on: editor model scenario)) editor: editor.
+	manager := (self uiManagerOn: (ReplayRunner on: editor scenario)) editor: editor.
 	manager wrapForEdition.
 	^ editor newMorph morph: manager ui
 ]

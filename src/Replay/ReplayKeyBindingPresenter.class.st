@@ -1,6 +1,8 @@
 "
 I edit a ReplayKeyBinding: its chords are visible rows that I add, delete and capture, and my modifier check boxes (a ReplayKeyModifiersPresenter) show and edit the modifiers of the selected chord. A new chord takes the modifiers shown by the check boxes, so Cmd + T then Cmd + S is entered by checking Command once.
 
+Capture shortcut listens to the next key press on my hand (a ReplayShortcutCaptureListener). The capture is cancelled by a second click, by Escape, by stopShortcutCapture (sent when the pane that shows me is replaced or its window closes), and in any case by a key press once I am no longer shown.
+
 A key binding is an immutable value: each edit makes a new binding, which I keep and give to the block of on:whenChangedDo:. keyBinding: shows another binding and also notifies.
 "
 Class {
@@ -17,6 +19,7 @@ Class {
 		'removeKeyButton',
 		'captureShortcutButton',
 		'captureListener',
+		'hand',
 		'clearKeysButton',
 		'modifiersPresenter'
 	],
@@ -220,6 +223,28 @@ ReplayKeyBindingPresenter >> initializePresenters [
 ]
 
 { #category : 'accessing' }
+ReplayKeyBindingPresenter >> hand [
+	"The hand that captures shortcuts"
+
+	^ hand ifNil: [ self currentWorld activeHand ]
+]
+
+{ #category : 'accessing' }
+ReplayKeyBindingPresenter >> hand: aHandMorph [
+
+	hand := aHandMorph
+]
+
+{ #category : 'testing' }
+ReplayKeyBindingPresenter >> isShown [
+	"Whether my widget is in a world: false once my window closed or the pane that showed me was replaced"
+
+	^ self adapter
+		  ifNil: [ false ]
+		  ifNotNil: [ :adapter | adapter widget notNil and: [ adapter widget world notNil ] ]
+]
+
+{ #category : 'accessing' }
 ReplayKeyBindingPresenter >> keyBinding [
 
 	^ keyBinding ifNil: [ keyBinding := ReplayKeyBinding new ]
@@ -325,28 +350,28 @@ ReplayKeyBindingPresenter >> showSelectedChordModifiers [
 
 { #category : 'actions' }
 ReplayKeyBindingPresenter >> startShortcutCapture [
+	"Capture the next key press as my binding; a second click, Escape or hiding me cancels"
 
-	| hand |
-	captureListener ifNotNil: [
-		self stopShortcutCapture.
-		^ self ].
-	hand := World activeHand.
-	hand ifNil: [ ^ self ].
-	captureListener := ReplayShortcutCaptureListener
-		onHand: hand
-		do: [ :capturedBinding |
-			captureListener := nil.
-			self updateCaptureShortcutButtonLabel.
-			self editKeyBinding: capturedBinding ].
+	captureListener ifNotNil: [ ^ self stopShortcutCapture ].
+	captureListener := ReplayShortcutCaptureListener new
+		                   captureWhile: [ self isShown ];
+		                   whenCapturedDo: [ :capturedBinding |
+			                   captureListener := nil.
+			                   self updateCaptureShortcutButtonLabel.
+			                   self editKeyBinding: capturedBinding ];
+		                   whenCancelledDo: [
+			                   captureListener := nil.
+			                   self updateCaptureShortcutButtonLabel ];
+		                   startOnHand: self hand;
+		                   yourself.
 	self updateCaptureShortcutButtonLabel
 ]
 
 { #category : 'actions' }
 ReplayKeyBindingPresenter >> stopShortcutCapture [
 
-	captureListener ifNotNil: [
-		captureListener stop.
-		captureListener := nil ].
+	captureListener ifNotNil: [ :listener | listener cancel ].
+	captureListener := nil.
 	self updateCaptureShortcutButtonLabel
 ]
 

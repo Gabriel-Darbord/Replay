@@ -47,7 +47,7 @@ ReplayWrapperMorph >> menuPresenterOn: editor [
 				action: [
 					editor
 						addAction: (action fromUIPath: self path)
-						after: editor model currentAction ] ] ].
+						after: editor currentAction ] ] ].
 	^ menu
 ]
 

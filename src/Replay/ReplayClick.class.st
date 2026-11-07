@@ -79,7 +79,7 @@ ReplayClick >> clickCountPresenterOn: editor [
 		number: self clickCount;
 		whenNumberChangedDo: [ :number |
 			self clickCount: number.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: input named: 'Action click count'.
 	editor registerReplayPresenter: input named: self class displayName , ' count'.
 	^ SpBoxLayout newTopToBottom
@@ -115,7 +115,7 @@ ReplayClick >> clickOn: ui [
 ReplayClick >> debugClickOn: editor [
 
 	| builder |
-	builder := ReplayUIBuilder on: editor model scenario.
+	builder := ReplayUIBuilder on: editor scenario.
 
 	builder whenDone: [
 		self findElementIn: builder manager managedUI thenDo: [ :ui |
@@ -125,7 +125,7 @@ ReplayClick >> debugClickOn: editor [
 
 	"We need to open the window for the UI to load correctly"
 	(SpMorphPresenter new morph:
-			 (builder uiForAction: self inStep: editor model currentStep))
+			 (builder uiForAction: self inStep: editor currentStep))
 		asWindow
 		title: 'Debugging Click Event';
 		open;
@@ -256,7 +256,7 @@ ReplayClick >> mousePhasePresenterOn: editor [
 		whenSelectedItemChangedDo: [ :association |
 			association ifNotNil: [
 				self mousePhase: association key.
-				editor actions rebuildLayout ] ].
+				editor actionChanged: self ] ].
 	dropList selectItem: (choices
 		detect: [ :association | association key = self mousePhase ]
 		ifNone: [ choices first ]).
@@ -317,14 +317,14 @@ ReplayClick >> positionPresenterOn: editor [
 		number: self positionOrZero x;
 		whenNumberChangedDo: [ :number |
 			self position: number @ self positionOrZero y.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	yInput := editor newNumberInput.
 	yInput
 		numberType: Float;
 		number: self positionOrZero y;
 		whenNumberChangedDo: [ :number |
 			self position: self positionOrZero x @ number.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: xInput named: 'Action click x'.
 	editor registerReplayPresenter: yInput named: 'Action click y'.
 	^ SpBoxLayout newTopToBottom

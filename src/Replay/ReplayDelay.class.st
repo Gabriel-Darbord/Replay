@@ -86,7 +86,7 @@ ReplayDelay >> secondsPresenterOn: editor labeled: label [
 		number: self seconds;
 		whenNumberChangedDo: [ :aNumber |
 				self seconds: aNumber.
-				editor actions rebuildLayout ].
+				editor actionChanged: self ].
 	editor registerReplayPresenter: textPresenter named: 'Action seconds'.
 	editor registerReplayPresenter: textPresenter named: 'Delay seconds'.
 

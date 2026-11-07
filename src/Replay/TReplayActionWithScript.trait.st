@@ -37,7 +37,7 @@ TReplayActionWithScript >> compileScriptFor: receiver [
 TReplayActionWithScript >> debugScriptInEditor: editor [
 	"Debug my script from the editor, with the receiver it would have when running the edited scenario."
 
-	self debugScriptOn: (ReplayRunner on: editor model scenario)
+	self debugScriptOn: (ReplayRunner on: editor scenario)
 ]
 
 { #category : 'debugging' }
@@ -122,7 +122,7 @@ TReplayActionWithScript >> scriptPresenterOn: editor labeled: label [
 		text: self script;
 		whenTextChangedDo: [ :aString |
 			self script: aString.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: codePresenter named: 'Action script'.
 	editor registerReplayPresenter: codePresenter named: self scriptTargetName.
 

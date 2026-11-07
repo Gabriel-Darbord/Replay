@@ -206,7 +206,6 @@ ReplayUIBuilderTest >> testScriptErrorHelpIsReportedAgainstTheFailingAction [
 	target := ReplayClick new.
 	self scenarioWithSteps: { { ReplayOpenPresenter new script: '42'. target } }.
 	editor := ReplayEditor on: scenario.
-	editor model currentStep: scenario steps first.
 
 	presenter := target tryUIEditionPresenterOn: editor.
 

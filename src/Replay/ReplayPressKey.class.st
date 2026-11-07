@@ -63,7 +63,7 @@ ReplayPressKey >> keyPresenterOn: editor [
 		whenSelectedItemChangedDo: [ :association |
 			association ifNotNil: [
 				self keySelector: association key.
-				editor actions rebuildLayout ] ].
+				editor actionChanged: self ] ].
 	dropList selectItem: (choices
 		detect: [ :association | association key = self keySelector ]
 		ifNone: [ choices first ]).
@@ -97,7 +97,7 @@ ReplayPressKey >> modifierPresenterOn: editor [
 		modifiers: self modifiers;
 		whenChangedDo: [ :newModifiers |
 			self modifiers: newModifiers.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	presenter registerReplayPresentersOn: editor named: 'Action'.
 	presenter registerReplayPresentersOn: editor named: self class displayName.
 	^ SpBoxLayout newTopToBottom
@@ -168,7 +168,7 @@ ReplayPressKey >> repeatCountPresenterOn: editor [
 		number: self repeatCount;
 		whenNumberChangedDo: [ :aNumber |
 			self repeatCount: aNumber.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: countPresenter named: 'Action repeat count'.
 	editor registerReplayPresenter: countPresenter named: 'Press key repeat count'.
 

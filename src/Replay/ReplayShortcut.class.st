@@ -46,7 +46,7 @@ ReplayShortcut >> keyBindingPresenterOn: editor [
 	| presenter |
 	presenter := ReplayKeyBindingPresenter on: self keyBinding whenChangedDo: [ :binding |
 		             self keyBinding: binding.
-		             editor actions rebuildLayout ].
+		             editor actionChanged: self ].
 	presenter registerReplayPresentersOn: editor named: 'Action shortcut'.
 	presenter registerReplayPresentersOn: editor named: self class displayName.
 	^ presenter
@@ -98,7 +98,7 @@ ReplayShortcut >> shortcutDescriptionPresenterOn: editor [
 	descriptionPresenter shortcutList whenSelectedDo: [ :keymap |
 		(ReplayKeyBinding fromKeymap: keymap) ifNotNil: [ :binding |
 			self keyBinding: binding.
-			editor actionEditor: (self editionPresenterOn: editor) ] ].
+			editor buildActionEditor: [ self editionPresenterOn: editor ] ] ].
 
 	presenter layout: (SpBoxLayout newTopToBottom
 			 add: 'Select a shortcut in the list to use it:' expand: false;

@@ -44,8 +44,8 @@ ReplayShortcutDescriptionPresenter >> connectPresenters [
 			[ :keymap | keymap shortcut asString ] ascending ]
 ]
 
-{ #category : 'initialization - deprecated' }
-ReplayShortcutDescriptionPresenter >> initializeWidgets [
+{ #category : 'initialization' }
+ReplayShortcutDescriptionPresenter >> initializePresenters [
 
 	categoryDropList := self newDropList.
 	shortcutList := self newTable.

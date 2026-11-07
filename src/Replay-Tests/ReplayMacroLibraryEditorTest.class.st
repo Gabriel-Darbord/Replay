@@ -229,6 +229,60 @@ ReplayMacroLibraryEditorTest >> testMacroSettingsChangeSavesTheLibrary [
 ]
 
 { #category : 'tests' }
+ReplayMacroLibraryEditorTest >> testEmbeddedEditorRecordsWhileItsMacroIsShown [
+
+	| hand editor first second firstEditor listener |
+	hand := HandMorph new.
+	editor := self editorOnFile.
+	first := editor addMacro.
+	second := editor addMacro.
+	editor showMacro: first.
+	editor hand: hand.
+	editor open.
+	firstEditor := editor scenarioEditor.
+	listener := ReplayRecordingToggleListener onHand: hand.
+	self assert: listener editors asArray equals: { firstEditor }.
+
+	firstEditor startRecordingOn: self currentWorld.
+	firstEditor recorder recordAction: ReplayClick new.
+	editor showMacro: second.
+	self deny: firstEditor isRecording.
+	self assert: (first scenario steps first actions collect: [ :action | action class ]) asArray
+		equals: { ReplayAttachWorld. ReplayClick }.
+	self assert: (ReplayRecordingToggleListener onHand: hand) editors asArray equals: { editor scenarioEditor }.
+	self assert: editor scenarioEditor hand identicalTo: hand.
+
+	editor scenarioEditor startRecordingOn: self currentWorld.
+	editor window close.
+	self deny: editor scenarioEditor isRecording.
+	self assert: (ReplayRecordingToggleListener onHand: hand) isNil.
+	self assert: hand eventListeners isEmptyOrNil
+]
+
+{ #category : 'tests' }
+ReplayMacroLibraryEditorTest >> testMovingRecordingScenarioToLibraryKeepsTheRecordedActions [
+
+	| hand registry editor macro libraryEditor |
+	hand := HandMorph new.
+	registry := ReplayMacroRegistry new.
+	editor := ReplayEditor new
+		          hand: hand;
+		          yourself.
+	editor open.
+	editor startRecordingOn: self currentWorld.
+	editor recorder recordAction: ReplayClick new.
+	macro := editor moveToLibraryOf: registry.
+	libraryEditor := ReplayMacroLibraryEditor openOnRegistry: registry.
+
+	self deny: editor isRecording.
+	self assert: hand eventListeners isEmptyOrNil.
+	self assert: (macro scenario steps first actions collect: [ :action | action class ]) asArray
+		equals: { ReplayAttachWorld. ReplayClick }.
+	"The embedded editor was built on the recorded actions, and shows the first one"
+	self assert: libraryEditor scenarioEditor currentAction identicalTo: macro scenario steps first actions first
+]
+
+{ #category : 'tests' }
 ReplayMacroLibraryEditorTest >> testMovingScenarioToLibraryKeepsOneEditor [
 
 	| registry scenario editor macro libraryEditors |
@@ -260,7 +314,7 @@ ReplayMacroLibraryEditorTest >> testOpenShowsTheDefaultLibraryOnce [
 
 	self assert: editor registry identicalTo: ReplayMacroRegistry default.
 	self assert: ReplayMacroLibraryEditor open identicalTo: editor.
-	self assert: (self newWindowsLabeled: 'Replay Library') size equals: 1
+	self assert: (self newWindowsLabeled: 'Replay Macro Library') size equals: 1
 ]
 
 { #category : 'tests' }

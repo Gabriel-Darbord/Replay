@@ -46,7 +46,7 @@ TReplayActionWithText >> textPresenterOn: editor labeled: label [
 		text: self text;
 		whenTextChangedDo: [ :aString |
 			self text: aString.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: textPresenter named: 'Action text'.
 	editor registerReplayPresenter: textPresenter named: self class displayName , ' text'.
 

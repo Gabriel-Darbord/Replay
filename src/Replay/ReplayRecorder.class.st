@@ -1,5 +1,7 @@
 "
 I record live user input events into Replay actions. I can preserve inter-action timing as ReplayDelay actions or normalize recorded actions by stripping timing.
+
+I record from the time I start on a hand (startOnHand:) until I stop, which answers the recorded actions. I do not record the events on the morphs I ignore (ignoreMorph:), nor the key binding I ignore (ignoreKeyBinding:), such as the one that stops me.
 "
 Class {
 	#name : 'ReplayRecorder',
@@ -20,8 +22,7 @@ Class {
 		'mouseMoveCount',
 		'mouseMoved',
 		'ignoredMorphs',
-		'stopKeyBinding',
-		'stopBlock',
+		'ignoredKeyBinding',
 		'prologueActions',
 		'pendingShortcutAction',
 		'pendingKeyPressAction'
@@ -207,6 +208,13 @@ ReplayRecorder >> hasPendingShortcut [
 ]
 
 { #category : 'accessing' }
+ReplayRecorder >> ignoreKeyBinding: aReplayKeyBinding [
+	"Do not record the presses of aReplayKeyBinding, such as the one that stops recording"
+
+	ignoredKeyBinding := aReplayKeyBinding
+]
+
+{ #category : 'accessing' }
 ReplayRecorder >> ignoreMorph: aMorph [
 	aMorph ifNotNil: [ self ignoredMorphs add: aMorph ]
 ]
@@ -217,10 +225,24 @@ ReplayRecorder >> ignoredMorphs [
 ]
 
 { #category : 'testing' }
+ReplayRecorder >> ignoresKeyboardEvent: anEvent [
+
+	ignoredKeyBinding ifNil: [ ^ false ].
+	(anEvent isKeyDown or: [ anEvent isKeystroke ]) ifFalse: [ ^ false ].
+	^ (ReplayKeyBinding fromKeyboardEvent: anEvent) = ignoredKeyBinding
+]
+
+{ #category : 'testing' }
 ReplayRecorder >> ignoresMorph: aMorph [
 	aMorph ifNil: [ ^ false ].
 	^ self ignoredMorphs anySatisfy: [ :ignored |
 		aMorph == ignored or: [ aMorph ownerChain includes: ignored ] ]
+]
+
+{ #category : 'testing' }
+ReplayRecorder >> isRecording [
+
+	^ hand notNil
 ]
 
 { #category : 'testing' }
@@ -292,14 +314,6 @@ ReplayRecorder >> isShortcutEvent: anEvent [
 	"Whether anEvent holds a modifier that makes its key a shortcut instead of typing"
 
 	^ ReplayKeyModifiers hasShortcutModifier: (ReplayKeyModifiers fromEvent: anEvent)
-]
-
-{ #category : 'testing' }
-ReplayRecorder >> matchesStopShortcutEvent: anEvent [
-
-	stopKeyBinding ifNil: [ ^ false ].
-	anEvent isKeyDown ifFalse: [ ^ false ].
-	^ (ReplayKeyBinding fromKeyboardEvent: anEvent) = stopKeyBinding
 ]
 
 { #category : 'accessing' }
@@ -403,7 +417,7 @@ ReplayRecorder >> recordEvent: anEvent [
 ReplayRecorder >> recordKeyboardEvent: anEvent [
 
 	| target |
-	(self matchesStopShortcutEvent: anEvent) ifTrue: [ ^ self requestStop ].
+	(self ignoresKeyboardEvent: anEvent) ifTrue: [ ^ self ].
 	target := anEvent hand keyboardFocus.
 	(self managedIncludesMorph: target) ifFalse: [ ^ self ].
 	anEvent isKeystroke ifTrue: [
@@ -544,11 +558,6 @@ ReplayRecorder >> referenceForMorph: aMorph [
 	^ ReplayUIReference morphicPath: path
 ]
 
-{ #category : 'recording' }
-ReplayRecorder >> requestStop [
-	stopBlock ifNotNil: [ stopBlock value ]
-]
-
 { #category : 'testing' }
 ReplayRecorder >> sameReferenceOf: firstAction and: secondAction [
 	(firstAction isUIHandler and: [ secondAction isUIHandler ]) ifFalse: [ ^ false ].
@@ -603,11 +612,6 @@ ReplayRecorder >> shouldIgnoreMouseEvent: anEvent [
 ]
 
 { #category : 'recording' }
-ReplayRecorder >> start [
-	self startOnHand: World activeHand
-]
-
-{ #category : 'recording' }
 ReplayRecorder >> startOnHand: aHandMorph [
 	hand ifNotNil: [ self stop ].
 	hand := aHandMorph.
@@ -620,14 +624,6 @@ ReplayRecorder >> stop [
 		hand removeEventListener: self listener.
 		hand := nil ].
 	^ self recordedActions
-]
-
-{ #category : 'accessing' }
-ReplayRecorder >> stopKeyBinding: aReplayKeyBinding do: aBlock [
-	"Pressing aReplayKeyBinding runs aBlock instead of being recorded"
-
-	stopKeyBinding := aReplayKeyBinding.
-	stopBlock := aBlock
 ]
 
 { #category : 'targeting' }

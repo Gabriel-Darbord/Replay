@@ -61,7 +61,7 @@ ReplayScroll >> countPresenterOn: editor [
 		number: self count;
 		whenNumberChangedDo: [ :number |
 			self count: number.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: input named: 'Action scroll count'.
 	editor registerReplayPresenter: input named: self class displayName , ' count'.
 	^ SpBoxLayout newTopToBottom
@@ -105,7 +105,7 @@ ReplayScroll >> directionPresenterOn: editor [
 		whenSelectedItemChangedDo: [ :association |
 			association ifNotNil: [
 				self direction: association key.
-				editor actions rebuildLayout ] ].
+				editor actionChanged: self ] ].
 	dropList selectItem: (choices
 		detect: [ :association | association key = self direction ]
 		ifNone: [ choices second ]).
@@ -211,14 +211,14 @@ ReplayScroll >> positionPresenterOn: editor [
 		number: self positionOrZero x;
 		whenNumberChangedDo: [ :number |
 			self position: number @ self positionOrZero y.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	yInput := editor newNumberInput.
 	yInput
 		numberType: Float;
 		number: self positionOrZero y;
 		whenNumberChangedDo: [ :number |
 			self position: self positionOrZero x @ number.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: xInput named: 'Action scroll x'.
 	editor registerReplayPresenter: yInput named: 'Action scroll y'.
 	^ SpBoxLayout newTopToBottom

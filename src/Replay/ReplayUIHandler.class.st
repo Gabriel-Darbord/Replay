@@ -192,7 +192,7 @@ ReplayUIHandler >> semanticTargetPresenterOn: editor [
 		text: self targetName;
 		whenTextChangedDo: [ :aString |
 			self targetName: aString.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: targetNamePresenter named: 'Action target name'.
 	editor registerReplayPresenter: targetNamePresenter named: self class displayName , ' target name'.
 
@@ -321,7 +321,7 @@ ReplayUIHandler >> uiEditionPresenterOn: editor [
 	"Presenter that highlights the current target and allows changing it"
 
 	| builder |
-	builder := ReplayUIBuilder on: editor model scenario.
+	builder := ReplayUIBuilder on: editor scenario.
 
 	builder whenDone: [
 		| manager highlight |
@@ -341,7 +341,7 @@ ReplayUIHandler >> uiEditionPresenterOn: editor [
 		manager wrapForEdition ].
 
 	^ editor newMorph morph:
-		  (builder uiForAction: self inStep: editor model currentStep)
+		  (builder uiForAction: self inStep: editor currentStep)
 ]
 
 { #category : 'accessing' }

@@ -75,7 +75,7 @@ ReplayEditorSemanticTargetTest >> testRecordingStatusShowsShortcut [
 	editor := self newEditor.
 	self assert: editor recordingShortcutDescription equals: editor recordingKeyBinding displayString.
 	self assert: (editor recordingStatusText includesSubstring: editor recordingShortcutDescription).
-	self assert: (editor recordingStatusText includesSubstring: 'Record or stop')
+	self assert: (editor recordingStatusText includesSubstring: 'to record the active window')
 ]
 
 { #category : 'tests' }
@@ -96,7 +96,7 @@ ReplayEditorSemanticTargetTest >> testScenarioFieldsAreRegistered [
 
 	| editor |
 	editor := self newEditor.
-	editor model scenario editionPresenterOn: editor.
+	editor scenario editionPresenterOn: editor.
 	self assert: (editor replayPresenterAt: 'Scenario title' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Scenario description' ifAbsent: [ nil ]) notNil
 ]

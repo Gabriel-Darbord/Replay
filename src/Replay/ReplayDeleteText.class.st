@@ -59,7 +59,7 @@ ReplayDeleteText >> countPresenterOn: editor [
 		number: self count;
 		whenNumberChangedDo: [ :number |
 			self count: number.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: input named: 'Action delete count'.
 	editor registerReplayPresenter: input named: self class displayName , ' count'.
 	^ SpBoxLayout newTopToBottom
@@ -134,7 +134,7 @@ ReplayDeleteText >> directionPresenterOn: editor [
 		whenSelectedItemChangedDo: [ :association |
 			association ifNotNil: [
 				self direction: association key.
-				editor actions rebuildLayout ] ].
+				editor actionChanged: self ] ].
 	dropList selectItem: (choices
 		detect: [ :association | association key = self direction ]
 		ifNone: [ choices first ]).

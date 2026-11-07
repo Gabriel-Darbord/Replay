@@ -37,7 +37,7 @@ ReplaySelectText >> indexPresenterOn: editor labeled: label value: value update:
 		number: value;
 		whenNumberChangedDo: [ :number |
 				updateBlock value: number.
-				editor actions rebuildLayout ].
+				editor actionChanged: self ].
 	targetName := label allButLast asLowercase.
 	editor registerReplayPresenter: input named: 'Action ' , targetName.
 	editor registerReplayPresenter: input named: self class displayName , ' ' , targetName.

@@ -128,7 +128,7 @@ ReplayNavigate >> placementPresenterOn: editor [
 		targetPrefixes: { 'Navigation'. self class displayName }
 		whenChangedDo: [ :aPlacement |
 			self placement: aPlacement.
-			editor actions rebuildLayout ]
+			editor actionChanged: self ]
 ]
 
 { #category : 'running' }

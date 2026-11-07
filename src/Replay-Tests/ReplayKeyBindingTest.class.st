@@ -235,6 +235,8 @@ ReplayKeyBindingTest >> testKeysPresenterCaptureUpdatesModifiers [
 	presenter := ReplayKeyBindingPresenter
 		             on: (ReplayKeyBinding character: $z modifiers: 0)
 		             whenChangedDo: [ :newBinding | binding := newBinding ].
+	presenter hand: HandMorph new.
+	presenter open.
 	self deny: presenter modifiersPresenter commandCheckBox state.
 	self assert: presenter captureShortcutButton label equals: 'Capture shortcut'.
 	presenter startShortcutCapture.

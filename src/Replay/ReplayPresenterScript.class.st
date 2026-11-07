@@ -23,9 +23,9 @@ ReplayPresenterScript >> debugScriptInEditor: editor [
 	The preview opens in a window so the UI loads correctly."
 
 	| builder ui |
-	builder := ReplayUIBuilder on: editor model scenario.
+	builder := ReplayUIBuilder on: editor scenario.
 	builder whenDone: [ self debugScriptOn: builder ].
-	ui := [ builder uiForAction: self inStep: editor model currentStep ]
+	ui := [ builder uiForAction: self inStep: editor currentStep ]
 		      on: ReplayError
 		      do: [ :error | ^ self inform: error messageText ].
 	(SpMorphPresenter new morph: ui) asWindow

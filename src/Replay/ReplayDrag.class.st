@@ -221,14 +221,14 @@ ReplayDrag >> pointPresenterOn: editor label: label value: point update: updateB
 		number: point x;
 		whenNumberChangedDo: [ :number |
 			updateBlock value: number @ point y.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	yInput := editor newNumberInput.
 	yInput
 		numberType: Float;
 		number: point y;
 		whenNumberChangedDo: [ :number |
 			updateBlock value: point x @ number.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: xInput named: 'Action ' , targetName , ' x'.
 	editor registerReplayPresenter: yInput named: 'Action ' , targetName , ' y'.
 	^ SpBoxLayout newTopToBottom
@@ -344,7 +344,7 @@ ReplayDrag >> stepsPresenterOn: editor [
 		number: self steps;
 		whenNumberChangedDo: [ :number |
 			self steps: number.
-			editor actions rebuildLayout ].
+			editor actionChanged: self ].
 	editor registerReplayPresenter: input named: 'Action drag steps'.
 	editor registerReplayPresenter: input named: self class displayName , ' steps'.
 	^ SpBoxLayout newTopToBottom

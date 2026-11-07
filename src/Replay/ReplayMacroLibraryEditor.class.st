@@ -1,13 +1,15 @@
 "
-I am the library window (""Replay Library""): I show the macros of a ReplayMacroRegistry and edit the selected one.
+I am the library window (""Replay Macro Library""): I show the macros of a ReplayMacroRegistry and edit the selected one.
 
 The left list holds the macros, named after their scenario. The right pane embeds a ReplayEditor on the scenario of the selected macro; its Edit shortcut button shows the macro settings (a ReplayMacroEditor). The toolbar imports macros pasted as STON, exports the library or the selected macro to the clipboard, and installs or uninstalls the whole library. The status row counts installed macros and sets whether the library installs on startup.
+
+The embedded editor records like a standalone one while my window is open: I open its session when my window opens or another macro is selected, and close it when my window closes or the macro is no longer selected, which ends its recording. My hand (hand:) is the one of the embedded editor.
 
 I am always on a registry, and I save it after each library-level change (add, remove, import, macro settings, startup setting) and when my window closes, which also captures scenario edits. Use open for the default library, which is saved in the user's preferences.
 "
 Class {
 	#name : 'ReplayMacroLibraryEditor',
-	#superclass : 'SpPresenter',
+	#superclass : 'ReplayToolPresenter',
 	#instVars : [
 		'registry',
 		'toolbar',
@@ -54,28 +56,13 @@ ReplayMacroLibraryEditor class >> open [
 			  nil ]
 ]
 
-{ #category : 'accessing' }
-ReplayMacroLibraryEditor class >> openInstances [
-	"Library editors open in their own window"
-
-	^ (self currentWorld systemWindows collect: [ :window | window model ])
-		  select: [ :model | (model isKindOf: SpWindowPresenter) and: [ model presenter isKindOf: self ] ]
-		  thenCollect: [ :model | model presenter ]
-]
-
 { #category : 'instance creation' }
 ReplayMacroLibraryEditor class >> openOnRegistry: aReplayMacroRegistry [
 	"Show the library window of aReplayMacroRegistry, never a second one"
 
-	^ self openInstances
-		  detect: [ :editor | editor registry == aReplayMacroRegistry ]
-		  ifFound: [ :editor |
-				  editor window activate.
-				  editor ]
-		  ifNone: [
-				  (self onRegistry: aReplayMacroRegistry)
-					  open;
-					  yourself ]
+	^ self
+		  openInstanceSuchThat: [ :editor | editor registry == aReplayMacroRegistry ]
+		  ifNone: [ self onRegistry: aReplayMacroRegistry ]
 ]
 
 { #category : 'actions' }
@@ -188,6 +175,13 @@ ReplayMacroLibraryEditor >> importString: aString [
 ]
 
 { #category : 'accessing' }
+ReplayMacroLibraryEditor >> hand: aHandMorph [
+
+	super hand: aHandMorph.
+	scenarioEditor ifNotNil: [ scenarioEditor hand: aHandMorph ]
+]
+
+{ #category : 'accessing' }
 ReplayMacroLibraryEditor >> installAllButton [
 
 	^ installAllButton
@@ -265,12 +259,13 @@ ReplayMacroLibraryEditor >> initializePresenters [
 ReplayMacroLibraryEditor >> initializeWindow: aWindow [
 
 	super initializeWindow: aWindow.
-	aWindow title: 'Replay Library'.
-	aWindow initialExtent: 1500 @ 820.
-	aWindow whenOpenedDo: [ scenarioEditor ifNotNil: [ scenarioEditor installRecordingShortcutListener ] ].
-	aWindow whenClosedDo: [
-		scenarioEditor ifNotNil: [ scenarioEditor closeRecordingSession ].
-		self registry save ]
+	aWindow
+		title: 'Replay Macro Library';
+		initialExtent: 1500 @ 820;
+		whenOpenedDo: [ scenarioEditor ifNotNil: [ scenarioEditor openSession ] ];
+		whenClosedDo: [
+			scenarioEditor ifNotNil: [ scenarioEditor closeSession ].
+			self registry save ]
 ]
 
 { #category : 'accessing' }
@@ -369,15 +364,15 @@ ReplayMacroLibraryEditor >> scenarioEditor [
 ReplayMacroLibraryEditor >> selectMacro: aReplayMacro [
 	"Show the scenario of aReplayMacro in an embedded scenario editor, which also edits its settings"
 
-	scenarioEditor ifNotNil: [ scenarioEditor closeRecordingSession ].
+	scenarioEditor ifNotNil: [ scenarioEditor closeSession ].
 	scenarioEditor := aReplayMacro ifNotNil: [
 		(ReplayEditor onMacro: aReplayMacro inLibrary: self library)
+			hand: hand;
 			whenMacroChangedDo: [ self macroSettingsChanged ];
 			whenTitleChangedDo: [ self refreshMacroLabels ];
 			yourself ].
 	scenarioPane replaceAtIndex: 1 with: (scenarioEditor ifNil: [ self emptyMacroPresenter ]).
-	(scenarioEditor isNotNil and: [ self isDisplayed ]) ifTrue: [
-		scenarioEditor installRecordingShortcutListener ]
+	(scenarioEditor isNotNil and: [ self isDisplayed ]) ifTrue: [ scenarioEditor openSession ]
 ]
 
 { #category : 'accessing' }

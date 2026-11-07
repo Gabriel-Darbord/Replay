@@ -40,12 +40,6 @@ ReplayViewSwitcherPresenter >> defaultLayout [
 	"For some reason, hAlignCenter makes the buttons have a minimum size larger than normal"
 ]
 
-{ #category : 'accessing' }
-ReplayViewSwitcherPresenter >> selectViewAt: index [
-
-	(self switcher presenterAt: index) state: true
-]
-
 { #category : 'initialization' }
 ReplayViewSwitcherPresenter >> setViews: namesAndActions [
 

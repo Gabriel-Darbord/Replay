@@ -29,7 +29,7 @@ ReplayBrowseClass >> settingsPresenterOn: editor [
 	presenter whenSelectedDo: [ :aClass |
 		aClass ifNotNil: [
 			self targetClass: aClass.
-			editor actions rebuildLayout ] ].
+			editor actionChanged: self ] ].
 	^ editor newPresenter
 		layout: (SpBoxLayout newTopToBottom
 				spacing: 10;

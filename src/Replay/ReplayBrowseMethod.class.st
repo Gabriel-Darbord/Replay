@@ -41,7 +41,7 @@ ReplayBrowseMethod >> settingsPresenterOn: editor [
 	methodList whenSelectedDo: [ :aMethod |
 		aMethod ifNotNil: [
 			self targetMethod: aMethod.
-			editor actions rebuildLayout ] ].
+			editor actionChanged: self ] ].
 	^ editor newPresenter
 		layout: (SpBoxLayout newTopToBottom
 				spacing: 10;

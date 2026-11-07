@@ -64,7 +64,7 @@ ReplayAnnotate >> placementPresenterOn: editor [
 		whenSelectedItemChangedDo: [ :association |
 			association ifNotNil: [
 				self placement: association key.
-				editor actions rebuildLayout ] ].
+				editor actionChanged: self ] ].
 	dropList selectItem: (choices
 		detect: [ :association | association key = self placement ]
 		ifNone: [ choices first ]).
