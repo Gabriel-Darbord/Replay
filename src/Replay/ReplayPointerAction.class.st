@@ -127,12 +127,13 @@ ReplayPointerAction >> setButton: aMask to: aBoolean [
 
 { #category : 'events' }
 ReplayPointerAction >> targetStartingAt: aMorph handling: selector with: anEvent [
-	"The first morph of the owner chain of aMorph that handles anEvent, as Morphic dispatch would find it, or aMorph when none does"
+	"The first morph of the owner chain of aMorph that handles anEvent, as Morphic dispatch would find it, or aMorph when none does.
+	Like Morphic dispatch, I skip the morphs that reject events, such as the locked label of a button."
 
 	| target |
 	target := aMorph.
-	[ target notNil and: [ (target perform: selector with: anEvent) not ] ]
-		whileTrue: [ target := target owner ].
+	[ target isNil or: [ target replayHandles: anEvent with: selector ] ]
+		whileFalse: [ target := target owner ].
 	^ target ifNil: [ aMorph ]
 ]
 

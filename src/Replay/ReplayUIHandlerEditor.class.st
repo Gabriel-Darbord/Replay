@@ -47,7 +47,7 @@ ReplayUIHandlerEditor >> editTargetIn: aReplayUIManager [
 					self showTargetNotice: 'Target not found in this preview: ' , action target description , '.' ] ] ].
 	session clickBlock: [ :event :wrapper |
 		highlight ifNotNil: [ highlight delete ].
-		action target: wrapper reference.
+		action target: (session referenceFor: wrapper).
 		highlight := self highlight: wrapper bounds in: aReplayUIManager.
 		self showTargetNotice: ''.
 		self targetChanged ].

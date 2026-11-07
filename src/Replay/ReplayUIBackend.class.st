@@ -48,6 +48,13 @@ ReplayUIBackend >> resolve: aReference thenDo: foundBlock onMissing: missingBloc
 		onMissing: missingBlock
 ]
 
+{ #category : 'resolving' }
+ReplayUIBackend >> nameOfMorph: aMorph [
+	"A semantic name that resolves to aMorph, or nil when there is none"
+
+	^ nil
+]
+
 { #category : 'accessing' }
 ReplayUIBackend >> resolver [
 

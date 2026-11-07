@@ -676,3 +676,53 @@ ReplayRecorderTest >> testRecorderTranslatesMouseWheelToReplayScroll [
 		ensure: [ recorder manager close ]
 ]
 
+
+{ #category : 'support' }
+ReplayRecorderTest >> recordClickAt: aPoint in: aSpecPresenter [
+	"Record a left click at aPoint, a World point, in aSpecPresenter managed by Replay, and answer the recorded actions"
+
+	| manager recorder hand |
+	manager := ReplayUIManager new managePresenter: aSpecPresenter.
+	manager openLabeled: 'Recorded names'.
+	^ [
+	  recorder := ReplayRecorder new
+		              manager: manager;
+		              preserveTiming: false;
+		              yourself.
+	  hand := World activeHand.
+	  recorder recordEvent: (self mouseButtonEventType: #mouseDown position: aPoint value which: MouseEvent redButton buttons: MouseEvent redButton hand: hand).
+	  recorder recordEvent: (self mouseButtonEventType: #mouseUp position: aPoint value which: MouseEvent redButton buttons: 0 hand: hand).
+	  recorder actions asArray ] ensure: [ manager close ]
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderAnchorsAClickInAListToTheNamedList [
+	"The cell under the pointer has no name, but the list handling the click has one: the click targets the list, at the same point"
+
+	| pane list actions |
+	pane := ReplayNamedPanePresenter new.
+	actions := self
+		           recordClickAt: [
+			           list := pane items adapter widget.
+			           list fullDrawOn: (Form extent: list extent depth: 32) getCanvas.
+			           list topLeft + (20 @ 10) ]
+		           in: pane.
+	self assert: actions first target equals: (ReplayUIReference named: 'items').
+	self assert: actions first position equals: 20 @ 10
+]
+
+{ #category : 'tests' }
+ReplayRecorderTest >> testRecorderNamesTheWidgetsOfSpecPresenters [
+
+	| pane button actions |
+	pane := ReplayNamedPanePresenter new.
+	actions := self
+		           recordClickAt: [
+			           button := pane details runButton adapter widget.
+			           button center ]
+		           in: pane.
+	self assert: actions size equals: 2.
+	actions do: [ :action |
+		self assert: action target equals: (ReplayUIReference named: 'runButton').
+		self assert: action position equals: button center - button topLeft ]
+]

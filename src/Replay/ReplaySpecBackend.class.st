@@ -113,6 +113,14 @@ ReplaySpecBackend >> presenter: aSpecPresenter [
 ]
 
 { #category : 'resolving' }
+ReplaySpecBackend >> nameOfMorph: aMorph [
+	"The shortest semantic name of the presenter rendered by aMorph, or nil"
+
+	presenter ifNil: [ ^ nil ].
+	^ presenter replayNameOfPresenterWith: aMorph
+]
+
+{ #category : 'resolving' }
 ReplaySpecBackend >> presenterNamed: aString ifAbsent: absentBlock [
 
 	presenter ifNil: [ ^ absentBlock value ].

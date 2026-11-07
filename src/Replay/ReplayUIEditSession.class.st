@@ -99,9 +99,18 @@ ReplayUIEditSession >> newAddActionMenuFor: wrapper [
 				name: actionClass displayName;
 				action: [
 					editor
-						addAction: (actionClass target: wrapper reference)
+						addAction: (actionClass target: (self referenceFor: wrapper))
 						after: editor currentAction ] ] ].
 	^ menu
+]
+
+{ #category : 'accessing' }
+ReplayUIEditSession >> referenceFor: aWrapperMorph [
+	"A reference to the morph wrapped by aWrapperMorph: its semantic name when it has one, which survives layout changes, or else its Morphic path"
+
+	^ (aWrapperMorph wrappedMorph ifNotNil: [ :morph | manager backend nameOfMorph: morph ])
+		  ifNil: [ aWrapperMorph reference ]
+		  ifNotNil: [ :name | ReplayUIReference named: name ]
 ]
 
 { #category : 'event handling' }

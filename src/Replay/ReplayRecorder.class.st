@@ -139,6 +139,20 @@ ReplayRecorder >> deleteDirectionFrom: anEvent [
 	^ nil
 ]
 
+{ #category : 'targeting' }
+ReplayRecorder >> anchorFor: aMorph handling: aSelector with: anEvent [
+	"The morph to target for anEvent on aMorph.
+	Replay sends the event to the first morph handling it up the owner chain of the target, so any morph from aMorph up to that one works as target: I answer the first of them that has a semantic name, which survives layout changes, or else aMorph."
+
+	| current |
+	current := aMorph.
+	[ current isNil or: [ current == manager managedUI ] ] whileFalse: [
+		(manager backend nameOfMorph: current) ifNotNil: [ ^ current ].
+		(current replayHandles: anEvent with: aSelector) ifTrue: [ ^ aMorph ].
+		current := current owner ].
+	^ aMorph
+]
+
 { #category : 'recording' }
 ReplayRecorder >> discardPendingKeyPress [
 
@@ -459,6 +473,7 @@ ReplayRecorder >> recordMouseDown: anEvent [
 	| target |
 	target := self targetMorphAtWorldPoint: anEvent position.
 	target ifNil: [ ^ self ].
+	target := self anchorFor: target handling: #handlesMouseDown: with: anEvent.
 	mouseDownTarget := target.
 	mouseDownReference := self referenceForMorph: target.
 	mouseDownReference ifNil: [ ^ self clearMouseGesture ].
@@ -511,6 +526,7 @@ ReplayRecorder >> recordMouseWheel: anEvent [
 	| target reference action |
 	target := self targetMorphAtWorldPoint: anEvent position.
 	target ifNil: [ ^ self ].
+	target := self anchorFor: target handling: #handlesMouseWheel: with: anEvent.
 	reference := self referenceForMorph: target.
 	reference ifNil: [ ^ self ].
 	action := ReplayScroll new
@@ -552,7 +568,12 @@ ReplayRecorder >> recordedActions [
 
 { #category : 'targeting' }
 ReplayRecorder >> referenceForMorph: aMorph [
+	"The semantic name of aMorph when it has one, which survives layout changes, or else its Morphic path from the managed UI"
+
 	| path |
+	(self managedIncludesMorph: aMorph) ifFalse: [ ^ nil ].
+	(manager backend nameOfMorph: aMorph) ifNotNil: [ :name |
+		^ ReplayUIReference named: name ].
 	path := self pathForMorph: aMorph.
 	path ifNil: [ ^ nil ].
 	^ ReplayUIReference morphicPath: path

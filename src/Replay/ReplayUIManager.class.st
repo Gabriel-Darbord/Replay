@@ -20,6 +20,17 @@ Class {
 	#tag : 'Core'
 }
 
+{ #category : 'instance creation' }
+ReplayUIManager class >> backendObserving: aMorph [
+	"A backend for aMorph observed as it is: the Spec backend of the presenter of a Spec window, so that its subpresenters resolve by name, or else the Morphic backend"
+
+	| model |
+	model := (aMorph respondsTo: #model) ifTrue: [ aMorph model ].
+	((model isKindOf: SpWindowPresenter) and: [ model presenter notNil ])
+		ifTrue: [ ^ ReplaySpecBackend presenter: model presenter morph: aMorph ].
+	^ ReplayMorphicBackend on: aMorph
+]
+
 { #category : 'managing UI' }
 ReplayUIManager >> addOverlay: ui [
 
@@ -214,7 +225,7 @@ ReplayUIManager >> newOverlay [
 { #category : 'managing UI' }
 ReplayUIManager >> observe: aMorph [
 	"Observe an existing Morph without adding an overlay. This is for passive event recording where user interaction must continue normally."
-	^ self observe: aMorph usingBackend: (ReplayMorphicBackend on: aMorph)
+	^ self observe: aMorph usingBackend: (self class backendObserving: aMorph)
 ]
 
 { #category : 'managing UI' }
