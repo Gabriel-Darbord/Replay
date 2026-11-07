@@ -151,7 +151,7 @@ ReplayMacroLibraryEditorTest >> testInstallationSummaryUpdatesWhenSelectedMacroI
 
 	| library macro editor |
 	library := ReplayMacroLibrary new.
-	macro := library addMacro: (self macroNamed: 'Summary macro' shortcut: (self controlShortcut: 'f')).
+	macro := library addMacro: (self macroNamed: 'Summary macro' keyBinding: (self controlShortcut: 'f')).
 	macro contextNames: { #RubTextEditor }.
 	editor := ReplayMacroLibraryEditor on: library.
 
@@ -188,7 +188,7 @@ ReplayMacroLibraryEditorTest >> testListLabelFollowsShortcutChange [
 	self waitUntil: [ (self displayedLabelsOf: editor) includes: 'Macro 1' ].
 
 	editor scenarioEditor editShortcut.
-	editor macroEditor keyBindingPresenter text: 'k'.
+	editor macroEditor keyBindingPresenter keyBinding: (ReplayKeyBinding character: $k modifiers: 0).
 
 	self waitUntil: [ (self displayedLabelsOf: editor) includes: macro printString ].
 	self deny: ((self displayedLabelsOf: editor) includes: 'Macro 1')
@@ -199,7 +199,7 @@ ReplayMacroLibraryEditorTest >> testListLabelAndKeymapsFollowTitleChange [
 
 	| library macro editor |
 	library := ReplayMacroLibrary new.
-	macro := library addMacro: (self macroNamed: 'Before' shortcut: (self controlShortcut: 'f')).
+	macro := library addMacro: (self macroNamed: 'Before' keyBinding: (self controlShortcut: 'f')).
 	macro contextNames: { #ReplayMacroLibraryEditorTest }.
 	macro install.
 	editor := ReplayMacroLibraryEditor on: library.
@@ -221,11 +221,11 @@ ReplayMacroLibraryEditorTest >> testMacroSettingsChangeSavesTheLibrary [
 	editor := self editorOnFile.
 	macro := editor addMacro.
 	editor scenarioEditor editShortcut.
-	editor macroEditor keyBindingPresenter text: 'k'.
+	editor macroEditor keyBindingPresenter keyBinding: (ReplayKeyBinding character: $k modifiers: 0).
 
 	self
-		assert: (ReplayMacroRegistry libraryFromFile: editor registry file) macros first shortcut text
-		equals: 'k'
+		assert: (ReplayMacroRegistry libraryFromFile: editor registry file) macros first keyBinding
+		equals: (ReplayKeyBinding character: $k modifiers: 0)
 ]
 
 { #category : 'tests' }
@@ -275,12 +275,12 @@ ReplayMacroLibraryEditorTest >> testOpenOnScenarioOfTheDefaultLibraryShowsTheLib
 ]
 
 { #category : 'tests' }
-ReplayMacroLibraryEditorTest >> testOpensWithUnmappedShortcutCharacter [
+ReplayMacroLibraryEditorTest >> testOpensWithUnknownKey [
 
 	| macro library editor |
-	macro := self macroNamed: 'Stored malformed shortcut' shortcut: (ReplayShortcut new
-			          text: (String with: (Character value: 16rFFC3));
-			          yourself).
+	macro := self
+		         macroNamed: 'Stored malformed shortcut'
+		         keyBinding: (ReplayKeyBinding chords: { ReplayKeyChord key: #NOT_A_KEY }).
 	library := ReplayMacroLibrary new.
 	library addMacro: macro.
 	editor := ReplayMacroLibraryEditor on: library.
@@ -309,7 +309,7 @@ ReplayMacroLibraryEditorTest >> testRemoveMacroUninstallsIt [
 
 	| library macro editor |
 	library := ReplayMacroLibrary new.
-	macro := library addMacro: (self macroNamed: 'Removed' shortcut: (self controlShortcut: 'r')).
+	macro := library addMacro: (self macroNamed: 'Removed' keyBinding: (self controlShortcut: 'r')).
 	macro contextNames: { #RubTextEditor }.
 	macro install.
 	editor := ReplayMacroLibraryEditor on: library.
@@ -430,9 +430,9 @@ ReplayMacroLibraryEditorTest >> testToggleInstallationInstallsAndUninstallsTheLi
 
 	| library first second editor |
 	library := ReplayMacroLibrary new.
-	first := library addMacro: (self macroNamed: 'First' shortcut: (self controlShortcut: 'f')).
+	first := library addMacro: (self macroNamed: 'First' keyBinding: (self controlShortcut: 'f')).
 	first contextNames: { #RubTextEditor }.
-	second := library addMacro: (self macroNamed: 'Second' shortcut: (self controlShortcut: 'g')).
+	second := library addMacro: (self macroNamed: 'Second' keyBinding: (self controlShortcut: 'g')).
 	second contextNames: { #RubTextEditor }.
 	editor := ReplayMacroLibraryEditor on: library.
 	editor scenarioEditor editShortcut.

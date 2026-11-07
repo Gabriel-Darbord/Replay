@@ -1,5 +1,5 @@
 "
-I am a keyboard macro: a scenario run by a key binding (a ReplayShortcut) in keymap contexts (KMCategory names).
+I am a keyboard macro: a scenario run by a key binding (a ReplayKeyBinding) in keymap contexts (KMCategory names).
 
 My name is the title of my scenario. My identifier is assigned when I am created and saved with me, so the keymaps I install keep the same name across saves and loads. Installing me adds one keymap per context to the Keymapping repository; such keymaps are recognized by their name prefix.
 "
@@ -8,7 +8,7 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'identifier',
-		'shortcut',
+		'keyBinding',
 		'scenario',
 		'contextNames'
 	],
@@ -65,11 +65,11 @@ ReplayMacro class >> macroNameOfKeymap: aKMKeymap [
 ]
 
 { #category : 'instance creation' }
-ReplayMacro class >> scenario: aReplayScenario shortcut: aReplayShortcut [
+ReplayMacro class >> scenario: aReplayScenario keyBinding: aReplayKeyBinding [
 
 	^ self new
 		  scenario: aReplayScenario;
-		  shortcut: aReplayShortcut;
+		  keyBinding: aReplayKeyBinding;
 		  yourself
 ]
 
@@ -127,7 +127,7 @@ ReplayMacro >> conflictsInCategory: aKMCategory [
 
 	^ (aKMCategory allEntries keymaps
 		reject: [ :keymap | self isOwnKeymap: keymap ])
-		select: [ :keymap | self shortcut matchesKeymap: keymap ]
+		select: [ :keymap | self keyBinding matchesKeymap: keymap ]
 		thenCollect: [ :keymap |
 			ReplayShortcutConflict category: aKMCategory keymap: keymap ]
 ]
@@ -159,8 +159,9 @@ ReplayMacro >> hasInstallContexts [
 
 { #category : 'testing' }
 ReplayMacro >> hasKeyBinding [
+	"Whether my key binding can be installed"
 
-	^ self shortcut text notEmpty
+	^ self keyBinding isKeymappable
 ]
 
 { #category : 'accessing' }
@@ -244,7 +245,7 @@ ReplayMacro >> keymap [
 
 	^ KMKeymap
 		named: self keymapName
-		shortcut: self shortcut asKMShortcut
+		shortcut: self keyBinding asKMShortcut
 		action: [ self run ]
 		description: self keymapDescription
 ]
@@ -262,6 +263,18 @@ ReplayMacro >> keymapName [
 ]
 
 { #category : 'accessing' }
+ReplayMacro >> keyBinding [
+
+	^ keyBinding ifNil: [ keyBinding := ReplayKeyBinding new ]
+]
+
+{ #category : 'accessing' }
+ReplayMacro >> keyBinding: aReplayKeyBinding [
+
+	keyBinding := aReplayKeyBinding
+]
+
+{ #category : 'accessing' }
 ReplayMacro >> name [
 	"I am named after my scenario"
 
@@ -272,10 +285,10 @@ ReplayMacro >> name [
 ReplayMacro >> printOn: stream [
 
 	stream nextPutAll: self name.
-	self shortcut text isEmpty ifTrue: [ ^ self ].
+	self keyBinding isEmpty ifTrue: [ ^ self ].
 	stream
 		nextPutAll: ' (';
-		nextPutAll: self shortcut displayString;
+		nextPutAll: self keyBinding displayString;
 		nextPut: $)
 ]
 
@@ -303,18 +316,6 @@ ReplayMacro >> scenario [
 ReplayMacro >> scenario: aReplayScenario [
 
 	scenario := aReplayScenario
-]
-
-{ #category : 'accessing' }
-ReplayMacro >> shortcut [
-
-	^ shortcut ifNil: [ shortcut := ReplayShortcut new ]
-]
-
-{ #category : 'accessing' }
-ReplayMacro >> shortcut: aReplayShortcut [
-
-	shortcut := aReplayShortcut
 ]
 
 { #category : 'keymapping' }

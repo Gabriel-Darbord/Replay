@@ -1,11 +1,14 @@
 "
-I send a keyboard shortcut chord to a resolved UI target and can adopt shortcuts from Pharo keymaps.
+I replay a key binding (a ReplayKeyBinding) on a resolved UI target: I send a key down event for each of its chords, with the modifiers of the chord, as Keymapping dispatches shortcuts on key down.
+
+My settings edit the binding with a ReplayKeyBindingPresenter, or adopt the binding of a keymap listed by a ReplayShortcutDescriptionPresenter.
 "
 Class {
 	#name : 'ReplayShortcut',
 	#superclass : 'ReplayKeyboardEvent',
-	#traits : 'TReplayActionWithFlags',
-	#classTraits : 'TReplayActionWithFlags classTrait',
+	#instVars : [
+		'keyBinding'
+	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
 	#tag : 'Actions'
@@ -18,119 +21,42 @@ ReplayShortcut class >> displayName [
 ]
 
 { #category : 'instance creation' }
-ReplayShortcut class >> fromKeymap: aKMKeymap [
+ReplayShortcut class >> keyBinding: aReplayKeyBinding [
 
 	^ self new
-		beForKeymap: aKMKeymap;
-		yourself
+		  keyBinding: aReplayKeyBinding;
+		  yourself
 ]
 
-{ #category : 'instance creation' }
-ReplayShortcut class >> fromShortcut: aShortcut [
+{ #category : 'accessing' }
+ReplayShortcut >> keyBinding [
 
-	^ self new
-		beForShortcut: aShortcut;
-		yourself
+	^ keyBinding ifNil: [ keyBinding := ReplayKeyBinding new ]
 ]
 
-{ #category : 'converting' }
-ReplayShortcut >> asKMShortcut [
+{ #category : 'accessing' }
+ReplayShortcut >> keyBinding: aReplayKeyBinding [
 
-	| combinations |
-	self text isEmpty ifTrue: [ ^ KMNoShortcut new ].
-	combinations := OrderedCollection new.
-	self text do: [ :character |
-		combinations add: (self keyCombinationForCharacter: character) ].
-	^ combinations allButFirst
-		inject: combinations first
-		into: [ :shortcut :next | shortcut , next ]
+	keyBinding := aReplayKeyBinding
 ]
 
 { #category : 'editing' }
-ReplayShortcut >> beForKeymap: aKMKeymap [
-	"Adopt the characters and modifiers of the keymap to replay it."
+ReplayShortcut >> keyBindingPresenterOn: editor [
 
-	self text: ''.
-	self flags: 0.
-	aKMKeymap shortcut configureReplayShortcut: self
-]
-
-{ #category : 'editing' }
-ReplayShortcut >> beForShortcut: aShortcut [
-	"Adopt the characters and modifiers from a Keymapping shortcut object."
-
-	self text: ''.
-	self flags: 0.
-	aShortcut configureReplayShortcut: self
+	| presenter |
+	presenter := ReplayKeyBindingPresenter on: self keyBinding whenChangedDo: [ :binding |
+		             self keyBinding: binding.
+		             editor actions rebuildLayout ].
+	presenter registerReplayPresentersOn: editor named: 'Action shortcut'.
+	presenter registerReplayPresentersOn: editor named: self class displayName.
+	^ presenter
 ]
 
 { #category : 'printing' }
-ReplayShortcut >> displayString [
+ReplayShortcut >> printOn: stream [
 
-	^ [ self asKMShortcut asString ]
-		on: Error
-		do: [ :error | self fallbackDisplayString ]
-]
-
-{ #category : 'printing' }
-ReplayShortcut >> fallbackDisplayString [
-
-	^ String streamContents: [ :stream |
-		self writeModifierDisplayOn: stream.
-		self text withIndexDo: [ :character :index |
-			(index > 1 or: [ self flags ~= 0 ]) ifTrue: [ stream nextPutAll: ' + ' ].
-			self writeCharacterDisplayFor: character on: stream ] ]
-]
-
-{ #category : 'testing' }
-ReplayShortcut >> isReplayableShortcutCharacter: aCharacter [
-
-	^ aCharacter asInteger ~= 0
-]
-
-{ #category : 'converting' }
-ReplayShortcut >> keyCombinationForCharacter: aCharacter [
-
-	| combination |
-	self flags = 0 ifTrue: [ ^ aCharacter asKeyCombination ].
-	combination := aCharacter asLowercase.
-	(self flags bitAnd: 64) ~= 0 ifTrue: [ combination := combination command ].
-	(self flags bitAnd: 16) ~= 0 ifTrue: [ combination := combination control ].
-	(self flags bitAnd: 32) ~= 0 ifTrue: [ combination := combination alt ].
-	(self flags bitAnd: 8) ~= 0 ifTrue: [ combination := combination shift ].
-	^ combination
-]
-
-{ #category : 'testing' }
-ReplayShortcut >> matchesKeymap: aKMKeymap [
-
-	^ self sameShortcutAs: (self class fromKeymap: aKMKeymap)
-]
-
-{ #category : 'editing' }
-ReplayShortcut >> modifierPresenterOn: editor [
-	"Flags for keyboard modifiers in the shortcut combination."
-
-	^ self modifierPresenterOn: editor whenChangedDo: [ ]
-]
-
-{ #category : 'editing' }
-ReplayShortcut >> modifierPresenterOn: editor whenChangedDo: aBlock [
-	"Flags for keyboard modifiers in the shortcut combination."
-
-	^ SpBoxLayout newTopToBottom
-		add: 'Modifier keys:';
-		add: (self
-			flagsPresenterOn: editor
-			namesAndValues: #( Shift 8 Control 16 'Alt/Option' 32 Command 64 )
-			whenChangedDo: aBlock);
-		yourself
-]
-
-{ #category : 'testing' }
-ReplayShortcut >> normalizedText [
-
-	^ self text asLowercase
+	super printOn: stream.
+	self printDetail: self keyBinding displayString on: stream
 ]
 
 { #category : 'running' }
@@ -145,13 +71,6 @@ ReplayShortcut >> runOn: runner resolvedUI: resolvedUI [
 	resolvedUI runShortcut: self
 ]
 
-{ #category : 'testing' }
-ReplayShortcut >> sameShortcutAs: aReplayShortcut [
-
-	^ self flags = aReplayShortcut flags
-		and: [ self normalizedText = aReplayShortcut normalizedText ]
-]
-
 { #category : 'editing' }
 ReplayShortcut >> settingsPresenterOn: editor [
 
@@ -159,8 +78,7 @@ ReplayShortcut >> settingsPresenterOn: editor [
 		layout: (SpBoxLayout newTopToBottom
 				spacing: 10;
 				add: (self targetPresenterOn: editor) expand: false;
-				add: (self modifierPresenterOn: editor) expand: false;
-				add: (self shortcutKeysPresenterOn: editor) expand: false;
+				add: (self keyBindingPresenterOn: editor) expand: false;
 				add: (self shortcutDescriptionPresenterOn: editor);
 				yourself);
 		yourself
@@ -168,39 +86,19 @@ ReplayShortcut >> settingsPresenterOn: editor [
 
 { #category : 'editing' }
 ReplayShortcut >> shortcutDescriptionPresenterOn: editor [
-	"Probably worth its own class"
 
 	| presenter descriptionPresenter |
 	presenter := editor newPresenter.
-
-	"Presenter describing all existing shortcuts"
 	(descriptionPresenter := ReplayShortcutDescriptionPresenter new)
 		owner: presenter;
-		categories: KMRepository default categories keys.
+		categories: KMRepository default categories keys;
+		selectKeymapOf: self keyBinding.
 
-	text isEmptyOrNil ifFalse: [ "Select the corresponding shortcut in the presenter"
-		| shortcut match |
-		shortcut := self class new.
-		descriptionPresenter categoryDropList items
-			detect: [ :category |
-				category allEntries keymaps
-					detect: [ :keymap |
-						shortcut beForKeymap: keymap.
-						self flags = shortcut flags and: [ self text = shortcut text ] ]
-					ifFound: [ :keymap |
-						match := keymap.
-						true ]
-					ifNone: [ false ] ]
-			ifFound: [ :category |
-				descriptionPresenter categoryDropList selectItem: category.
-				descriptionPresenter shortcutList
-					selectItem: match
-					scrollToSelection: true ] ].
-
-	"Adopt a shortcut when it is selected"
+	"Adopt the binding of a keymap when it is selected"
 	descriptionPresenter shortcutList whenSelectedDo: [ :keymap |
-		self beForKeymap: keymap.
-		editor actionEditor: (self editionPresenterOn: editor) ].
+		(ReplayKeyBinding fromKeymap: keymap) ifNotNil: [ :binding |
+			self keyBinding: binding.
+			editor actionEditor: (self editionPresenterOn: editor) ] ].
 
 	presenter layout: (SpBoxLayout newTopToBottom
 			 add: 'Select a shortcut in the list to use it:' expand: false;
@@ -209,64 +107,10 @@ ReplayShortcut >> shortcutDescriptionPresenterOn: editor [
 	^ presenter
 ]
 
-{ #category : 'editing' }
-ReplayShortcut >> shortcutKeysPresenterOn: editor [
-
-	^ self
-		shortcutKeysPresenterOn: editor
-		whenChangedDo: [ editor actions rebuildLayout ]
-]
-
-{ #category : 'editing' }
-ReplayShortcut >> shortcutKeysPresenterOn: editor whenChangedDo: aBlock [
-
-	| presenter |
-	presenter := ReplayShortcutKeysPresenter on: self whenChangedDo: aBlock.
-	presenter registerReplayPresentersOn: editor named: 'Action shortcut'.
-	presenter registerReplayPresentersOn: editor named: self class displayName.
-	editor registerReplayPresenter: presenter named: 'Action text'.
-	editor registerReplayPresenter: presenter named: self class displayName , ' text'.
-	^ presenter
-]
-
 { #category : 'running' }
 ReplayShortcut >> shortcutOn: ui [
+	"Keymapping dispatches on key down, nothing needs the key up"
 
-	self text do: [ :character |
-		(self isReplayableShortcutCharacter: character) ifTrue: [
-			(self keyDown: character buttons: self flags) sentTo: ui ] ]
-
-	"What listens to keyUp? Doesn't seem required for shortcuts"
-	"self text do: [ :character |
-		(self keyUp: character buttons: self flags) sentTo: ui ]"
-]
-
-{ #category : 'printing' }
-ReplayShortcut >> writeCharacterDisplayFor: character on: stream [
-
-	stream nextPutAll: character storeString.
-	stream nextPutAll: ' (code '.
-	stream print: character asInteger.
-	stream nextPut: $)
-]
-
-{ #category : 'printing' }
-ReplayShortcut >> writeModifierDisplayOn: stream [
-
-	| wrote |
-	wrote := false.
-	(self flags bitAnd: 64) ~= 0 ifTrue: [
-		stream nextPutAll: 'Cmd'.
-		wrote := true ].
-	(self flags bitAnd: 16) ~= 0 ifTrue: [
-		wrote ifTrue: [ stream nextPutAll: ' + ' ].
-		stream nextPutAll: 'Ctrl'.
-		wrote := true ].
-	(self flags bitAnd: 32) ~= 0 ifTrue: [
-		wrote ifTrue: [ stream nextPutAll: ' + ' ].
-		stream nextPutAll: 'Alt'.
-		wrote := true ].
-	(self flags bitAnd: 8) ~= 0 ifTrue: [
-		wrote ifTrue: [ stream nextPutAll: ' + ' ].
-		stream nextPutAll: 'Shift' ]
+	self keyBinding chords do: [ :chord |
+		chord keyboardKey ifNotNil: [ (chord keyboardEventOfType: #keyDown) sentTo: ui ] ]
 ]

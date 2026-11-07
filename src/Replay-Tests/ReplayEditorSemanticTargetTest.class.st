@@ -46,9 +46,9 @@ ReplayEditorSemanticTargetTest >> testFlagTargetsAreRegistered [
 	self assert: (editor replayPresenterAt: 'Action right click' ifAbsent: [ nil ]) notNil.
 
 	editor clearReplayPresenterTargets.
-	ReplayShortcut new modifierPresenterOn: editor.
+	ReplayPressKey new modifierPresenterOn: editor.
 	self assert: (editor replayPresenterAt: 'Action shift' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Shortcut shift' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Press key shift' ifAbsent: [ nil ]) notNil.
 	self assert: (editor replayPresenterAt: 'Action alt option' ifAbsent: [ nil ]) notNil
 ]
 
@@ -73,7 +73,7 @@ ReplayEditorSemanticTargetTest >> testRecordingStatusShowsShortcut [
 
 	| editor |
 	editor := self newEditor.
-	self assert: editor recordingShortcutDescription equals: editor recordingShortcut asString.
+	self assert: editor recordingShortcutDescription equals: editor recordingKeyBinding displayString.
 	self assert: (editor recordingStatusText includesSubstring: editor recordingShortcutDescription).
 	self assert: (editor recordingStatusText includesSubstring: 'Record or stop')
 ]
@@ -159,15 +159,19 @@ ReplayEditorSemanticTargetTest >> testShortcutActionRegistersVisibleKeyEditors [
 
 	| editor action presenter |
 	editor := self newEditor.
-	action := ReplayShortcut new
-		text: (String with: (Character arrowLeft));
-		yourself.
-	presenter := action shortcutKeysPresenterOn: editor.
-	self assert: presenter class equals: ReplayShortcutKeysPresenter.
-	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) identicalTo: presenter.
+	action := ReplayShortcut keyBinding: (ReplayKeyBinding character: Character arrowLeft modifiers: 0).
+	presenter := action keyBindingPresenterOn: editor.
+	self assert: presenter class equals: ReplayKeyBindingPresenter.
+	self assert: (editor replayPresenterAt: 'Action shortcut keys' ifAbsent: [ nil ]) identicalTo: presenter.
 	self assert: (editor replayPresenterAt: 'Action shortcut key list' ifAbsent: [ nil ]) identicalTo: presenter keyList.
 	self assert: (editor replayPresenterAt: 'Action shortcut capture shortcut button' ifAbsent: [ nil ]) identicalTo: presenter captureShortcutButton.
-	self assert: (editor replayPresenterAt: 'Shortcut key list' ifAbsent: [ nil ]) identicalTo: presenter keyList
+	self assert: (editor replayPresenterAt: 'Shortcut key list' ifAbsent: [ nil ]) identicalTo: presenter keyList.
+	self
+		assert: (editor replayPresenterAt: 'Shortcut command' ifAbsent: [ nil ])
+		identicalTo: presenter modifiersPresenter commandCheckBox.
+	self
+		assert: (editor replayPresenterAt: 'Action shortcut alt option' ifAbsent: [ nil ])
+		identicalTo: presenter modifiersPresenter altCheckBox
 ]
 
 { #category : 'tests' }

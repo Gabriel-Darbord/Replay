@@ -1,8 +1,7 @@
 Extension { #name : 'KMNoShortcut' }
 
 { #category : '*Replay' }
-KMNoShortcut >> configureReplayShortcut: aReplayShortcut [
+KMNoShortcut >> replayKeyBindings [
 
-	aReplayShortcut text: ''.
-	aReplayShortcut flags: 0
+	^ { ReplayKeyBinding new }
 ]

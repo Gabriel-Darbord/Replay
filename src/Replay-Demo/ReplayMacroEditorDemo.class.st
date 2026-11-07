@@ -66,8 +66,7 @@ ReplayMacroEditorDemo >> configureFindMacroAction [
 
 	^ self script: '| editor context payload step |
 editor := self focus macroEditor.
-editor keyBindingPresenter text: ''f''.
-editor controlCheckBox state ifFalse: [ editor controlCheckBox toggleState ].
+editor keyBindingPresenter keyBinding: (ReplayKeyBinding character: $f modifiers: ReplayKeyModifiers control).
 context := editor contextDropList items detect: [ :each | each identifier = #textEditors ].
 editor contextDropList selectItem: context.
 editor addSelectedContext.
@@ -256,7 +255,7 @@ ReplayMacroEditorDemo >> uninstallStep [
 { #category : 'actions' }
 ReplayMacroEditorDemo >> updateInstalledShortcutAction [
 
-	^ self script: 'self focus macroEditor keyBindingPresenter text: ''g'''
+	^ self script: 'self focus macroEditor keyBindingPresenter keyBinding: (ReplayKeyBinding character: $g modifiers: ReplayKeyModifiers control)'
 ]
 
 { #category : 'steps' }

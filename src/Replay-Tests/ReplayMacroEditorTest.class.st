@@ -14,7 +14,7 @@ ReplayMacroEditorTest >> conflictingMacro [
 
 	| keymap macro |
 	keymap := (KMRepository default categoryForName: #RubSmalltalkEditor) allEntries keymaps anyOne.
-	macro := self macroNamed: 'Conflicting macro' shortcut: (ReplayShortcut fromKeymap: keymap).
+	macro := self macroNamed: 'Conflicting macro' keyBinding: (ReplayKeyBinding fromKeymap: keymap).
 	macro contextNames: { #RubSmalltalkEditor }.
 	^ macro
 ]
@@ -24,7 +24,7 @@ ReplayMacroEditorTest >> installableMacro [
 	"A macro bound to Control+F in text editors"
 
 	| macro |
-	macro := self macroNamed: 'Find macro' shortcut: (self controlShortcut: 'f').
+	macro := self macroNamed: 'Find macro' keyBinding: (self controlShortcut: 'f').
 	macro contextNames: { #RubTextEditor }.
 	^ macro
 ]
@@ -99,16 +99,13 @@ ReplayMacroEditorTest >> testCanUninstallMacro [
 ReplayMacroEditorTest >> testConflictHelpNamesConflictingContexts [
 
 	| shortcut macro editor |
-	shortcut := ReplayShortcut new
-		            text: 'f';
-		            addFlags: 64;
-		            yourself.
+	shortcut := ReplayKeyBinding character: $f modifiers: ReplayKeyModifiers command.
 	self
 		withKeymapNamed: #replayTestFind
 		shortcut: shortcut asKMShortcut
 		inCategoryNamed: #RubTextEditor
 		during: [
-			macro := self macroNamed: 'Find macro' shortcut: shortcut.
+			macro := self macroNamed: 'Find macro' keyBinding: shortcut.
 			macro contextNames: { #RubSmalltalkEditor }.
 			editor := self editorOn: macro.
 
@@ -123,9 +120,9 @@ ReplayMacroEditorTest >> testConflictsIgnoreInstalledKeymapsOfTheLibrary [
 
 	| library first second editor |
 	library := ReplayMacroLibrary new.
-	first := library addMacro: (self macroNamed: 'First' shortcut: (self controlShortcut: 'f')).
+	first := library addMacro: (self macroNamed: 'First' keyBinding: (self controlShortcut: 'f')).
 	first contextNames: { #ReplayMacroEditorTest }.
-	second := library addMacro: (self macroNamed: 'Second' shortcut: (self controlShortcut: 'f')).
+	second := library addMacro: (self macroNamed: 'Second' keyBinding: (self controlShortcut: 'f')).
 	second contextNames: { #ReplayMacroEditorTest }.
 	library install.
 	editor := ReplayMacroEditor on: first inLibrary: library.
@@ -146,7 +143,7 @@ ReplayMacroEditorTest >> testDisablesInstallUntilBindingAndContext [
 	self assert: editor keyBindingRequirementIconPresenter image equals: (editor iconNamed: #cancel).
 	self assert: editor contextRequirementIconPresenter image equals: (editor iconNamed: #cancel).
 
-	macro shortcut text: 'r'.
+	macro keyBinding: (ReplayKeyBinding character: $r modifiers: 0).
 	editor macroChanged.
 	self deny: editor installButton isEnabled.
 	self assert: (editor installButton help includesSubstring: 'install context').
@@ -231,8 +228,8 @@ ReplayMacroEditorTest >> testNotifiesSettingChanges [
 	editor := self editorOn: self installableMacro.
 	changes := 0.
 	editor whenMacroChangedDo: [ changes := changes + 1 ].
-	editor keyBindingPresenter text: 'g'.
-	editor shiftCheckBox toggleState.
+	editor keyBindingPresenter keyBinding: (ReplayKeyBinding character: $g modifiers: 0).
+	editor keyBindingPresenter modifiersPresenter shiftCheckBox toggleState.
 	editor clearContexts.
 	editor installMacro.
 
@@ -257,14 +254,14 @@ ReplayMacroEditorTest >> testSelectsNextContextAfterRemoval [
 ReplayMacroEditorTest >> testSemanticNames [
 
 	| editor |
-	editor := self editorOn: (self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command)).
+	editor := self editorOn: (self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command)).
 	{
 		'Key binding' -> editor keyBindingPresenter.
 		'Key binding label' -> editor keyBindingLabelPresenter.
-		'Shift modifier' -> editor shiftCheckBox.
-		'Control modifier' -> editor controlCheckBox.
-		'Alt modifier' -> editor altCheckBox.
-		'Command modifier' -> editor commandCheckBox.
+		'Shift modifier' -> editor keyBindingPresenter modifiersPresenter shiftCheckBox.
+		'Control modifier' -> editor keyBindingPresenter modifiersPresenter controlCheckBox.
+		'Alt modifier' -> editor keyBindingPresenter modifiersPresenter altCheckBox.
+		'Command modifier' -> editor keyBindingPresenter modifiersPresenter commandCheckBox.
 		'Install context picker' -> editor contextDropList.
 		'Add install context button' -> editor contextAddButton.
 		'Install context list' -> editor contextList.
@@ -299,7 +296,7 @@ ReplayMacroEditorTest >> testShowsNoConflictsWithoutInstallContexts [
 ReplayMacroEditorTest >> testShowsSmalltalkFindConflictFromBaseTextContext [
 
 	| macro editor |
-	macro := self macroNamed: 'Smalltalk find replacement' shortcut: self defaultFindShortcut.
+	macro := self macroNamed: 'Smalltalk find replacement' keyBinding: self defaultFindShortcut.
 	macro contextNames: { #RubSmalltalkEditor }.
 	editor := self editorOn: macro.
 
@@ -310,15 +307,16 @@ ReplayMacroEditorTest >> testShowsSmalltalkFindConflictFromBaseTextContext [
 { #category : 'tests' }
 ReplayMacroEditorTest >> testShowsStoredShortcut [
 
-	| macro editor |
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command).
+	| macro editor modifiers |
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command).
 	editor := self editorOn: macro.
 
-	self assert: editor keyBindingPresenter text equals: macro shortcut text.
-	self assert: editor commandCheckBox state.
-	self deny: editor controlCheckBox state.
-	self deny: editor altCheckBox state.
-	self deny: editor shiftCheckBox state
+	self assert: editor keyBindingPresenter keyBinding equals: macro keyBinding.
+	modifiers := editor keyBindingPresenter modifiersPresenter.
+	self assert: modifiers commandCheckBox state.
+	self deny: modifiers controlCheckBox state.
+	self deny: modifiers altCheckBox state.
+	self deny: modifiers shiftCheckBox state
 ]
 
 { #category : 'tests' }
@@ -326,9 +324,9 @@ ReplayMacroEditorTest >> testShowsLibraryInternalConflicts [
 
 	| library first second editor |
 	library := ReplayMacroLibrary new.
-	first := library addMacro: (self macroNamed: 'First' shortcut: (ReplayShortcut fromShortcut: $s command)).
+	first := library addMacro: (self macroNamed: 'First' keyBinding: (ReplayKeyBinding fromKMCombination: $s command)).
 	first addContextNamed: #ReplayMacroContext.
-	second := library addMacro: (self macroNamed: 'Second' shortcut: (ReplayShortcut fromShortcut: $s command)).
+	second := library addMacro: (self macroNamed: 'Second' keyBinding: (ReplayKeyBinding fromKMCombination: $s command)).
 	second addContextNamed: #ReplayMacroContext.
 	editor := ReplayMacroEditor on: first inLibrary: library.
 
@@ -340,7 +338,7 @@ ReplayMacroEditorTest >> testShowsLibraryInternalConflicts [
 ReplayMacroEditorTest >> testSummarizesInstalledContextsWithFullHelp [
 
 	| macro editor |
-	macro := self macroNamed: 'Many context macro' shortcut: (self controlShortcut: 'm').
+	macro := self macroNamed: 'Many context macro' keyBinding: (self controlShortcut: 'm').
 	macro contextNames: { #RubTextEditor. #MorphCtrlNavigation. #WindowShortcuts }.
 	editor := self editorOn: macro.
 	editor installMacro.
@@ -374,7 +372,7 @@ ReplayMacroEditorTest >> testUpdatesInstalledMacroWhenShortcutChanges [
 	macro := self installableMacro.
 	editor := self editorOn: macro.
 	editor installMacro.
-	editor keyBindingPresenter text: 'g'.
+	editor keyBindingPresenter keyBinding: (self controlShortcut: 'g').
 
 	keymap := (KMRepository default categoryForName: #RubTextEditor) allEntries keymaps detect: [ :each |
 		          macro isOwnKeymap: each ].
@@ -385,36 +383,34 @@ ReplayMacroEditorTest >> testUpdatesInstalledMacroWhenShortcutChanges [
 ReplayMacroEditorTest >> testUpdatesShortcutModifier [
 
 	| macro editor |
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut new
-			          text: 's';
-			          yourself).
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding character: $s modifiers: 0).
 	editor := self editorOn: macro.
 
-	editor commandCheckBox toggleState.
-	self assert: (macro shortcut hasFlags: 64).
-	self assert: macro shortcut asKMShortcut asString equals: 'Cmd + S'.
-	editor commandCheckBox toggleState.
-	self deny: (macro shortcut hasFlags: 64)
+	editor keyBindingPresenter modifiersPresenter commandCheckBox toggleState.
+	self assert: macro keyBinding equals: (ReplayKeyBinding character: $s modifiers: ReplayKeyModifiers command).
+	self assert: macro keyBinding asKMShortcut asString equals: 'Cmd + S'.
+	editor keyBindingPresenter modifiersPresenter commandCheckBox toggleState.
+	self assert: macro keyBinding equals: (ReplayKeyBinding character: $s modifiers: 0)
 ]
 
 { #category : 'tests' }
 ReplayMacroEditorTest >> testUpdatesShortcutText [
 
 	| macro editor |
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command).
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command).
 	editor := self editorOn: macro.
 
-	editor keyBindingPresenter text: 'd'.
+	editor keyBindingPresenter keyBinding: (ReplayKeyBinding character: $d modifiers: ReplayKeyModifiers command).
 
-	self assert: macro shortcut text equals: 'd'.
-	self assert: macro shortcut asKMShortcut asString equals: 'Cmd + D'
+	self assert: macro keyBinding equals: (ReplayKeyBinding fromKMCombination: $d command).
+	self assert: macro keyBinding asKMShortcut asString equals: 'Cmd + D'
 ]
 
 { #category : 'tests' }
 ReplayMacroEditorTest >> testUsesAcceptIconWithoutConflicts [
 
 	| macro editor |
-	macro := self macroNamed: 'No conflict macro' shortcut: (self controlShortcut: 'z').
+	macro := self macroNamed: 'No conflict macro' keyBinding: (self controlShortcut: 'z').
 	macro contextNames: { #ReplayMacroTestNoConflict }.
 	editor := self editorOn: macro.
 
@@ -447,18 +443,18 @@ ReplayMacroEditorTest >> testUsesQuestionIconWithoutBinding [
 ]
 
 { #category : 'tests' }
-ReplayMacroEditorTest >> testUsesShortcutKeysPresenter [
+ReplayMacroEditorTest >> testUsesKeyBindingPresenter [
 
 	| macro editor |
-	macro := self macroNamed: 'Branch macro' shortcut: (ReplayShortcut new
-			          text: (String with: Character arrowRight);
-			          addFlags: 64;
-			          yourself).
+	macro := self
+		         macroNamed: 'Branch macro'
+		         keyBinding: (ReplayKeyBinding character: Character arrowRight modifiers: ReplayKeyModifiers command).
 	editor := self editorOn: macro.
 
 	self assert: editor keyBindingLabelPresenter label equals: 'Key binding:'.
 	self assert: (editor keyBindingLabelPresenter help includesSubstring: 'trigger').
-	self assert: editor keyBindingPresenter class equals: ReplayShortcutKeysPresenter.
-	self assert: editor keyBindingPresenter text equals: macro shortcut text.
-	self assert: editor keyBindingPresenter keyList items asArray equals: { Character arrowRight }
+	self assert: editor keyBindingPresenter class equals: ReplayKeyBindingPresenter.
+	self assert: editor keyBindingPresenter keyBinding equals: macro keyBinding.
+	self assert: editor keyBindingPresenter keyList items asArray equals: macro keyBinding chords.
+	self assert: editor keyBindingPresenter modifiersPresenter commandCheckBox state
 ]

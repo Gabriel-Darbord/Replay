@@ -1,13 +1,12 @@
 "
-I listen for one keyboard shortcut event on a Morphic hand, convert it through ReplayRecorder, and then uninstall myself.
+I listen for one key press on a Morphic hand, decode it as a ReplayKeyBinding, give it to my capture block, and then uninstall myself. Modifier keys pressed alone are not captured.
 "
 Class {
 	#name : 'ReplayShortcutCaptureListener',
 	#superclass : 'Object',
 	#instVars : [
 		'captureBlock',
-		'hand',
-		'recorder'
+		'hand'
 	],
 	#category : 'Replay-Editing',
 	#package : 'Replay',
@@ -32,25 +31,19 @@ ReplayShortcutCaptureListener >> hand [
 { #category : 'event handling' }
 ReplayShortcutCaptureListener >> handleListenEvent: anEvent [
 
-	| shortcut |
+	| binding |
 	anEvent isKeyboard ifFalse: [ ^ self ].
 	anEvent isKeyDown ifFalse: [ ^ self ].
-	shortcut := self recorder shortcutFromEvent: anEvent.
-	shortcut ifNil: [ ^ self ].
+	binding := ReplayKeyBinding fromKeyboardEvent: anEvent.
+	binding ifNil: [ ^ self ].
 	self stop.
-	captureBlock ifNotNil: [ :block | block cull: shortcut ]
+	captureBlock ifNotNil: [ :block | block cull: binding ]
 ]
 
 { #category : 'testing' }
 ReplayShortcutCaptureListener >> isActive [
 
 	^ hand notNil
-]
-
-{ #category : 'accessing' }
-ReplayShortcutCaptureListener >> recorder [
-
-	^ recorder ifNil: [ recorder := ReplayRecorder new ]
 ]
 
 { #category : 'capturing' }

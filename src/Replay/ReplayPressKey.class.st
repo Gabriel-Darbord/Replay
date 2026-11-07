@@ -1,15 +1,15 @@
 "
-I press a configured non-text keyboard key, optionally repeated and with modifiers.
+I press a named keyboard key (see ReplayKeyChord class>>namedKeys), optionally repeated and with modifiers (a ReplayKeyModifiers mask).
+
+Like a real keyboard, each press sends a key down event, a keystroke event when the key types text (Space without shortcut modifier), and a key up event. Morphic and Rubric act on the key down of the keys that type no text: a keystroke for them would insert a control character.
 "
 Class {
 	#name : 'ReplayPressKey',
 	#superclass : 'ReplayKeyboardEvent',
-	#traits : 'TReplayActionWithFlags',
-	#classTraits : 'TReplayActionWithFlags classTrait',
 	#instVars : [
 		'keySelector',
 		'repeatCount',
-		'flags'
+		'modifiers'
 	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
@@ -25,33 +25,14 @@ ReplayPressKey class >> displayName [
 { #category : 'accessing' }
 ReplayPressKey class >> keyChoices [
 
-	^ {
-		#left -> 'Left'.
-		#right -> 'Right'.
-		#up -> 'Up'.
-		#down -> 'Down'.
-		#home -> 'Home'.
-		#end -> 'End'.
-		#pageUp -> 'Page Up'.
-		#pageDown -> 'Page Down'.
-		#backspace -> 'Backspace'.
-		#delete -> 'Delete'.
-		#enter -> 'Enter'.
-		#escape -> 'Escape'.
-		#tab -> 'Tab'.
-		#space -> 'Space' }
+	^ ReplayKeyChord keyChoices
 ]
 
 { #category : 'accessing' }
-ReplayPressKey >> flags [
+ReplayPressKey >> chord [
+	"The key I press, with my modifiers"
 
-	^ flags ifNil: [ flags := 0 ]
-]
-
-{ #category : 'accessing' }
-ReplayPressKey >> flags: anInteger [
-
-	flags := anInteger
+	^ (ReplayKeyChord namedKey: self keySelector) withModifiers: self modifiers
 ]
 
 { #category : 'initialization' }
@@ -59,8 +40,7 @@ ReplayPressKey >> initialize [
 
 	super initialize.
 	keySelector := #left.
-	repeatCount := 1.
-	flags := 0
+	repeatCount := 1
 ]
 
 { #category : 'accessing' }
@@ -108,31 +88,45 @@ ReplayPressKey >> keySelector: aSymbol [
 	keySelector := aSymbol
 ]
 
-{ #category : 'accessing' }
-ReplayPressKey >> keyboardKey [
-
-	^ KeyboardKey perform: self keySelector
-]
-
 { #category : 'editing' }
 ReplayPressKey >> modifierPresenterOn: editor [
 
+	| presenter |
+	presenter := editor instantiate: ReplayKeyModifiersPresenter.
+	presenter
+		modifiers: self modifiers;
+		whenChangedDo: [ :newModifiers |
+			self modifiers: newModifiers.
+			editor actions rebuildLayout ].
+	presenter registerReplayPresentersOn: editor named: 'Action'.
+	presenter registerReplayPresentersOn: editor named: self class displayName.
 	^ SpBoxLayout newTopToBottom
 		add: 'Modifiers:' expand: false;
-		add: (self flagsPresenterOn: editor namesAndValues: #(
-			Shift 8
-			Control 16
-			'Alt/Option' 32
-			Command 64));
+		add: presenter;
 		yourself
+]
+
+{ #category : 'accessing' }
+ReplayPressKey >> modifiers [
+
+	^ modifiers ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+ReplayPressKey >> modifiers: anInteger [
+
+	modifiers := anInteger
 ]
 
 { #category : 'running' }
 ReplayPressKey >> pressKeyOn: ui [
 
+	| chord |
+	chord := self chord.
 	self repeatCount timesRepeat: [
-			(self keyDownKey: self keyboardKey buttons: self flags) sentTo: ui.
-			(self keyUpKey: self keyboardKey buttons: self flags) sentTo: ui ]
+		(chord keyboardEventOfType: #keyDown) sentTo: ui.
+		chord typesText ifTrue: [ (chord keyboardEventOfType: #keystroke) sentTo: ui ].
+		(chord keyboardEventOfType: #keyUp) sentTo: ui ]
 ]
 
 { #category : 'printing' }
@@ -142,10 +136,10 @@ ReplayPressKey >> printOn: stream [
 	stream
 		nextPutAll: ': ';
 		nextPutAll: self keyLabel.
-	self flags = 0 ifFalse: [
+	self modifiers = 0 ifFalse: [
 		stream
 			nextPutAll: ' modifiers=';
-			print: self flags ].
+			print: self modifiers ].
 	self repeatCount = 1 ifFalse: [
 		stream
 			nextPutAll: ' x';

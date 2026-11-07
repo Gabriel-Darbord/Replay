@@ -1,7 +1,8 @@
 Extension { #name : 'KMModifier' }
 
 { #category : '*Replay' }
-KMModifier >> configureReplayShortcut: aReplayShortcut [
+KMModifier >> replayModifiers [
+	"My ReplayKeyModifiers mask"
 
-	aReplayShortcut addFlags: self eventCode
+	^ self eventCode
 ]

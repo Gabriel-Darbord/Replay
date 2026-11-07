@@ -23,20 +23,15 @@ ReplayMacroTestCase class >> isAbstract [
 
 { #category : 'support' }
 ReplayMacroTestCase >> controlShortcut: aString [
+	"The key binding Control + the key of the single character of aString"
 
-	^ ReplayShortcut new
-		  text: aString;
-		  addFlags: 16;
-		  yourself
+	^ ReplayKeyBinding character: aString first modifiers: ReplayKeyModifiers control
 ]
 
 { #category : 'support' }
 ReplayMacroTestCase >> defaultFindShortcut [
 
-	^ ReplayShortcut new
-		  text: 'f';
-		  addFlags: OSPlatform current defaultModifier eventCode;
-		  yourself
+	^ ReplayKeyBinding character: $f modifiers: OSPlatform current defaultModifier replayModifiers
 ]
 
 { #category : 'support' }
@@ -81,17 +76,17 @@ ReplayMacroTestCase >> keyboardEventForCharacter: aCharacter buttons: flags [
 { #category : 'support' }
 ReplayMacroTestCase >> macroNamed: aString [
 
-	^ self macroNamed: aString shortcut: ReplayShortcut new
+	^ self macroNamed: aString keyBinding: ReplayKeyBinding new
 ]
 
 { #category : 'support' }
-ReplayMacroTestCase >> macroNamed: aString shortcut: aReplayShortcut [
+ReplayMacroTestCase >> macroNamed: aString keyBinding: aReplayKeyBinding [
 
 	^ ReplayMacro
 		  scenario: (ReplayScenario new
 				   title: aString;
 				   yourself)
-		  shortcut: aReplayShortcut
+		  keyBinding: aReplayKeyBinding
 ]
 
 { #category : 'running' }

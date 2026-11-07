@@ -1,5 +1,5 @@
 "
-I edit the settings of a library macro: its key binding, the contexts it is installed in, and whether it is installed. I also list the shortcuts it conflicts with, in the image and in its library.
+I edit the settings of a library macro: its key binding (with a ReplayKeyBindingPresenter, which also edits the modifiers of each key), the contexts it is installed in, and whether it is installed. I also list the shortcuts it conflicts with, in the image and in its library.
 
 I am not a window: a ReplayEditor on a library macro shows me in its right pane when its Edit shortcut button is pressed. The macro name is the title of its scenario, edited with Edit scenario data.
 I keep the installed keymaps of the macro up to date with my edits, then notify the block given to whenMacroChangedDo:.
@@ -14,11 +14,6 @@ Class {
 		'replayPresenters',
 		'keyBindingLabelPresenter',
 		'keyBindingPresenter',
-		'modifierPresenter',
-		'commandCheckBox',
-		'controlCheckBox',
-		'altCheckBox',
-		'shiftCheckBox',
 		'contextDropList',
 		'contextAddButton',
 		'contextList',
@@ -44,7 +39,6 @@ ReplayMacroEditor class >> defaultLayout [
 		  spacing: 8;
 		  add: #keyBindingLabelPresenter expand: false;
 		  add: #keyBindingPresenter expand: false;
-		  add: #modifierPresenter expand: false;
 		  add: 'Install contexts:' expand: false;
 		  add: (SpBoxLayout newLeftToRight
 				   spacing: 8;
@@ -116,24 +110,12 @@ ReplayMacroEditor >> addSelectedContext [
 	self macroChanged
 ]
 
-{ #category : 'accessing' }
-ReplayMacroEditor >> altCheckBox [
-
-	^ altCheckBox
-]
-
 { #category : 'actions' }
 ReplayMacroEditor >> clearContexts [
 
 	self macro contextNames ifEmpty: [ ^ self ].
 	self macro contextNames: #(  ).
 	self macroChanged
-]
-
-{ #category : 'accessing' }
-ReplayMacroEditor >> commandCheckBox [
-
-	^ commandCheckBox
 ]
 
 { #category : 'accessing' }
@@ -214,12 +196,6 @@ ReplayMacroEditor >> contextRequirementIconPresenter [
 	^ contextRequirementIconPresenter
 ]
 
-{ #category : 'accessing' }
-ReplayMacroEditor >> controlCheckBox [
-
-	^ controlCheckBox
-]
-
 { #category : 'initialization' }
 ReplayMacroEditor >> initializePresenters [
 
@@ -227,12 +203,11 @@ ReplayMacroEditor >> initializePresenters [
 		label: 'Key binding:';
 		help: 'Choose the key sequence and modifier keys that trigger this macro.';
 		yourself.
-	keyBindingPresenter := ReplayShortcutKeysPresenter
-		on: self macro shortcut
-		whenChangedDo: [
-			self refreshShortcut.
+	keyBindingPresenter := ReplayKeyBindingPresenter
+		on: self macro keyBinding
+		whenChangedDo: [ :binding |
+			self macro keyBinding: binding.
 			self macroChanged ].
-	self initializeModifierPresenters.
 
 	contextDropList := self newDropList
 		items: ReplayMacroContext availableContexts;
@@ -291,38 +266,18 @@ ReplayMacroEditor >> initializePresenters [
 ]
 
 { #category : 'initialization' }
-ReplayMacroEditor >> initializeModifierPresenters [
-
-	shiftCheckBox := self newModifierCheckBox: 'Shift' flag: 8.
-	controlCheckBox := self newModifierCheckBox: 'Control' flag: 16.
-	altCheckBox := self newModifierCheckBox: 'Alt/Option' flag: 32.
-	commandCheckBox := self newModifierCheckBox: 'Command' flag: 64.
-	modifierPresenter := self newPresenter
-		layout: (SpBoxLayout newTopToBottom
-			add: 'Modifier keys:' expand: false;
-			add: (SpBoxLayout newLeftToRight
-				spacing: 8;
-				add: shiftCheckBox expand: false;
-				add: controlCheckBox expand: false;
-				add: altCheckBox expand: false;
-				add: commandCheckBox expand: false;
-				yourself)
-			expand: false;
-			yourself);
-		yourself
-]
-
-{ #category : 'initialization' }
 ReplayMacroEditor >> initializeReplayPresenters [
 	"One semantic name per presenter, for Replay actions such as Annotate"
 
+	| modifiers |
+	modifiers := keyBindingPresenter modifiersPresenter.
 	replayPresenters := Dictionary new
 		at: 'Key binding label' put: keyBindingLabelPresenter;
 		at: 'Key binding' put: keyBindingPresenter;
-		at: 'Shift modifier' put: shiftCheckBox;
-		at: 'Control modifier' put: controlCheckBox;
-		at: 'Alt modifier' put: altCheckBox;
-		at: 'Command modifier' put: commandCheckBox;
+		at: 'Shift modifier' put: modifiers shiftCheckBox;
+		at: 'Control modifier' put: modifiers controlCheckBox;
+		at: 'Alt modifier' put: modifiers altCheckBox;
+		at: 'Command modifier' put: modifiers commandCheckBox;
 		at: 'Install context picker' put: contextDropList;
 		at: 'Add install context button' put: contextAddButton;
 		at: 'Install context list' put: contextList;
@@ -410,22 +365,6 @@ ReplayMacroEditor >> macroLibrary [
 	^ macroLibrary
 ]
 
-{ #category : 'accessing' }
-ReplayMacroEditor >> modifierPresenter [
-
-	^ modifierPresenter
-]
-
-{ #category : 'initialization' }
-ReplayMacroEditor >> newModifierCheckBox: aString flag: anInteger [
-
-	^ self newCheckBox
-		  label: aString;
-		  state: (self macro shortcut hasFlags: anInteger);
-		  whenChangedDo: [ :state | self setModifier: anInteger to: state ];
-		  yourself
-]
-
 { #category : 'updating' }
 ReplayMacroEditor >> notifyMacroChanged [
 
@@ -448,7 +387,6 @@ ReplayMacroEditor >> refreshContextList [
 { #category : 'updating' }
 ReplayMacroEditor >> refreshFromMacro [
 
-	self refreshShortcut.
 	self refreshContextList.
 	self refreshSelectedContext.
 	self updateInstallationStatus.
@@ -463,17 +401,6 @@ ReplayMacroEditor >> refreshSelectedContext [
 		detect: [ :context | context matchesCategoryNames: self macro contextNames ]
 		ifFound: [ :context | contextDropList selectItem: context ]
 		ifNone: [ contextDropList selectItem: nil ]
-]
-
-{ #category : 'updating' }
-ReplayMacroEditor >> refreshShortcut [
-	"The modifier check boxes ignore a state that the shortcut already has"
-
-	keyBindingPresenter setTextSilently: self macro shortcut text.
-	commandCheckBox state: (self macro shortcut hasFlags: 64).
-	controlCheckBox state: (self macro shortcut hasFlags: 16).
-	altCheckBox state: (self macro shortcut hasFlags: 32).
-	shiftCheckBox state: (self macro shortcut hasFlags: 8)
 ]
 
 { #category : 'actions' }
@@ -499,22 +426,6 @@ ReplayMacroEditor >> setMacro: aReplayMacro library: aReplayMacroLibrary [
 
 	macro := aReplayMacro.
 	macroLibrary := aReplayMacroLibrary
-]
-
-{ #category : 'actions' }
-ReplayMacroEditor >> setModifier: anInteger to: aBoolean [
-
-	(self macro shortcut hasFlags: anInteger) = aBoolean ifTrue: [ ^ self ].
-	aBoolean
-		ifTrue: [ self macro shortcut addFlags: anInteger ]
-		ifFalse: [ self macro shortcut removeFlags: anInteger ].
-	self macroChanged
-]
-
-{ #category : 'accessing' }
-ReplayMacroEditor >> shiftCheckBox [
-
-	^ shiftCheckBox
 ]
 
 { #category : 'private' }

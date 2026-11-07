@@ -1,7 +1,9 @@
 Extension { #name : 'KMSingleKeyCombination' }
 
 { #category : '*Replay' }
-KMSingleKeyCombination >> configureReplayShortcut: aReplayShortcut [
+KMSingleKeyCombination >> replayKeyBindings [
+	"Subclasses naming a character instead of a key have no KeyboardKey"
 
-	key configureReplayShortcut: aReplayShortcut
+	(key isKindOf: KeyboardKey) ifFalse: [ ^ #(  ) ].
+	^ { ReplayKeyBinding chords: { ReplayKeyChord key: key name } }
 ]

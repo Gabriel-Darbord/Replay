@@ -414,18 +414,6 @@ ReplayEditor >> model [
 	^ model ifNil: [ model := ReplayEditorModel new ]
 ]
 
-{ #category : 'recording' }
-ReplayEditor >> modifierFlagsFromEvent: anEvent [
-
-	| modifiers |
-	modifiers := 0.
-	anEvent shiftPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent shiftKeyMask ].
-	anEvent controlKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent ctrlKeyMask ].
-	(anEvent optionKeyPressed or: [ anEvent altKeyPressed ]) ifTrue: [ modifiers := modifiers bitOr: UserInputEvent altKeyMask ].
-	anEvent commandKeyPressed ifTrue: [ modifiers := modifiers bitOr: UserInputEvent cmdKeyMask ].
-	^ modifiers
-]
-
 { #category : 'macro' }
 ReplayEditor >> moveToLibrary [
 
@@ -479,34 +467,24 @@ ReplayEditor >> recordingControls [
 ]
 
 { #category : 'recording' }
-ReplayEditor >> recordingShortcut [
-	^ ReplayShortcut new
-		text: 'r';
-		flags: self recordingShortcutFlags;
-		asKMShortcut
+ReplayEditor >> recordingKeyBinding [
+	"The binding that starts and stops recording: Cmd + R, or Ctrl + R where Control is the default modifier"
+
+	^ ReplayKeyBinding character: $r modifiers: OSPlatform current defaultModifier replayModifiers
 ]
 
 { #category : 'recording' }
 ReplayEditor >> recordingShortcutDescription [
 
-	^ self recordingShortcut asString
-]
-
-{ #category : 'recording' }
-ReplayEditor >> recordingShortcutFlags [
-	^ OSPlatform current defaultModifier eventCode
+	^ self recordingKeyBinding displayString
 ]
 
 { #category : 'recording' }
 ReplayEditor >> recordingShortcutMatchesEvent: anEvent [
 
-	| flags text |
 	anEvent isKeyboard ifFalse: [ ^ false ].
 	anEvent isKeyDown ifFalse: [ ^ false ].
-	flags := self modifierFlagsFromEvent: anEvent.
-	flags = self recordingShortcutFlags ifFalse: [ ^ false ].
-	text := anEvent modifiedCharacter asString asLowercase.
-	^ text = 'r'
+	^ (ReplayKeyBinding fromKeyboardEvent: anEvent) = self recordingKeyBinding
 ]
 
 { #category : 'recording' }
@@ -734,7 +712,7 @@ ReplayEditor >> startRecordingOn: targetMorph attachAction: attachAction status:
 		prologueActions: { attachAction };
 		yourself.
 	recordingTargetDescription := statusString.
-	recorder stopShortcutText: 'r' flags: self recordingShortcutFlags do: [ self stopRecording ].
+	recorder stopKeyBinding: self recordingKeyBinding do: [ self stopRecording ].
 	self ignoreRecordingControlsOn: recorder.
 	recorder start.
 	self updateRecordingStatus

@@ -15,13 +15,12 @@ ReplayMacroTest >> testCapturedShortcutInstallsAndRunsThroughMorphDispatcher [
 	catcher := KMCatcherMorph new.
 	[
 		catcher keyStroke: (self keyboardEventForCharacter: $f buttons: 16).
-		capturedShortcut := ReplayShortcut fromShortcut: catcher shortcut ] ensure: [ catcher delete ].
+		capturedShortcut := ReplayKeyBinding fromKMCombination: catcher shortcut ] ensure: [ catcher delete ].
 	spy := ReplayMacroRunSpy new.
-	macro := ReplayMacro scenario: spy shortcut: capturedShortcut.
+	macro := ReplayMacro scenario: spy keyBinding: capturedShortcut.
 	macro contextNames: { #ReplayMacroCapturedShortcutDispatcherTest }.
 
-	self assert: capturedShortcut text equals: 'f'.
-	self assert: capturedShortcut flags equals: 16.
+	self assert: capturedShortcut equals: (ReplayKeyBinding character: $f modifiers: ReplayKeyModifiers control).
 	macro install.
 	self dispatch: $f buttons: 16 inCategoryNamed: #ReplayMacroCapturedShortcutDispatcherTest.
 	self assert: spy hasRun
@@ -48,7 +47,7 @@ ReplayMacroTest >> testInstallRequiresKeyBindingAndContexts [
 	self assert: macro install isEmpty.
 	self deny: (macro installedInContextNamed: #RubTextEditor).
 
-	macro shortcut text: 'r'.
+	macro keyBinding: (ReplayKeyBinding character: $r modifiers: 0).
 	macro contextNames: #(  ).
 	self deny: macro canInstall.
 	self assert: macro install isEmpty.
@@ -66,10 +65,10 @@ ReplayMacroTest >> testInstallReplacesOwnKeymapInCategory [
 
 	| category macro firstKeymap secondKeymap ownKeymaps |
 	category := KMCategory named: #ReplayMacroReplaceInstallTest.
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command).
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command).
 
 	firstKeymap := macro installInCategory: category.
-	macro shortcut: (ReplayShortcut fromShortcut: $d command).
+	macro keyBinding: (ReplayKeyBinding fromKMCombination: $d command).
 	secondKeymap := macro installInCategory: category.
 	ownKeymaps := category allEntries keymaps select: [ :keymap | macro isOwnKeymap: keymap ].
 
@@ -83,7 +82,7 @@ ReplayMacroTest >> testInstallReplacesOwnKeymapInCategory [
 ReplayMacroTest >> testInstalledKeymapEntriesListMacroKeymaps [
 
 	| macro |
-	macro := self macroNamed: 'Installed entry macro' shortcut: (self controlShortcut: 'f').
+	macro := self macroNamed: 'Installed entry macro' keyBinding: (self controlShortcut: 'f').
 	macro contextNames: { #RubTextEditor }.
 	macro install.
 
@@ -98,7 +97,7 @@ ReplayMacroTest >> testInstalledMacroRunsThroughMorphDispatcher [
 
 	| macro spy |
 	spy := ReplayMacroRunSpy new.
-	macro := ReplayMacro scenario: spy shortcut: (self controlShortcut: 'f').
+	macro := ReplayMacro scenario: spy keyBinding: (self controlShortcut: 'f').
 	macro contextNames: { #ReplayMacroDispatcherTest }.
 	macro install.
 
@@ -111,7 +110,7 @@ ReplayMacroTest >> testInstalledMacroUsesReplacedScenarioWhenShortcutRuns [
 
 	| macro spy |
 	spy := ReplayMacroRunSpy new.
-	macro := self macroNamed: 'Scenario macro' shortcut: (self controlShortcut: 'f').
+	macro := self macroNamed: 'Scenario macro' keyBinding: (self controlShortcut: 'f').
 	macro contextNames: { #ReplayMacroScenarioReplacementTest }.
 	macro install.
 	macro scenario: spy.
@@ -124,11 +123,11 @@ ReplayMacroTest >> testInstalledMacroUsesReplacedScenarioWhenShortcutRuns [
 ReplayMacroTest >> testInstalledTextEditorMacroIsVisibleToCategoryBinding [
 
 	| macro binding keymap |
-	macro := self macroNamed: 'Find macro' shortcut: (self controlShortcut: 'f').
+	macro := self macroNamed: 'Find macro' keyBinding: (self controlShortcut: 'f').
 	macro contextNames: { #RubTextEditor }.
 	macro install.
 	binding := (KMRepository default categoryForName: #RubTextEditor) bindToObject: nil andMorph: nil.
-	keymap := binding keymapForShortcut: macro shortcut asKMShortcut.
+	keymap := binding keymapForShortcut: macro keyBinding asKMShortcut.
 
 	self assert: (macro isOwnKeymap: keymap)
 ]
@@ -138,7 +137,7 @@ ReplayMacroTest >> testInstallsKeymapInCategory [
 
 	| category macro keymap |
 	category := KMCategory named: #ReplayMacroInstallTest.
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command).
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command).
 
 	keymap := macro installInCategory: category.
 
@@ -153,7 +152,7 @@ ReplayMacroTest >> testInstallDoesNotReportOwnKeymapAsConflict [
 
 	| category macro keymap |
 	category := KMCategory named: #ReplayMacroInstallTest.
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command).
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command).
 
 	keymap := macro installInCategory: category.
 
@@ -165,7 +164,7 @@ ReplayMacroTest >> testInstallDoesNotReportOwnKeymapAsConflict [
 ReplayMacroTest >> testMacroDetectsBaseTextFindConflictInSmalltalkEditorContext [
 
 	| macro |
-	macro := self macroNamed: 'Smalltalk find replacement' shortcut: self defaultFindShortcut.
+	macro := self macroNamed: 'Smalltalk find replacement' keyBinding: self defaultFindShortcut.
 	macro contextNames: { #RubSmalltalkEditor }.
 
 	self assert: (macro conflicts anySatisfy: [ :conflict |
@@ -180,7 +179,7 @@ ReplayMacroTest >> testMacroDetectsConflictingKeymapInCategory [
 	conflictingKeymap := KMKeymap named: #save shortcut: $s command action: [ ].
 	category addKeymapEntry: conflictingKeymap.
 	category addKeymapEntry: (KMKeymap named: #open shortcut: $o command action: [ ]).
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromKeymap: conflictingKeymap).
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKeymap: conflictingKeymap).
 
 	conflicts := macro conflictsInCategory: category.
 	conflict := conflicts anyOne.
@@ -195,7 +194,7 @@ ReplayMacroTest >> testMacroDetectsConflictingKeymapInCategory [
 ReplayMacroTest >> testMacroDetectsFindConflictInTextEditorContext [
 
 	| macro |
-	macro := self macroNamed: 'Find replacement' shortcut: self defaultFindShortcut.
+	macro := self macroNamed: 'Find replacement' keyBinding: self defaultFindShortcut.
 	macro contextNames: { #RubTextEditor }.
 
 	self assert: (macro conflicts anySatisfy: [ :conflict |
@@ -218,7 +217,7 @@ ReplayMacroTest >> testMacroReportsExternalConflictAfterInstall [
 
 	| category macro externalConflict conflicts |
 	category := KMCategory named: #ReplayMacroExternalConflictTest.
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command).
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command).
 	externalConflict := KMKeymap named: #existingSave shortcut: $s command action: [ ].
 	category addKeymapEntry: externalConflict.
 	macro installInCategory: category.
@@ -230,24 +229,25 @@ ReplayMacroTest >> testMacroReportsExternalConflictAfterInstall [
 ]
 
 { #category : 'tests' }
-ReplayMacroTest >> testPrintStringToleratesUnmappedShortcutCharacter [
+ReplayMacroTest >> testPrintStringToleratesUnknownKey [
+	"A key name that no KeyboardKey has, as a hand-edited macro file may hold"
 
 	| macro printString |
 	macro := self
 		         macroNamed: 'Malformed shortcut'
-		         shortcut: (ReplayShortcut new
-				          text: (String with: (Character value: 16rFFC3));
-				          yourself).
+		         keyBinding: (ReplayKeyBinding chords: { ReplayKeyChord key: #NOT_A_KEY modifiers: ReplayKeyModifiers command }).
 	printString := macro printString.
 	self assert: (printString includesSubstring: 'Malformed shortcut').
-	self assert: (printString includesSubstring: 'Character value: 65475')
+	self assert: (printString includesSubstring: 'Command + NOT_A_KEY').
+	self deny: macro hasKeyBinding.
+	self deny: macro canInstall
 ]
 
 { #category : 'tests' }
 ReplayMacroTest >> testReplayKeymapsAreRecognizedByName [
 
 	| macro foreign |
-	macro := self macroNamed: 'Recognized' shortcut: (self controlShortcut: 'f').
+	macro := self macroNamed: 'Recognized' keyBinding: (self controlShortcut: 'f').
 	foreign := KMKeymap
 		           named: #foreign
 		           shortcut: $f ctrl
@@ -267,16 +267,27 @@ ReplayMacroTest >> testRoundTripsThroughSton [
 		            yourself.
 	macro := ReplayMacro
 		         scenario: scenario
-		         shortcut: (ReplayShortcut fromKeymap: (KMKeymap named: #save shortcut: $s command action: [ ])).
+		         keyBinding: (ReplayKeyBinding fromKeymap: (KMKeymap named: #save shortcut: $s command action: [ ])).
 	macro addContextNamed: #RubSmalltalkEditor.
 
 	copy := STON fromString: (STON toString: macro).
 
 	self assert: copy name equals: 'Macro scenario'.
 	self assert: copy identifier equals: macro identifier.
-	self assert: copy shortcut text equals: 's'.
-	self assert: copy shortcut flags equals: 64.
+	self assert: copy keyBinding equals: (ReplayKeyBinding character: $s modifiers: ReplayKeyModifiers command).
 	self assert: copy contextNames asArray equals: #( RubSmalltalkEditor )
+]
+
+{ #category : 'tests' }
+ReplayMacroTest >> testStonHoldsTheKeyBindingAlone [
+	"The key binding of a macro is a value, not a UI action with a target"
+
+	| ston |
+	ston := STON toString: (self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command)).
+
+	self assert: (ston includesSubstring: '#keyBinding:ReplayKeyBinding[ReplayKeyChord[#S,64]]').
+	#( 'ReplayShortcut' 'reference' 'path' 'flags' 'text' ) do: [ :field |
+		self deny: (ston includesSubstring: field) ]
 ]
 
 { #category : 'tests' }
@@ -295,9 +306,9 @@ ReplayMacroTest >> testStoresContextNames [
 ReplayMacroTest >> testUninstallAllInstalledKeymapsRemovesEveryMacroKeymap [
 
 	| first second |
-	first := self macroNamed: 'First' shortcut: (self controlShortcut: 'f').
+	first := self macroNamed: 'First' keyBinding: (self controlShortcut: 'f').
 	first contextNames: { #RubTextEditor }.
-	second := self macroNamed: 'Second' shortcut: (self controlShortcut: 'g').
+	second := self macroNamed: 'Second' keyBinding: (self controlShortcut: 'g').
 	second contextNames: { #ReplayMacroUninstallAllTest }.
 	first install.
 	second install.
@@ -313,7 +324,7 @@ ReplayMacroTest >> testUninstallAllInstalledKeymapsRemovesEveryMacroKeymap [
 ReplayMacroTest >> testUninstallRemovesInstalledKeymaps [
 
 	| macro |
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command).
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command).
 	macro contextNames: { #ReplayMacroUninstallTest. #RubTextEditor }.
 	macro install.
 	self assert: (macro installedInContextNamed: #ReplayMacroUninstallTest).
@@ -328,10 +339,10 @@ ReplayMacroTest >> testUpdateInstalledKeymapsAfterShortcutChange [
 
 	| category macro keymap |
 	category := KMRepository default categoryForName: #ReplayMacroUpdateInstallTest.
-	macro := self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command).
+	macro := self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command).
 	macro contextNames: { category name }.
 	macro install.
-	macro shortcut: (ReplayShortcut fromShortcut: $d command).
+	macro keyBinding: (ReplayKeyBinding fromKMCombination: $d command).
 	macro updateInstalledKeymaps.
 
 	keymap := category allEntries keymaps detect: [ :each | macro isOwnKeymap: each ].
@@ -343,7 +354,7 @@ ReplayMacroTest >> testUpdateInstalledKeymapsAfterShortcutChange [
 ReplayMacroTest >> testUpdateInstalledKeymapsKeepsUninstalledMacroUninstalled [
 
 	| macro |
-	macro := self macroNamed: 'Not installed' shortcut: (self controlShortcut: 'f').
+	macro := self macroNamed: 'Not installed' keyBinding: (self controlShortcut: 'f').
 	macro contextNames: { #RubTextEditor }.
 	macro updateInstalledKeymaps.
 
@@ -354,12 +365,12 @@ ReplayMacroTest >> testUpdateInstalledKeymapsKeepsUninstalledMacroUninstalled [
 ReplayMacroTest >> testUpdateInstalledKeymapsUninstallsWhenBindingRemoved [
 
 	| macro |
-	macro := self macroNamed: 'Invalidate installed macro' shortcut: (self controlShortcut: 'i').
+	macro := self macroNamed: 'Invalidate installed macro' keyBinding: (self controlShortcut: 'i').
 	macro contextNames: { #RubTextEditor }.
 	macro install.
 	self assert: (macro installedInContextNamed: #RubTextEditor).
 
-	macro shortcut text: ''.
+	macro keyBinding: ReplayKeyBinding new.
 	macro updateInstalledKeymaps.
 	self deny: (macro installedInContextNamed: #RubTextEditor)
 ]
@@ -369,7 +380,7 @@ ReplayMacroTest >> testUpdateKeymapDescriptionsAfterRename [
 
 	| category macro keymap |
 	category := KMRepository default categoryForName: #ReplayMacroRenameInstallTest.
-	macro := self macroNamed: 'Before rename' shortcut: (ReplayShortcut fromShortcut: $s command).
+	macro := self macroNamed: 'Before rename' keyBinding: (ReplayKeyBinding fromKMCombination: $s command).
 	macro contextNames: { category name }.
 	macro install.
 	macro scenario title: 'After rename'.

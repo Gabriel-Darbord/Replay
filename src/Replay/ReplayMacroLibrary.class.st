@@ -120,8 +120,8 @@ ReplayMacroLibrary >> internalConflicts [
 { #category : 'conflicts' }
 ReplayMacroLibrary >> internalConflictsBetween: aReplayMacro and: anotherReplayMacro [
 
-	(aReplayMacro shortcut text isEmpty or: [ anotherReplayMacro shortcut text isEmpty ]) ifTrue: [ ^ #() ].
-	(aReplayMacro shortcut sameShortcutAs: anotherReplayMacro shortcut) ifFalse: [ ^ #() ].
+	aReplayMacro hasKeyBinding ifFalse: [ ^ #(  ) ].
+	aReplayMacro keyBinding = anotherReplayMacro keyBinding ifFalse: [ ^ #(  ) ].
 	^ (self internalConflictCategoryNamesBetween: aReplayMacro and: anotherReplayMacro)
 		collect: [ :contextName |
 			ReplayShortcutConflict

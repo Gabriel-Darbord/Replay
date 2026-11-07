@@ -1,8 +1,8 @@
 Extension { #name : 'KMModifiedKeyCombination' }
 
 { #category : '*Replay' }
-KMModifiedKeyCombination >> configureReplayShortcut: aReplayShortcut [
+KMModifiedKeyCombination >> replayKeyBindings [
 
-	self modifier configureReplayShortcut: aReplayShortcut.
-	self character configureReplayShortcut: aReplayShortcut
+	^ self character replayKeyBindings collect: [ :binding |
+		  binding withAddedModifiers: self modifier replayModifiers ]
 ]

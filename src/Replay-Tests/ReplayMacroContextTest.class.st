@@ -45,7 +45,7 @@ ReplayMacroContextTest >> testConflictUsesCommandDisplayForMetaShortcut [
 ReplayMacroContextTest >> testConflictWithMacroKeymapIsNamedAfterTheMacro [
 
 	| macro conflict |
-	macro := self macroNamed: 'Other macro' shortcut: (self controlShortcut: 'f').
+	macro := self macroNamed: 'Other macro' keyBinding: (self controlShortcut: 'f').
 	conflict := ReplayShortcutConflict
 		            category: (KMRepository default categoryForName: #RubTextEditor)
 		            keymap: macro keymap.

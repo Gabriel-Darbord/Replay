@@ -13,9 +13,9 @@ ReplayMacroLibraryTest >> libraryWithTwoSaveMacrosIn: firstContext and: secondCo
 
 	| library |
 	library := ReplayMacroLibrary new.
-	(library addMacro: (self macroNamed: 'First' shortcut: (ReplayShortcut fromShortcut: $s command)))
+	(library addMacro: (self macroNamed: 'First' keyBinding: (ReplayKeyBinding fromKMCombination: $s command)))
 		addContextNamed: firstContext.
-	(library addMacro: (self macroNamed: 'Second' shortcut: (ReplayShortcut fromShortcut: $s command)))
+	(library addMacro: (self macroNamed: 'Second' keyBinding: (ReplayKeyBinding fromKMCombination: $s command)))
 		addContextNamed: secondContext.
 	^ library
 ]
@@ -55,7 +55,7 @@ ReplayMacroLibraryTest >> testAggregatesConflicts [
 
 	| keymap macro library |
 	keymap := (KMRepository default categoryForName: #RubSmalltalkEditor) allEntries keymaps anyOne.
-	macro := self macroNamed: 'Conflicting' shortcut: (ReplayShortcut fromKeymap: keymap).
+	macro := self macroNamed: 'Conflicting' keyBinding: (ReplayKeyBinding fromKeymap: keymap).
 	macro contextNames: { #RubSmalltalkEditor }.
 	library := ReplayMacroLibrary new.
 	library addMacro: macro.
@@ -67,9 +67,9 @@ ReplayMacroLibraryTest >> testAggregatesConflicts [
 ReplayMacroLibraryTest >> testDetectsInternalConflictAcrossCompositeEditorContext [
 
 	| smalltalkMacro textMacro library |
-	smalltalkMacro := self macroNamed: 'Smalltalk macro' shortcut: self defaultFindShortcut.
+	smalltalkMacro := self macroNamed: 'Smalltalk macro' keyBinding: self defaultFindShortcut.
 	smalltalkMacro contextNames: { #RubSmalltalkEditor }.
-	textMacro := self macroNamed: 'Text macro' shortcut: self defaultFindShortcut.
+	textMacro := self macroNamed: 'Text macro' keyBinding: self defaultFindShortcut.
 	textMacro contextNames: { #RubTextEditor }.
 	library := ReplayMacroLibrary new.
 	library
@@ -120,9 +120,9 @@ ReplayMacroLibraryTest >> testInstallAndUninstallAllMacros [
 
 	| library first second |
 	library := ReplayMacroLibrary new.
-	first := library addMacro: (self macroNamed: 'First' shortcut: (self controlShortcut: 'f')).
+	first := library addMacro: (self macroNamed: 'First' keyBinding: (self controlShortcut: 'f')).
 	first contextNames: { #RubTextEditor }.
-	second := library addMacro: (self macroNamed: 'Second' shortcut: (self controlShortcut: 'g')).
+	second := library addMacro: (self macroNamed: 'Second' keyBinding: (self controlShortcut: 'g')).
 	second contextNames: { #RubTextEditor }.
 
 	library install.
@@ -174,7 +174,7 @@ ReplayMacroLibraryTest >> testRemoveMacroUninstallsIt [
 
 	| library macro |
 	library := ReplayMacroLibrary new.
-	macro := library addMacro: (self macroNamed: 'Remove installed macro' shortcut: (self controlShortcut: 'r')).
+	macro := library addMacro: (self macroNamed: 'Remove installed macro' keyBinding: (self controlShortcut: 'r')).
 	macro contextNames: { #RubTextEditor }.
 	macro install.
 	self assert: (macro installedInContextNamed: #RubTextEditor).
@@ -188,7 +188,7 @@ ReplayMacroLibraryTest >> testReportsInstalledMacros [
 
 	| library installed |
 	library := ReplayMacroLibrary new.
-	installed := library addMacro: (self macroNamed: 'Installed' shortcut: (self controlShortcut: 'f')).
+	installed := library addMacro: (self macroNamed: 'Installed' keyBinding: (self controlShortcut: 'f')).
 	installed contextNames: { #RubTextEditor }.
 	library addMacro: (self macroNamed: 'Uninstalled').
 	installed install.
@@ -216,11 +216,11 @@ ReplayMacroLibraryTest >> testRoundTripsThroughSton [
 
 	| library copy |
 	library := ReplayMacroLibrary new.
-	library addMacro: (self macroNamed: 'Save macro' shortcut: (ReplayShortcut fromShortcut: $s command)).
+	library addMacro: (self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command)).
 
 	copy := STON fromString: (STON toString: library).
 
 	self assert: copy macros size equals: 1.
 	self assert: copy macros first name equals: 'Save macro'.
-	self assert: copy macros first shortcut asKMShortcut asString equals: 'Cmd + S'
+	self assert: copy macros first keyBinding asKMShortcut asString equals: 'Cmd + S'
 ]

@@ -200,8 +200,7 @@ ReplayRecorderTest >> testRecorderCapturesControlShortcutWithKeyValue [
 		         hand: nil
 		         stamp: 0.
 	shortcut := recorder shortcutFromEvent: event.
-	self assert: shortcut text equals: 'l'.
-	self assert: shortcut flags equals: UserInputEvent ctrlKeyMask
+	self assert: shortcut keyBinding equals: (ReplayKeyBinding character: $l modifiers: ReplayKeyModifiers control)
 ]
 
 { #category : 'tests' }
@@ -319,8 +318,7 @@ ReplayRecorderTest >> testRecorderFlushesPendingAltShortcutWhenRecordingEnds [
 		self assert: recorded size equals: 1.
 		action := recorded first.
 		self assert: action class equals: ReplayShortcut.
-		self assert: action text equals: 'x'.
-		self assert: action flags equals: UserInputEvent altKeyMask ]
+		self assert: action keyBinding equals: (ReplayKeyBinding character: $x modifiers: ReplayKeyModifiers alt) ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
@@ -468,7 +466,7 @@ ReplayRecorderTest >> testRecorderRecordsArrowKeyDownAsPressKeyWhenKeyUpArrives 
 		action := recorder actions first.
 		self assert: action class equals: ReplayPressKey.
 		self assert: action keySelector equals: #left.
-		self assert: action flags equals: 0.
+		self assert: action modifiers equals: 0.
 		self assert: action uiReference isKeyboardFocus ] ensure: [
 			hand keyboardFocus: previousFocus.
 			recorder manager close ]
@@ -515,7 +513,7 @@ ReplayRecorderTest >> testRecorderRecordsEnterKeyDownAsPressKeyWhenKeyUpArrives 
 		action := recorder actions first.
 		self assert: action class equals: ReplayPressKey.
 		self assert: action keySelector equals: #enter.
-		self assert: action flags equals: 0.
+		self assert: action modifiers equals: 0.
 		self assert: action uiReference isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
@@ -571,7 +569,7 @@ ReplayRecorderTest >> testRecorderRecordsModifiedArrowKeyAsPressKey [
 		action := recorder actions first.
 		self assert: action class equals: ReplayPressKey.
 		self assert: action keySelector equals: #right.
-		self assert: action flags equals: UserInputEvent cmdKeyMask.
+		self assert: action modifiers equals: UserInputEvent cmdKeyMask.
 		self assert: action uiReference isKeyboardFocus ] ensure: [
 			hand keyboardFocus: previousFocus.
 			recorder manager close ]
@@ -592,8 +590,7 @@ ReplayRecorderTest >> testRecorderRecordsShortcutForModifiedKeyDown [
 		recorder recordEvent: (self keyboardEventType: #keyDown character: $f buttons: UserInputEvent cmdKeyMask hand: hand).
 		action := recorder actions first.
 		self assert: action class equals: ReplayShortcut.
-		self assert: action text equals: 'f'.
-		self assert: action flags equals: UserInputEvent cmdKeyMask.
+		self assert: action keyBinding equals: (ReplayKeyBinding character: $f modifiers: ReplayKeyModifiers command).
 		self assert: action uiReference isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
@@ -606,7 +603,7 @@ ReplayRecorderTest >> testRecorderStopShortcutInvokesStopBlockWithoutRecordingSh
 	target := Morph new bounds: (20 @ 10 extent: 50 @ 30).
 	root addMorph: target.
 	recorder := self newRecorderOn: root.
-	recorder stopShortcutText: 'r' flags: UserInputEvent cmdKeyMask do: [ stopped := true ].
+	recorder stopKeyBinding: (ReplayKeyBinding character: $r modifiers: ReplayKeyModifiers command) do: [ stopped := true ].
 	hand := World activeHand.
 	previousFocus := hand keyboardFocus.
 	stopped := false.
@@ -623,7 +620,7 @@ ReplayRecorderTest >> testRecorderStopShortcutWorksWithoutKeyboardFocus [
 	| root recorder hand previousFocus stopped |
 	root := Morph new extent: 200 @ 100.
 	recorder := self newRecorderOn: root.
-	recorder stopShortcutText: 'r' flags: UserInputEvent cmdKeyMask do: [ stopped := true ].
+	recorder stopKeyBinding: (ReplayKeyBinding character: $r modifiers: ReplayKeyModifiers command) do: [ stopped := true ].
 	hand := World activeHand.
 	previousFocus := hand keyboardFocus.
 	stopped := false.
@@ -750,12 +747,12 @@ ReplayRecorderTest >> testRecordingToggleListenerStartsAndStopsFromShortcut [
 	startEvent := self
 		keyboardEventType: #keyDown
 		character: $r
-		buttons: editor recordingShortcutFlags
+		buttons: editor recordingKeyBinding chords first modifiers
 		hand: hand.
 	stopEvent := self
 		keyboardEventType: #keyDown
 		character: $r
-		buttons: editor recordingShortcutFlags
+		buttons: editor recordingKeyBinding chords first modifiers
 		hand: hand.
 
 	[
@@ -786,7 +783,7 @@ ReplayRecorderTest >> testShortcutStartedRecordingTargetsFocusedWindow [
 	event := self
 		keyboardEventType: #keyDown
 		character: $r
-		buttons: editor recordingShortcutFlags
+		buttons: editor recordingKeyBinding chords first modifiers
 		hand: hand.
 
 	[

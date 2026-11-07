@@ -969,21 +969,24 @@ ReplayUIBackendTest >> testPressKeyActionDelegatesToResolvedUIBackend [
 
 { #category : 'tests' }
 ReplayUIBackendTest >> testPressKeyBuildsKeyboardKeyEvents [
+	"Like the OSWindow event handler, the events of a key typing no text carry its control character"
 
 	| action down up |
 	action := ReplayPressKey new.
 	action
 		keySelector: #left;
-		flags: 8.
-	down := action keyDownKey: action keyboardKey buttons: action flags.
-	up := action keyUpKey: action keyboardKey buttons: action flags.
+		modifiers: ReplayKeyModifiers shift.
+	down := action chord keyboardEventOfType: #keyDown.
+	up := action chord keyboardEventOfType: #keyUp.
 
 	self assert: down isKeyDown.
 	self assert: up isKeyUp.
-	self assert: down keyValue equals: KeyboardKey left value.
-	self assert: up keyValue equals: KeyboardKey left value.
-	self assert: down buttons equals: 8.
-	self assert: up buttons equals: 8
+	self assert: down key equals: KeyboardKey left.
+	self assert: down keyValue equals: Character arrowLeft asInteger.
+	self assert: down keyCharacter equals: Character arrowLeft.
+	self assert: up keyValue equals: Character arrowLeft asInteger.
+	self assert: down buttons equals: ReplayKeyModifiers shift.
+	self assert: up buttons equals: ReplayKeyModifiers shift
 ]
 
 { #category : 'tests' }
@@ -1025,6 +1028,74 @@ ReplayUIBackendTest >> testPressKeySendsDownAndUp [
 ]
 
 { #category : 'tests' }
+ReplayUIBackendTest >> testPressKeyEditsTextFieldLikeAKeyboard [
+	"Each key acts once: Morphic acts on the key down of keys typing no text, and a keystroke for them would insert a control character"
+
+	| field morph area |
+	field := SpTextInputFieldPresenter new.
+	field text: 'abcd'.
+	morph := field build.
+	area := morph textArea.
+	[
+	area selectFrom: 3 to: 2.
+	(ReplayPressKey new keySelector: #backspace; yourself) pressKeyOn: area.
+	self assert: area text asString equals: 'acd'.
+	self assert: area selectionInterval equals: (2 to: 1).
+	(ReplayPressKey new keySelector: #space; yourself) pressKeyOn: area.
+	self assert: area text asString equals: 'a cd'.
+	(ReplayPressKey new keySelector: #right; repeatCount: 2; yourself) pressKeyOn: area.
+	self assert: area text asString equals: 'a cd'.
+	self assert: area selectionInterval equals: (5 to: 4) ] ensure: [ morph delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testPressKeyEnterSubmitsTextFieldWithoutTyping [
+
+	| field submitted morph |
+	submitted := nil.
+	field := SpTextInputFieldPresenter new.
+	field
+		text: 'abcd';
+		whenSubmitDo: [ :text | submitted := text ].
+	morph := field build.
+	[
+	(ReplayPressKey new keySelector: #enter; yourself) pressKeyOn: morph textArea.
+	self assert: submitted equals: 'abcd'.
+	self assert: morph textArea text asString equals: 'abcd' ] ensure: [ morph delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testPressKeySendsKeystrokeOnlyForKeysTypingText [
+
+	| target |
+	target := ReplayEventRecorderMorph new.
+	(ReplayPressKey new keySelector: #space; yourself) pressKeyOn: target.
+	self assert: target eventLabels asArray equals: #( keyDown keystroke keyUp ).
+	self assert: target events second value keyCharacter equals: Character space.
+
+	target := ReplayEventRecorderMorph new.
+	(ReplayPressKey new keySelector: #space; modifiers: ReplayKeyModifiers control; yourself) pressKeyOn: target.
+	self assert: target eventLabels asArray equals: #( keyDown keyUp ).
+
+	#( #enter #tab #backspace #escape #delete ) do: [ :selector |
+		target := ReplayEventRecorderMorph new.
+		(ReplayPressKey new keySelector: selector; yourself) pressKeyOn: target.
+		self assert: target eventLabels asArray equals: #( keyDown keyUp ) ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testPressKeyTabInsertsOneTabInTextArea [
+
+	| area |
+	area := RubEditingArea new.
+	[
+	area setTextWith: 'ab'.
+	area selectFrom: 2 to: 1.
+	(ReplayPressKey new keySelector: #tab; yourself) pressKeyOn: area.
+	self assert: area text asString equals: (String with: $a with: Character tab with: $b) ] ensure: [ area delete ]
+]
+
+{ #category : 'tests' }
 ReplayUIBackendTest >> testPressKeySettingsPresenterBuilds [
 
 	| action presenter |
@@ -1032,7 +1103,7 @@ ReplayUIBackendTest >> testPressKeySettingsPresenterBuilds [
 	action
 		keySelector: #left;
 		repeatCount: 3;
-		flags: 8.
+		modifiers: ReplayKeyModifiers shift.
 	presenter := action settingsPresenterOn: ReplayEditor new.
 
 	self assert: presenter notNil
@@ -1260,8 +1331,7 @@ ReplayUIBackendTest >> testShortcutActionDelegatesToResolvedUIBackend [
 
 	| backend action resolved |
 	backend := ReplayRecordingBackend new.
-	action := ReplayShortcut new.
-	action text: 's'.
+	action := ReplayShortcut keyBinding: (ReplayKeyBinding character: $s modifiers: 0).
 	resolved := ReplayResolvedUIElement
 		backend: backend
 		reference: (ReplayUIReference named: 'Shortcut target')
@@ -1276,16 +1346,30 @@ ReplayUIBackendTest >> testShortcutActionDelegatesToResolvedUIBackend [
 ]
 
 { #category : 'tests' }
-ReplayUIBackendTest >> testShortcutIgnoresNullCharacters [
+ReplayUIBackendTest >> testShortcutIgnoresUnknownKeys [
 
 	| action target |
 	target := ReplayEventRecorderMorph new.
-	action := ReplayShortcut new
-		text: (String with: (Character value: 0));
-		flags: UserInputEvent cmdKeyMask;
-		yourself.
+	action := ReplayShortcut keyBinding:
+		          (ReplayKeyBinding chords: { ReplayKeyChord key: #NOT_A_KEY modifiers: ReplayKeyModifiers command }).
 	self shouldnt: [ action shortcutOn: target ] raise: Error.
 	self assert: target eventLabels isEmpty
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testShortcutSendsAKeyDownPerChordWithItsModifiers [
+
+	| action target |
+	target := ReplayEventRecorderMorph new.
+	action := ReplayShortcut keyBinding: (ReplayKeyBinding fromKMCombination: $t meta , $s).
+	action shortcutOn: target.
+
+	self assert: target eventLabels asArray equals: #( keyDown keyDown ).
+	self assert: target events first value key equals: (KeyboardKey named: #T).
+	self assert: target events first value buttons equals: ReplayKeyModifiers command.
+	self assert: target events first value keyCharacter equals: $t.
+	self assert: target events second value key equals: (KeyboardKey named: #S).
+	self assert: target events second value buttons equals: 0
 ]
 
 { #category : 'tests' }

@@ -1,5 +1,5 @@
 "
-I display available Pharo keymaps so shortcut actions and macro editors can inspect and adopt existing shortcuts.
+I list the keymaps of the Pharo keymap categories, one category at a time, so that a Shortcut action can adopt the key binding of an existing keymap. selectKeymapOf: selects the keymap that a key binding triggers.
 "
 Class {
 	#name : 'ReplayShortcutDescriptionPresenter',
@@ -20,18 +20,6 @@ ReplayShortcutDescriptionPresenter class >> defaultLayout [
 		  add: #categoryDropList withConstraints: [ :c | c height: 25 ];
 		  add: #shortcutList;
 		  yourself
-]
-
-{ #category : 'instance creation' }
-ReplayShortcutDescriptionPresenter class >> descriptionText [
-
-	^ 'Describes the shortcuts in the system'
-]
-
-{ #category : 'accessing' }
-ReplayShortcutDescriptionPresenter class >> icon [
-
-	^ self iconNamed: #keymapBrowser
 ]
 
 { #category : 'api' }
@@ -73,12 +61,18 @@ ReplayShortcutDescriptionPresenter >> initializeWidgets [
 		beResizable
 ]
 
-{ #category : 'initialization' }
-ReplayShortcutDescriptionPresenter >> initializeWindow: aWindowPresenter [
+{ #category : 'api' }
+ReplayShortcutDescriptionPresenter >> selectKeymapOf: aReplayKeyBinding [
+	"Select the first keymap that aReplayKeyBinding triggers, and its category"
 
-	aWindowPresenter
-		title: 'Shortcuts description';
-		initialExtent: 600 @ 350
+	aReplayKeyBinding isEmpty ifTrue: [ ^ self ].
+	categoryDropList items do: [ :category |
+		category allEntries keymaps
+			detect: [ :keymap | aReplayKeyBinding matchesKeymap: keymap ]
+			ifFound: [ :keymap |
+				categoryDropList selectItem: category.
+				shortcutList selectItem: keymap scrollToSelection: true.
+				^ self ] ]
 ]
 
 { #category : 'accessing' }

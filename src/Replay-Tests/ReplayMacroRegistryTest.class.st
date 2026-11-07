@@ -24,7 +24,7 @@ ReplayMacroRegistryTest >> fileWithLibraryInstallingOnStartup: aBoolean [
 	| library macro |
 	library := ReplayMacroLibrary new.
 	library installsOnStartup: aBoolean.
-	macro := library addMacro: (self macroNamed: 'Startup macro' shortcut: (self controlShortcut: 'f')).
+	macro := library addMacro: (self macroNamed: 'Startup macro' keyBinding: (self controlShortcut: 'f')).
 	macro contextNames: { #ReplayMacroStartupTest }.
 	^ self fileWith: (STON toStringPretty: library)
 ]
@@ -35,7 +35,7 @@ ReplayMacroRegistryTest >> registryWithInstalledMacro [
 
 	| registry macro |
 	registry := ReplayMacroRegistry new.
-	macro := registry library addMacro: (self macroNamed: 'Installed macro' shortcut: (self controlShortcut: 'f')).
+	macro := registry library addMacro: (self macroNamed: 'Installed macro' keyBinding: (self controlShortcut: 'f')).
 	macro contextNames: { #ReplayMacroRegistryTest }.
 	macro install.
 	^ registry
@@ -72,11 +72,11 @@ ReplayMacroRegistryTest >> testImportStringAddsAMacroOrALibrary [
 
 	| registry macro library added |
 	registry := ReplayMacroRegistry new.
-	macro := self macroNamed: 'Imported macro' shortcut: (self controlShortcut: 'r').
+	macro := self macroNamed: 'Imported macro' keyBinding: (self controlShortcut: 'r').
 	macro contextNames: { #RubTextEditor }.
 	added := registry importString: (STON toString: macro).
 	self assert: (added collect: [ :each | each name ]) asArray equals: #( 'Imported macro' ).
-	self assert: added first shortcut text equals: 'r'.
+	self assert: added first keyBinding equals: (self controlShortcut: 'r').
 	self assert: added first contextNames asArray equals: { #RubTextEditor }.
 
 	library := ReplayMacroLibrary new.
@@ -206,14 +206,14 @@ ReplayMacroRegistryTest >> testMacroIdentitySurvivesSaveLoadEditInstallReload [
 	macro := firstRegistry library addNewMacro.
 	macro
 		contextNames: { #RubTextEditor };
-		shortcut: (self controlShortcut: 'f').
+		keyBinding: (self controlShortcut: 'f').
 	firstRegistry save.
 
 	secondRegistry := ReplayMacroRegistry onFile: file.
 	loadedMacro := secondRegistry library macros first.
 	loadedMacro install.
 	loadedMacro scenario title: 'Edited macro'.
-	loadedMacro shortcut: (self controlShortcut: 'g').
+	loadedMacro keyBinding: (self controlShortcut: 'g').
 	loadedMacro updateInstalledKeymaps.
 	secondRegistry save.
 
@@ -222,7 +222,7 @@ ReplayMacroRegistryTest >> testMacroIdentitySurvivesSaveLoadEditInstallReload [
 	reloadedMacro install.
 	self assert: reloadedMacro identifier equals: macro identifier.
 	self assert: reloadedMacro name equals: 'Edited macro'.
-	self assert: reloadedMacro shortcut text equals: 'g'.
+	self assert: reloadedMacro keyBinding equals: (self controlShortcut: 'g').
 	self assert: (ReplayMacro installedKeymaps count: [ :keymap | reloadedMacro isOwnKeymap: keymap ]) equals: 1
 ]
 
@@ -248,7 +248,7 @@ ReplayMacroRegistryTest >> testReplaceLibrarySwapsKeymapsAndRunsTheNewMacro [
 	registry := self registryWithInstalledMacro.
 	registry file: self temporaryFile.
 	oldMacro := registry library macros first.
-	removedMacro := registry library addMacro: (self macroNamed: 'Removed' shortcut: (self controlShortcut: 'g')).
+	removedMacro := registry library addMacro: (self macroNamed: 'Removed' keyBinding: (self controlShortcut: 'g')).
 	removedMacro contextNames: { #ReplayMacroRegistryTest }.
 	removedMacro install.
 	newLibrary := ReplayMacroLibrary new.
@@ -297,7 +297,7 @@ ReplayMacroRegistryTest >> testSavesAndLoadsLibrary [
 	macro := registry library addNewMacro.
 	macro
 		contextNames: { #RubTextEditor };
-		shortcut: (self controlShortcut: 'f').
+		keyBinding: (self controlShortcut: 'f').
 	registry library installsOnStartup: true.
 	registry save.
 
