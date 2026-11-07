@@ -77,3 +77,23 @@ ReplayPresenterNamesTest >> testWidgetsGetTheShortestNameThatFindsThem [
 		equals: 'details.items'.
 	self assert: (pane replayNameOfPresenterWith: Morph new) isNil
 ]
+
+{ #category : 'tests' }
+ReplayPresenterNamesTest >> testNamesAreFoundThroughUnnamedSubpresenters [
+	"A subpresenter only in a layout has no name, but its own subpresenters do"
+
+	| container details |
+	details := ReplayNamedDetailsPresenter new.
+	container := SpPresenter new.
+	container layout: (SpBoxLayout newTopToBottom
+			 add: details;
+			 yourself).
+	self
+		assert: (container replayPresenterAt: 'runButton' ifAbsent: [ nil ])
+		identicalTo: details runButton.
+	container open.
+	self
+		assert: (container replayNameOfPresenterWith: details runButton adapter widget)
+		equals: 'runButton'.
+	self assert: (container replayNameOfPresenterWith: details adapter widget) isNil
+]
