@@ -174,7 +174,7 @@ ReplayRecorderTest >> testRecorderCoalescesTypedCharactersForFocusedTarget [
 		self assert: recorder actions size equals: 1.
 		self assert: action class equals: ReplayType.
 		self assert: action text equals: 'ab'.
-		self assert: action uiReference isKeyboardFocus ]
+		self assert: action target isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
@@ -200,7 +200,7 @@ ReplayRecorderTest >> testRecorderCoalescesTypingWhenFocusedMorphPathChanges [
 		self assert: recorder actions size equals: 1.
 		self assert: action class equals: ReplayType.
 		self assert: action text equals: 'ab'.
-		self assert: action uiReference isKeyboardFocus ]
+		self assert: action target isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
@@ -420,7 +420,7 @@ ReplayRecorderTest >> testRecorderRecordsArrowKeyDownAsPressKeyWhenKeyUpArrives 
 		self assert: action class equals: ReplayPressKey.
 		self assert: action keySelector equals: #left.
 		self assert: action modifiers equals: 0.
-		self assert: action uiReference isKeyboardFocus ] ensure: [
+		self assert: action target isKeyboardFocus ] ensure: [
 			hand keyboardFocus: previousFocus.
 			recorder manager close ]
 ]
@@ -442,7 +442,7 @@ ReplayRecorderTest >> testRecorderRecordsDeleteTextForBackspace [
 		self assert: action class equals: ReplayDeleteText.
 		self assert: action direction equals: #backward.
 		self assert: action count equals: 1.
-		self assert: action uiReference isKeyboardFocus ]
+		self assert: action target isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
@@ -467,7 +467,7 @@ ReplayRecorderTest >> testRecorderRecordsEnterKeyDownAsPressKeyWhenKeyUpArrives 
 		self assert: action class equals: ReplayPressKey.
 		self assert: action keySelector equals: #enter.
 		self assert: action modifiers equals: 0.
-		self assert: action uiReference isKeyboardFocus ]
+		self assert: action target isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
@@ -490,7 +490,7 @@ ReplayRecorderTest >> testRecorderRecordsKeyDownBackspaceAsDeleteText [
 		self assert: action class equals: ReplayDeleteText.
 		self assert: action direction equals: #backward.
 		self assert: action count equals: 1.
-		self assert: action uiReference isKeyboardFocus ]
+		self assert: action target isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
@@ -523,7 +523,7 @@ ReplayRecorderTest >> testRecorderRecordsModifiedArrowKeyAsPressKey [
 		self assert: action class equals: ReplayPressKey.
 		self assert: action keySelector equals: #right.
 		self assert: action modifiers equals: UserInputEvent cmdKeyMask.
-		self assert: action uiReference isKeyboardFocus ] ensure: [
+		self assert: action target isKeyboardFocus ] ensure: [
 			hand keyboardFocus: previousFocus.
 			recorder manager close ]
 ]
@@ -544,7 +544,7 @@ ReplayRecorderTest >> testRecorderRecordsShortcutForModifiedKeyDown [
 		action := recorder actions first.
 		self assert: action class equals: ReplayShortcut.
 		self assert: action keyBinding equals: (ReplayKeyBinding character: $f modifiers: ReplayKeyModifiers command).
-		self assert: action uiReference isKeyboardFocus ]
+		self assert: action target isKeyboardFocus ]
 
 		ensure: [ hand keyboardFocus: previousFocus. recorder manager close ]
 ]
@@ -626,12 +626,12 @@ ReplayRecorderTest >> testRecorderTranslatesMouseClickToReplayClick [
 		upAction := actions second.
 		self assert: downAction class equals: ReplayClick.
 		self assert: downAction mousePhase equals: #down.
-		self assert: downAction uiReference isMorphicPath.
-		self assert: downAction uiReference value equals: #(1).
+		self assert: downAction target isMorphicPath.
+		self assert: downAction target value equals: #(1).
 		self assert: downAction position equals: 5 @ 5.
 		self assert: upAction class equals: ReplayClick.
 		self assert: upAction mousePhase equals: #up.
-		self assert: upAction uiReference value equals: #(1).
+		self assert: upAction target value equals: #(1).
 		self assert: upAction position equals: 5 @ 5 ]
 		ensure: [ recorder manager close ]
 ]
@@ -650,7 +650,7 @@ ReplayRecorderTest >> testRecorderTranslatesMouseDragToReplayDrag [
 		recorder recordEvent: (self mouseButtonEventType: #mouseUp position: 35 @ 25 which: MouseEvent redButton buttons: 0 hand: hand).
 		action := recorder actions first.
 		self assert: action class equals: ReplayDrag.
-		self assert: action uiReference value equals: #(1).
+		self assert: action target value equals: #(1).
 		self assert: action startPosition equals: 5 @ 5.
 		self assert: action endPosition equals: 15 @ 15.
 		self assert: action steps equals: 1 ]

@@ -18,15 +18,9 @@ ReplayType class >> displayName [
 ]
 
 { #category : 'running' }
-ReplayType >> runOn: runner onUI: ui [
+ReplayType >> runOnMorph: aMorph [
 
-	self typeOn: ui
-]
-
-{ #category : 'running' }
-ReplayType >> runOn: runner resolvedUI: resolvedUI [
-
-	resolvedUI runType: self
+	self typeOn: aMorph
 ]
 
 { #category : 'editing' }

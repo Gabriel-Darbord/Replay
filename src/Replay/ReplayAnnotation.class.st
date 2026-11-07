@@ -1,5 +1,7 @@
 "
 I am the overlay morph that draws an annotation highlight around target bounds and owns its label and leader line placement.
+
+My label and line are separate morphs in the World: they show once I am in the World, even when I was added to a UI out of it, and they are deleted when I leave it.
 "
 Class {
 	#name : 'ReplayAnnotation',
@@ -198,6 +200,14 @@ ReplayAnnotation >> initialize [
 	super initialize.
 	self beTransparent.
 	self borderStyle: (BorderStyle width: 5 color: Color red)
+]
+
+{ #category : 'initialize' }
+ReplayAnnotation >> intoWorld: aWorld [
+	"My label and line live in the World: show them once I get there, when I was added to a UI out of the World"
+
+	super intoWorld: aWorld.
+	label ifNotNil: [ self placeLabelAt: label position ]
 ]
 
 { #category : 'accessing' }

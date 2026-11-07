@@ -179,15 +179,9 @@ ReplayPressKey >> repeatCountPresenterOn: editor [
 ]
 
 { #category : 'running' }
-ReplayPressKey >> runOn: runner onUI: ui [
+ReplayPressKey >> runOnMorph: aMorph [
 
-	self pressKeyOn: ui
-]
-
-{ #category : 'running' }
-ReplayPressKey >> runOn: runner resolvedUI: resolvedUI [
-
-	resolvedUI runPressKey: self
+	self pressKeyOn: aMorph
 ]
 
 { #category : 'editing' }

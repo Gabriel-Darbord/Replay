@@ -1,5 +1,7 @@
 "
-I add a visual annotation around a resolved UI target. I use the active UI manager overlay so scenarios can explain widgets without modifying the managed UI.
+I add a visual annotation around a resolved UI target, with an optional label and its placement. I use the overlay of the active UI manager so scenarios can explain widgets without modifying the managed UI.
+
+I need a target: annotating the whole World is refused.
 "
 Class {
 	#name : 'ReplayAnnotate',
@@ -86,21 +88,12 @@ ReplayAnnotate >> printOn: stream [
 ]
 
 { #category : 'running' }
-ReplayAnnotate >> runOn: runner onUI: ui [
-
-	runner manager defer: [
-		runner manager addOverlay: (ReplayAnnotation
-			annotate: ui bounds
-			label: self text
-			placement: self placement) ]
-]
-
-{ #category : 'running' }
 ReplayAnnotate >> runOn: runner resolvedUI: resolvedUI [
+	"Highlight the widget of my target in the overlay of the managed UI, once the UI has processed the previous actions"
 
 	| bounds |
+	resolvedUI morphRequiredFor: self.
 	bounds := resolvedUI boundsInSurface.
-	bounds ifNil: [ ^ super runOn: runner resolvedUI: resolvedUI ].
 	runner manager defer: [
 		runner manager addOverlay: (ReplayAnnotation
 			annotate: bounds

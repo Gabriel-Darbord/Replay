@@ -1,3 +1,6 @@
+"
+I am a test backend: I record the last action run on me instead of running it, and keep deferred blocks until a test runs them. My managed UI is any morph a test gives me.
+"
 Class {
 	#name : 'ReplayRecordingBackend',
 	#superclass : 'ReplayUIBackend',
@@ -5,7 +8,8 @@ Class {
 		'lastInteraction',
 		'lastAction',
 		'lastResolvedUI',
-		'deferredBlocks'
+		'deferredBlocks',
+		'managedUI'
 	],
 	#category : 'Replay-Tests',
 	#package : 'Replay-Tests'
@@ -47,6 +51,18 @@ ReplayRecordingBackend >> lastResolvedUI [
 	^ lastResolvedUI
 ]
 
+{ #category : 'accessing' }
+ReplayRecordingBackend >> managedUI [
+
+	^ managedUI
+]
+
+{ #category : 'accessing' }
+ReplayRecordingBackend >> managedUI: aMorph [
+
+	managedUI := aMorph
+]
+
 { #category : 'recording' }
 ReplayRecordingBackend >> record: interactionSymbol action: anAction resolvedUI: aResolvedUI [
 
@@ -56,9 +72,9 @@ ReplayRecordingBackend >> record: interactionSymbol action: anAction resolvedUI:
 ]
 
 { #category : 'running' }
-ReplayRecordingBackend >> runClick: aReplayClick on: aResolvedUI [
+ReplayRecordingBackend >> run: anAction on: aResolvedUI [
 
-	self record: #click action: aReplayClick resolvedUI: aResolvedUI
+	self record: #run action: anAction resolvedUI: aResolvedUI
 ]
 
 { #category : 'running' }
@@ -68,54 +84,6 @@ ReplayRecordingBackend >> runDeferredBlocks [
 	blocks := self deferredBlocks copy.
 	deferredBlocks removeAll.
 	blocks do: [ :block | block value ]
-]
-
-{ #category : 'running' }
-ReplayRecordingBackend >> runDeleteText: aReplayDeleteText on: aResolvedUI [
-
-	self record: #deleteText action: aReplayDeleteText resolvedUI: aResolvedUI
-]
-
-{ #category : 'running' }
-ReplayRecordingBackend >> runDrag: aReplayDrag on: aResolvedUI [
-
-	self record: #drag action: aReplayDrag resolvedUI: aResolvedUI
-]
-
-{ #category : 'running' }
-ReplayRecordingBackend >> runFocus: aReplayFocus on: aResolvedUI [
-
-	self record: #focus action: aReplayFocus resolvedUI: aResolvedUI
-]
-
-{ #category : 'running' }
-ReplayRecordingBackend >> runPressKey: aReplayPressKey on: aResolvedUI [
-
-	self record: #pressKey action: aReplayPressKey resolvedUI: aResolvedUI
-]
-
-{ #category : 'running' }
-ReplayRecordingBackend >> runScroll: aReplayScroll on: aResolvedUI [
-
-	self record: #scroll action: aReplayScroll resolvedUI: aResolvedUI
-]
-
-{ #category : 'running' }
-ReplayRecordingBackend >> runSelectText: aReplaySelectText on: aResolvedUI [
-
-	self record: #selectText action: aReplaySelectText resolvedUI: aResolvedUI
-]
-
-{ #category : 'running' }
-ReplayRecordingBackend >> runShortcut: aReplayShortcut on: aResolvedUI [
-
-	self record: #shortcut action: aReplayShortcut resolvedUI: aResolvedUI
-]
-
-{ #category : 'running' }
-ReplayRecordingBackend >> runType: aReplayType on: aResolvedUI [
-
-	self record: #type action: aReplayType resolvedUI: aResolvedUI
 ]
 
 { #category : 'running' }

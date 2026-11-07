@@ -1,23 +1,20 @@
 "
-I am the abstract base for actions that resolve a target UI element before running.
+I am the abstract base for actions that act on a target UI element.
+
+My target is a ReplayUIReference. Without one, I target the current World, which needs no managed UI; actions that need a real target answer false to allowsWorldTarget. Any other target is resolved by the manager of the runner, possibly over several UI cycles, into a ReplayResolvedUIElement.
+
+The backend of the resolved element runs me: it first asks me to run on the native element (a Spec presenter for instance) with runNativelyOn:, and when I cannot, it gives me the Morphic widget with runOnMorph:. Subclasses that can act on native elements override canRunNativelyOn: and runOnNative:; resolvers also ask canRunNativelyOn: to accept a native element that has no widget yet.
 "
 Class {
 	#name : 'ReplayUIHandler',
 	#superclass : 'ReplayUIAction',
 	#instVars : [
-		'path',
-		'reference'
+		'target'
 	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
 	#tag : 'Actions'
 }
-
-{ #category : 'instance creation' }
-ReplayUIHandler class >> fromUIPath: collection [
-
-	^ self new path: collection
-]
 
 { #category : 'testing' }
 ReplayUIHandler class >> isAbstract [
@@ -31,9 +28,22 @@ ReplayUIHandler class >> shouldBeMenuItem [
 	^ true
 ]
 
+{ #category : 'instance creation' }
+ReplayUIHandler class >> target: aReplayUIReference [
+
+	^ self new target: aReplayUIReference
+]
+
 { #category : 'testing' }
 ReplayUIHandler >> allowsWorldTarget [
 	^ true
+]
+
+{ #category : 'testing' }
+ReplayUIHandler >> canRunNativelyOn: anObject [
+	"Whether I can act on anObject, the native element of a resolved target, instead of its Morphic widget"
+
+	^ false
 ]
 
 { #category : 'testing' }
@@ -42,22 +52,10 @@ ReplayUIHandler >> controlsRunnerContinuation [
 	^ true
 ]
 
-{ #category : 'enumerating' }
-ReplayUIHandler >> findElementIn: aMorph thenDo: aBlock [
-	"Compatibility path for editor highlights that resolve against an explicit Morph."
-
-	^ (ReplayMorphicResolver on: (ReplayMorphicBackend on: aMorph))
-		resolve: self uiReference
-		thenDo: [ :resolved | aBlock value: resolved morph ]
-		onMissing: [ :error | error signal ]
-]
-
 { #category : 'testing' }
 ReplayUIHandler >> hasSpecificTarget [
 
-	path ifNotNil: [ ^ true ].
-	reference ifNil: [ ^ false ].
-	^ reference isWorld not
+	^ self target isWorld not
 ]
 
 { #category : 'editing' }
@@ -99,8 +97,17 @@ ReplayUIHandler >> isUIHandler [
 ReplayUIHandler >> missingManagerFor: runner [
 
 	ReplayMissingUIError new
-		messageText: 'No Replay UI is available for target ', self uiReference printString, '.';
+		messageText: 'No Replay UI is available for target ', self target printString, '.';
 		subject: runner;
+		signal
+]
+
+{ #category : 'error handling' }
+ReplayUIHandler >> missingTarget [
+
+	ReplayMissingUIError new
+		messageText: self class displayName , ' needs a target: choose one in its settings.';
+		subject: self;
 		signal
 ]
 
@@ -116,45 +123,35 @@ ReplayUIHandler >> missingTargetPresenterOn: editor [
 		yourself
 ]
 
-{ #category : 'accessing' }
-ReplayUIHandler >> path [
+{ #category : 'running' }
+ReplayUIHandler >> resolveTargetWith: aReplayUIManager thenDo: foundBlock onMissing: missingBlock [
 
-	^ path
+	^ aReplayUIManager
+		  resolve: self target
+		  forAction: self
+		  thenDo: foundBlock
+		  onMissing: missingBlock
 ]
 
-{ #category : 'accessing' }
-ReplayUIHandler >> path: aCollection [
-	"Path through owner chain, each element child index"
+{ #category : 'running' }
+ReplayUIHandler >> runNativelyOn: anObject [
+	"Act on anObject, the native element of a resolved target, if I can. Answer whether I did."
 
-	path := aCollection.
-	reference := nil
-]
-
-{ #category : 'accessing' }
-ReplayUIHandler >> reference [
-
-	^ reference
-]
-
-{ #category : 'accessing' }
-ReplayUIHandler >> reference: aReplayUIReference [
-
-	reference := aReplayUIReference.
-	path := nil
+	(anObject notNil and: [ self canRunNativelyOn: anObject ]) ifFalse: [ ^ false ].
+	self runOnNative: anObject.
+	^ true
 ]
 
 { #category : 'running' }
 ReplayUIHandler >> runOn: runner [
 	"Has control over runner continuation."
 
-	| uiReference manager |
-	uiReference := self uiReference.
-	uiReference isWorld ifTrue: [ ^ self runWithoutPathOn: runner ].
+	| manager |
+	self target isWorld ifTrue: [ ^ self runOnWorldOf: runner ].
 	manager := runner manager.
 	manager ifNil: [ ^ self missingManagerFor: runner ].
-	manager
-		resolve: uiReference
-		forAction: self
+	self
+		resolveTargetWith: manager
 		thenDo: [ :resolved |
 			runner isStopped ifFalse: [
 				runner protect: [ self runOn: runner resolvedUI: resolved ].
@@ -165,22 +162,37 @@ ReplayUIHandler >> runOn: runner [
 ]
 
 { #category : 'running' }
-ReplayUIHandler >> runOn: runner onUI: ui [
+ReplayUIHandler >> runOn: runner resolvedUI: resolvedUI [
+
+	resolvedUI run: self
+]
+
+{ #category : 'running' }
+ReplayUIHandler >> runOnMorph: aMorph [
+	"Act on aMorph, the Morphic widget of my target"
 
 	self subclassResponsibility
 ]
 
 { #category : 'running' }
-ReplayUIHandler >> runOn: runner resolvedUI: resolvedUI [
+ReplayUIHandler >> runOnNative: anObject [
+	"Act on anObject, a native element. Only sent when canRunNativelyOn: answers true, so subclasses overriding it override me."
 
-	^ self runOn: runner onUI: (resolvedUI morphRequiredFor: self class displayName)
+	self shouldNotImplement
 ]
 
 { #category : 'running' }
-ReplayUIHandler >> runWithoutPathOn: runner [
-	"When path nil, default behavior targets current World. Has control runner continuation."
+ReplayUIHandler >> runOnWorldOf: runner [
+	"Act on the current World, which needs no managed UI. Has control over runner continuation."
 
-	self runOn: runner onUI: self currentWorld.
+	| world |
+	self allowsWorldTarget ifFalse: [ ^ self missingTarget ].
+	world := self currentWorld.
+	self runOn: runner resolvedUI: (ReplayResolvedUIElement
+			 backend: runner backend
+			 reference: self target
+			 nativeElement: world
+			 morph: world).
 	runner defer: [ runner nextAction ]
 ]
 
@@ -203,6 +215,21 @@ ReplayUIHandler >> semanticTargetPresenterOn: editor [
 		yourself
 ]
 
+{ #category : 'accessing' }
+ReplayUIHandler >> target [
+	"The reference to the UI element I act on, the current World by default"
+
+	^ target ifNil: [ ReplayUIReference world ]
+]
+
+{ #category : 'accessing' }
+ReplayUIHandler >> target: aReplayUIReference [
+	"Target the referenced UI element. Nil or a World reference target the current World."
+
+	target := (aReplayUIReference notNil and: [ aReplayUIReference isWorld not ])
+		          ifTrue: [ aReplayUIReference ]
+]
+
 { #category : 'editing' }
 ReplayUIHandler >> targetControlsPresenterOn: editor [
 
@@ -223,29 +250,28 @@ ReplayUIHandler >> targetControlsPresenterOn: editor [
 { #category : 'accessing' }
 ReplayUIHandler >> targetName [
 
-	^ (reference notNil and: [ reference isNamed ])
-		ifTrue: [ reference value ]
+	^ self target isNamed
+		ifTrue: [ self target value ]
 		ifFalse: [ '' ]
 ]
 
 { #category : 'accessing' }
 ReplayUIHandler >> targetName: aString [
+	"Target the presenter with the semantic name aString. An empty name clears a semantic target."
 
 	| trimmed |
 	trimmed := aString
 		ifNil: [ '' ]
 		ifNotNil: [ aString trimBoth ].
 	trimmed
-		ifEmpty: [
-			reference ifNotNil: [
-				reference isNamed ifTrue: [ reference := nil ] ] ]
+		ifEmpty: [ self target isNamed ifTrue: [ self targetWorld ] ]
 		ifNotEmpty: [ self targetNamed: trimmed ]
 ]
 
 { #category : 'accessing' }
 ReplayUIHandler >> targetNamed: aString [
 
-	self reference: (ReplayUIReference named: aString)
+	self target: (ReplayUIReference named: aString)
 ]
 
 { #category : 'editing' }
@@ -287,10 +313,8 @@ ReplayUIHandler >> targetPresenterOn: editor [
 { #category : 'editing' }
 ReplayUIHandler >> targetStatePresenterOn: editor [
 
-	(reference notNil and: [ reference isNamed ])
-		ifTrue: [ ^ self targetNamedPresenterOn: editor ].
-	(path notNil or: [ reference notNil and: [ reference isMorphicPath ] ])
-		ifTrue: [ ^ self targetPathPresenterOn: editor ].
+	self target isNamed ifTrue: [ ^ self targetNamedPresenterOn: editor ].
+	self target isMorphicPath ifTrue: [ ^ self targetPathPresenterOn: editor ].
 	^ self allowsWorldTarget
 		ifTrue: [ self worldTargetPresenterOn: editor ]
 		ifFalse: [ self missingTargetPresenterOn: editor ]
@@ -298,10 +322,8 @@ ReplayUIHandler >> targetStatePresenterOn: editor [
 
 { #category : 'accessing' }
 ReplayUIHandler >> targetWorld [
-	"Target current World when path unset"
 
-	path := nil.
-	reference := nil
+	target := nil
 ]
 
 { #category : 'editing' }
@@ -327,14 +349,18 @@ ReplayUIHandler >> uiEditionPresenterOn: editor [
 		| manager highlight |
 		manager := builder manager editor: editor.
 
-		path ifNotNil: [ "Highlight the current target"
-			self findElementIn: manager managedUI thenDo: [ :element |
-				highlight := ReplayAnnotation annotateMorph: element.
-				manager overlay addMorphBack: highlight ] ].
+		self hasSpecificTarget ifTrue: [ "Highlight the current target"
+			self
+				resolveTargetWith: manager
+				thenDo: [ :resolved |
+					resolved hasMorph ifTrue: [
+						highlight := ReplayAnnotation annotateMorph: resolved morph.
+						manager overlay addMorphBack: highlight ] ]
+				onMissing: [ :error | "Nothing to highlight" ] ].
 
 		manager clickBlock: [ :event :wrapper | "Update target highlight"
 			highlight ifNotNil: [ highlight delete ].
-			self path: wrapper path.
+			self target: wrapper reference.
 			highlight := ReplayAnnotation annotateMorph: wrapper.
 			manager overlay addMorphBack: highlight ].
 
@@ -342,15 +368,6 @@ ReplayUIHandler >> uiEditionPresenterOn: editor [
 
 	^ editor newMorph morph:
 		  (builder uiForAction: self inStep: editor currentStep)
-]
-
-{ #category : 'accessing' }
-ReplayUIHandler >> uiReference [
-
-	reference ifNotNil: [ ^ reference ].
-	^ path
-		ifNil: [ ReplayUIReference world ]
-		ifNotNil: [ ReplayUIReference morphicPath: path ]
 ]
 
 { #category : 'editing' }

@@ -175,7 +175,7 @@ ReplayScenarioSerializationTest >> testDragActionRoundTripsThroughSton [
 		startPosition: 3 @ 4;
 		endPosition: 30 @ 40;
 		steps: 5;
-		flags: MouseEvent yellowButton;
+		buttons: MouseEvent yellowButton;
 		modifiers: UserInputEvent cmdKeyMask;
 		yourself.
 	copy := self roundTripAction: action.
@@ -184,7 +184,7 @@ ReplayScenarioSerializationTest >> testDragActionRoundTripsThroughSton [
 	self assert: copy startPosition equals: 3 @ 4.
 	self assert: copy endPosition equals: 30 @ 40.
 	self assert: copy steps equals: 5.
-	self assert: copy flags equals: MouseEvent yellowButton.
+	self assert: copy buttons equals: MouseEvent yellowButton.
 	self assert: copy modifiers equals: UserInputEvent cmdKeyMask
 ]
 
@@ -288,4 +288,27 @@ ReplayScenarioSerializationTest >> testSelectTextActionRoundTripsThroughSton [
 	self assert: copy targetName equals: 'Action script'.
 	self assert: copy startIndex equals: 2.
 	self assert: copy stopIndex equals: 5
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testPointerActionDefaultsAreNotSerialized [
+
+	| ston |
+	ston := STON toString: { ReplayClick new. ReplayDrag new. ReplayScroll new }.
+
+	#( 'buttons' 'modifiers' 'clickCount' 'mousePhase' 'steps' 'target' ) do: [ :key |
+		self deny: (ston includesSubstring: key) ]
+]
+
+{ #category : 'tests' }
+ReplayScenarioSerializationTest >> testUIActionTargetRoundTripsThroughSton [
+
+	{
+		(ReplayUIReference morphicPath: #( 3 1 2 )).
+		(ReplayUIReference named: 'Button').
+		ReplayUIReference keyboardFocus } do: [ :reference |
+		| copy |
+		copy := self roundTripAction: (ReplayClick target: reference).
+		self assert: copy target equals: reference ].
+	self assert: (self roundTripAction: ReplayFocus new) target isWorld
 ]

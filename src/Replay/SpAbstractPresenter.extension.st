@@ -6,3 +6,10 @@ SpAbstractPresenter >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
 
 	^ absentBlock value
 ]
+
+{ #category : '*Replay' }
+SpAbstractPresenter >> replayCanClickNatively [
+	"Answer whether a Replay click can act on me without my widget, as a click on my widget would"
+
+	^ false
+]

@@ -1,5 +1,5 @@
 "
-I adapt Replay UI management and target resolution for Spec presenters rendered through Morphic.
+I adapt Replay UI management and target resolution for Spec presenters rendered through Morphic: my presenter is the managed presenter, which exposes semantic names, and my morph, its rendered widget, is the managed UI. The native element of targets resolved by name is their presenter.
 "
 Class {
 	#name : 'ReplaySpecBackend',
@@ -20,29 +20,6 @@ ReplaySpecBackend class >> presenter: aSpecPresenter morph: aMorph [
 		  presenter: aSpecPresenter;
 		  morph: aMorph;
 		  yourself
-]
-
-{ #category : 'testing' }
-ReplaySpecBackend >> canPerformNativeClickOn: aPresenter [
-
-	aPresenter ifNil: [ ^ false ].
-	^ (aPresenter isKindOf: SpButtonPresenter)
-		or: [ (aPresenter isKindOf: SpLinkPresenter)
-				or: [ (aPresenter isKindOf: SpToolbarButtonPresenter)
-						or: [ aPresenter isKindOf: SpToolbarToggleButtonPresenter ] ] ]
-]
-
-{ #category : 'testing' }
-ReplaySpecBackend >> canRun: anAction nativelyOn: nativeElement [
-
-	(anAction isKindOf: ReplayClick) ifTrue: [
-		^ anAction isSimpleLeftClick
-			and: [ self canPerformNativeClickOn: nativeElement ] ].
-	(anAction isKindOf: ReplayFocus) ifTrue: [
-		^ nativeElement isKindOf: SpAbstractPresenter ].
-	(anAction isKindOf: ReplaySelectText) ifTrue: [
-		^ anAction canSelectTextIn: nativeElement ].
-	^ false
 ]
 
 { #category : 'accessing' }
@@ -95,35 +72,7 @@ ReplaySpecBackend >> resolver [
 ]
 
 { #category : 'accessing' }
-ReplaySpecBackend >> root [
-
-	^ presenter
-]
-
-{ #category : 'running' }
-ReplaySpecBackend >> runClick: aReplayClick on: aResolvedUI [
-
-	| targetPresenter |
-	targetPresenter := aResolvedUI nativeElement.
-	(aReplayClick isSimpleLeftClick and: [ self canPerformNativeClickOn: targetPresenter ])
-		ifTrue: [ targetPresenter performAction ]
-		ifFalse: [ super runClick: aReplayClick on: aResolvedUI ]
-]
-
-{ #category : 'accessing' }
 ReplaySpecBackend >> semanticScriptReceiver [
 
 	^ presenter
-]
-
-{ #category : 'accessing' }
-ReplaySpecBackend >> surfaceMorph [
-
-	^ morph
-]
-
-{ #category : 'accessing' }
-ReplaySpecBackend >> surfaceRoot [
-
-	^ morph
 ]

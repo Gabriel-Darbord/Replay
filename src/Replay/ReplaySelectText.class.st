@@ -1,5 +1,5 @@
 "
-I select a text range in a resolved UI target that supports text selection.
+I select a text range in a resolved UI target that supports text selection, natively when the native element does (as Spec text presenters do), otherwise in the Morphic widget.
 "
 Class {
 	#name : 'ReplaySelectText',
@@ -17,6 +17,12 @@ Class {
 ReplaySelectText class >> displayName [
 
 	^ 'Select text'
+]
+
+{ #category : 'testing' }
+ReplaySelectText >> canRunNativelyOn: anObject [
+
+	^ self canSelectTextIn: anObject
 ]
 
 { #category : 'testing' }
@@ -58,15 +64,15 @@ ReplaySelectText >> printOn: stream [
 ]
 
 { #category : 'running' }
-ReplaySelectText >> runOn: runner onUI: ui [
+ReplaySelectText >> runOnMorph: aMorph [
 
-	self selectTextIn: ui
+	self selectTextIn: aMorph
 ]
 
 { #category : 'running' }
-ReplaySelectText >> runOn: runner resolvedUI: resolvedUI [
+ReplaySelectText >> runOnNative: anObject [
 
-	resolvedUI runSelectText: self
+	self selectTextIn: anObject
 ]
 
 { #category : 'running' }

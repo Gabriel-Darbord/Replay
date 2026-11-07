@@ -1,5 +1,7 @@
 "
 I delete text around the current caret or selection in a resolved text target. I use editor deletion APIs so selection and forward/backward deletion match user behavior.
+
+I find the text editor of Rubric editing areas, and of the text morphs holding one (such as the widgets of Spec text inputs and text presenters), natively or in the Morphic widget.
 "
 Class {
 	#name : 'ReplayDeleteText',
@@ -25,6 +27,12 @@ ReplayDeleteText class >> directionChoices [
 ReplayDeleteText class >> displayName [
 
 	^ 'Delete text'
+]
+
+{ #category : 'testing' }
+ReplayDeleteText >> canRunNativelyOn: anObject [
+
+	^ self canDeleteTextIn: anObject
 ]
 
 { #category : 'testing' }
@@ -157,15 +165,15 @@ ReplayDeleteText >> printOn: stream [
 ]
 
 { #category : 'running' }
-ReplayDeleteText >> runOn: runner onUI: ui [
+ReplayDeleteText >> runOnMorph: aMorph [
 
-	self deleteTextIn: ui
+	self deleteTextIn: aMorph
 ]
 
 { #category : 'running' }
-ReplayDeleteText >> runOn: runner resolvedUI: resolvedUI [
+ReplayDeleteText >> runOnNative: anObject [
 
-	resolvedUI runDeleteText: self
+	self deleteTextIn: anObject
 ]
 
 { #category : 'editing' }
@@ -183,8 +191,10 @@ ReplayDeleteText >> settingsPresenterOn: editor [
 
 { #category : 'private' }
 ReplayDeleteText >> textEditorFor: anObject [
+	"The text editor of anObject: its own, the one of its text area for scrolled text morphs and text fields, or anObject itself"
 
 	(anObject respondsTo: #editor) ifTrue: [ ^ anObject editor ].
+	(anObject respondsTo: #textArea) ifTrue: [ ^ self textEditorFor: anObject textArea ].
 	^ anObject
 ]
 

@@ -74,9 +74,9 @@ ReplayRecorder >> clearMouseGesture [
 ReplayRecorder >> clickActionFor: aReplayUIReference at: aPoint event: anEvent phase: aSymbol [
 
 	^ ReplayClick new
-		reference: aReplayUIReference;
+		target: aReplayUIReference;
 		position: aPoint;
-		flags: (mouseDownButtons ifNil: [ anEvent whichButton ]);
+		buttons: (mouseDownButtons ifNil: [ anEvent whichButton ]);
 		modifiers: (mouseDownModifiers ifNil: [ ReplayKeyModifiers fromEvent: anEvent ]);
 		mousePhase: aSymbol;
 		yourself
@@ -154,11 +154,11 @@ ReplayRecorder >> discardPendingShortcut [
 { #category : 'event handling' }
 ReplayRecorder >> dragActionFor: aReplayUIReference endingAt: endPosition [
 	^ ReplayDrag new
-		reference: aReplayUIReference;
+		target: aReplayUIReference;
 		startPosition: mouseDownPosition;
 		endPosition: endPosition;
 		steps: self mouseMoveCount;
-		flags: (mouseDownButtons ifNil: [ MouseEvent redButton ]);
+		buttons: (mouseDownButtons ifNil: [ MouseEvent redButton ]);
 		modifiers: (mouseDownModifiers ifNil: [ 0 ]);
 		yourself
 ]
@@ -347,7 +347,7 @@ ReplayRecorder >> pathForMorph: aMorph [
 ReplayRecorder >> pendingKeyPressActionFor: anEvent [
 
 	^ ReplayPressKey new
-		reference: self keyboardFocusReference;
+		target: self keyboardFocusReference;
 		keySelector: (self keyPressSelectorFrom: anEvent);
 		modifiers: (ReplayKeyModifiers fromEvent: anEvent);
 		yourself
@@ -394,7 +394,7 @@ ReplayRecorder >> recordDelayBeforeNextAction [
 { #category : 'event handling' }
 ReplayRecorder >> recordDeleteTextOn: aReplayUIReference direction: directionSymbol [
 	self recordAction: (ReplayDeleteText new
-		reference: aReplayUIReference;
+		target: aReplayUIReference;
 		direction: directionSymbol;
 		yourself)
 ]
@@ -448,7 +448,7 @@ ReplayRecorder >> recordKeystroke: anEvent on: targetMorph [
 	code = 127 ifTrue: [ ^ self recordDeleteTextOn: reference direction: #forward ].
 	code = 0 ifTrue: [ ^ self ].
 	action := ReplayType new
-		reference: reference;
+		target: reference;
 		text: character asString;
 		yourself.
 	self recordAction: action
@@ -514,7 +514,7 @@ ReplayRecorder >> recordMouseWheel: anEvent [
 	reference := self referenceForMorph: target.
 	reference ifNil: [ ^ self ].
 	action := ReplayScroll new
-		reference: reference;
+		target: reference;
 		direction: (self scrollDirectionFrom: anEvent);
 		modifiers: (ReplayKeyModifiers fromEvent: anEvent);
 		position: (self offsetForWorldPoint: anEvent position inMorph: target);
@@ -561,13 +561,7 @@ ReplayRecorder >> referenceForMorph: aMorph [
 { #category : 'testing' }
 ReplayRecorder >> sameReferenceOf: firstAction and: secondAction [
 	(firstAction isUIHandler and: [ secondAction isUIHandler ]) ifFalse: [ ^ false ].
-	^ self sameUIReference: firstAction uiReference as: secondAction uiReference
-]
-
-{ #category : 'testing' }
-ReplayRecorder >> sameUIReference: firstReference as: secondReference [
-	firstReference class = secondReference class ifFalse: [ ^ false ].
-	^ firstReference kind = secondReference kind and: [ firstReference value = secondReference value ]
+	^ firstAction target = secondAction target
 ]
 
 { #category : 'event handling' }
@@ -587,7 +581,7 @@ ReplayRecorder >> shortcutFromEvent: anEvent [
 
 	^ (ReplayKeyBinding fromKeyboardEvent: anEvent) ifNotNil: [ :binding |
 		  ReplayShortcut new
-			  reference: self keyboardFocusReference;
+			  target: self keyboardFocusReference;
 			  keyBinding: binding;
 			  yourself ]
 ]

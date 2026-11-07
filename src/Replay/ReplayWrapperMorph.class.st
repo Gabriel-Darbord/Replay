@@ -1,5 +1,7 @@
 "
-I am a transparent overlay morph wrapped around a managed Morphic child while editing scenarios. I record the child path and expose highlighting and action-creation menus.
+I am a transparent overlay morph wrapped around a managed Morphic child while editing scenarios. Wrappers nest like the morphs they wrap: I keep the index of my wrapped morph among the submorphs of its owner, so the indexes of my wrapper owners give the path of my wrapped morph from the managed UI (see reference).
+
+I highlight while the hand is over me, and my menu creates actions targeting my wrapped morph.
 "
 Class {
 	#name : 'ReplayWrapperMorph',
@@ -46,21 +48,23 @@ ReplayWrapperMorph >> menuPresenterOn: editor [
 				name: action displayName;
 				action: [
 					editor
-						addAction: (action fromUIPath: self path)
+						addAction: (action target: self reference)
 						after: editor currentAction ] ] ].
 	^ menu
 ]
 
 { #category : 'event handling' }
 ReplayWrapperMorph >> onMouseEnter: event [
-	"Apply highlight if coming from outside of the UI.
-	Highlighting is then passed between wrappers on mouse leave."
+	"Apply highlight if coming from outside of the UI, or from one of my wrapper owners, which do not leave.
+	Otherwise, the highlight is passed between wrappers on mouse leave."
 
 	| comingFrom |
-	comingFrom := event hand world morphsAt: (event isMove
-			               ifTrue: [ event startPoint ]
-			               ifFalse: [ event position ]).
-	comingFrom class == self class ifFalse: [ self highlight ].
+	comingFrom := (event hand world morphsAt: (event isMove
+			                ifTrue: [ event startPoint ]
+			                ifFalse: [ event position ]))
+		              detect: [ :each | each class == self class ]
+		              ifNone: [ nil ].
+	(comingFrom isNil or: [ self hasOwner: comingFrom ]) ifTrue: [ self highlight ].
 	"We cannot rely on `event wasHandled` to know if this is the only highlighted wrapper.
 	So we have to remove the highlight from the whole owner chain."
 	(owner isNotNil and: [ owner class == self class ]) ifTrue: [
@@ -103,6 +107,13 @@ ReplayWrapperMorph >> pathOn: collection [
 	owner class == self class ifFalse: [ ^ self ].
 	owner pathOn: collection.
 	collection add: index
+]
+
+{ #category : 'accessing' }
+ReplayWrapperMorph >> reference [
+	"The Morphic path reference to my wrapped morph"
+
+	^ ReplayUIReference morphicPath: self path
 ]
 
 { #category : 'drawing' }

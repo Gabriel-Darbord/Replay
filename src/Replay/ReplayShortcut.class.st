@@ -60,15 +60,9 @@ ReplayShortcut >> printOn: stream [
 ]
 
 { #category : 'running' }
-ReplayShortcut >> runOn: runner onUI: ui [
+ReplayShortcut >> runOnMorph: aMorph [
 
-	self shortcutOn: ui
-]
-
-{ #category : 'running' }
-ReplayShortcut >> runOn: runner resolvedUI: resolvedUI [
-
-	resolvedUI runShortcut: self
+	self shortcutOn: aMorph
 ]
 
 { #category : 'editing' }

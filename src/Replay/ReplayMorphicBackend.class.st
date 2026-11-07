@@ -1,5 +1,5 @@
 "
-I adapt Replay UI management and target resolution for directly managed Morphic morphs.
+I adapt Replay UI management and target resolution for directly managed Morphic morphs: my morph is the managed UI, and the native element of my resolved targets is their morph.
 "
 Class {
 	#name : 'ReplayMorphicBackend',
@@ -36,22 +36,4 @@ ReplayMorphicBackend >> morph [
 ReplayMorphicBackend >> morph: aMorph [
 
 	morph := aMorph
-]
-
-{ #category : 'accessing' }
-ReplayMorphicBackend >> resolver [
-
-	^ ReplayMorphicResolver on: self
-]
-
-{ #category : 'accessing' }
-ReplayMorphicBackend >> root [
-
-	^ morph
-]
-
-{ #category : 'accessing' }
-ReplayMorphicBackend >> surfaceMorph [
-
-	^ morph
 ]

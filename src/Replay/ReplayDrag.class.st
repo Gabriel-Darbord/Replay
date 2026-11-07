@@ -1,16 +1,15 @@
 "
-I simulate a mouse drag gesture across a resolved UI target using local start and end offsets, button flags, modifiers, and interpolated move events.
+I simulate a mouse drag gesture on a resolved UI target: a mouse down at my start offset, interpolated mouse moves, and a mouse up at my end offset, with the mouse buttons and keyboard modifiers of my superclass. Offsets are from the top-left corner of the target, nil for its center.
+
+All my events go to the morph that handles the mouse down, found up the owner chain of the target, as the mouse focus would.
 "
 Class {
 	#name : 'ReplayDrag',
-	#superclass : 'ReplayUIHandler',
-	#traits : 'TReplayActionWithFlags',
-	#classTraits : 'TReplayActionWithFlags classTrait',
+	#superclass : 'ReplayPointerAction',
 	#instVars : [
 		'startPosition',
 		'endPosition',
-		'steps',
-		'modifiers'
+		'steps'
 	],
 	#category : 'Replay-Actions',
 	#package : 'Replay',
@@ -23,34 +22,15 @@ ReplayDrag class >> displayName [
 	^ 'Drag'
 ]
 
-{ #category : 'adding' }
-ReplayDrag >> addModifiers: anInteger [
-
-	self modifiers: (self modifiers bitOr: anInteger).
-	^ anInteger
-]
-
-{ #category : 'editing' }
-ReplayDrag >> buttonsPresenterOn: editor [
-
-	^ SpBoxLayout newTopToBottom
-		add: 'Mouse buttons:' expand: false;
-		add: (self flagsPresenterOn: editor namesAndValues: {
-			'Left drag'. MouseEvent redButton.
-			'Right drag'. MouseEvent yellowButton.
-			'Middle drag'. MouseEvent blueButton }) expand: false;
-		yourself
-]
-
 { #category : 'running' }
-ReplayDrag >> dragOn: ui [
+ReplayDrag >> dragOn: aMorph [
 
 	| startPoint endPoint hand target downEvent previousPoint |
-	startPoint := self worldStartPositionIn: ui.
-	endPoint := self worldEndPositionIn: ui.
+	startPoint := self worldPointAt: self startPosition in: aMorph.
+	endPoint := self worldPointAt: self endPosition in: aMorph.
 	hand := self newHandAt: startPoint.
 	downEvent := self mouseDownEventAt: startPoint hand: hand.
-	target := self targetStartingAt: ui handling: #handlesMouseDown: with: downEvent.
+	target := self targetStartingAt: aMorph handling: #handlesMouseDown: with: downEvent.
 	hand mouseFocus: target.
 	downEvent sentTo: target.
 	previousPoint := startPoint.
@@ -86,25 +66,11 @@ ReplayDrag >> endPositionOrZero [
 ReplayDrag >> endPositionPresenterOn: editor [
 
 	^ self
-		pointPresenterOn: editor
-		label: 'End offset:'
-		value: self endPositionOrZero
-		update: [ :point | self endPosition: point ]
-]
-
-{ #category : 'testing' }
-ReplayDrag >> hasModifiers: anInteger [
-
-	^ (self modifiers bitAnd: anInteger) = anInteger
-]
-
-{ #category : 'initialization' }
-ReplayDrag >> initialize [
-
-	super initialize.
-	flags := MouseEvent redButton.
-	steps := 1.
-	modifiers := 0
+		  offsetPresenterOn: editor
+		  labeled: 'End offset:'
+		  named: 'end offset'
+		  get: [ self endPositionOrZero ]
+		  set: [ :point | self endPosition: point ]
 ]
 
 { #category : 'running' }
@@ -113,70 +79,7 @@ ReplayDrag >> interpolatedPointFrom: startPoint to: endPoint atStep: stepIndex [
 	^ startPoint + ((endPoint - startPoint) * (stepIndex / self steps))
 ]
 
-{ #category : 'running' }
-ReplayDrag >> localEndPositionIn: aMorph [
-
-	^ self endPosition ifNil: [ aMorph center ] ifNotNil: [ :point | aMorph topLeft + point ]
-]
-
-{ #category : 'running' }
-ReplayDrag >> localStartPositionIn: aMorph [
-
-	^ self startPosition ifNil: [ aMorph center ] ifNotNil: [ :point | aMorph topLeft + point ]
-]
-
-{ #category : 'editing' }
-ReplayDrag >> modifierFlagsPresenterOn: editor namesAndValues: pairs [
-
-	^ SpGridLayout build: [ :layout |
-		pairs pairsDo: [ :name :value |
-			| checkbox targetName |
-			targetName := self flagTargetNameFor: name.
-			checkbox := editor newCheckBox
-				label: name;
-				state: (self hasModifiers: value);
-				whenActivatedDo: [ self addModifiers: value ];
-				whenDeactivatedDo: [ self removeModifiers: value ];
-				yourself.
-			editor registerReplayPresenter: checkbox named: 'Action drag ' , targetName.
-			editor registerReplayPresenter: checkbox named: self class displayName , ' ' , targetName.
-			layout add: checkbox ] ]
-]
-
-{ #category : 'accessing' }
-ReplayDrag >> modifiers [
-
-	^ modifiers ifNil: [ 0 ]
-]
-
-{ #category : 'accessing' }
-ReplayDrag >> modifiers: anInteger [
-
-	modifiers := anInteger
-]
-
-{ #category : 'editing' }
-ReplayDrag >> modifiersPresenterOn: editor [
-
-	^ SpBoxLayout newTopToBottom
-		add: 'Keyboard modifiers:' expand: false;
-		add: (self modifierFlagsPresenterOn: editor namesAndValues: #(Shift 8 Control 16 'Alt/Option' 32 Command 64)) expand: false;
-		yourself
-]
-
-{ #category : 'running' }
-ReplayDrag >> mouseDownEventAt: aPoint hand: aHand [
-
-	^ MouseButtonEvent new
-		setType: #mouseDown
-		position: aPoint
-		which: self flags
-		buttons: (self flags bitOr: self modifiers)
-		hand: aHand
-		stamp: Time millisecondClockValue
-]
-
-{ #category : 'running' }
+{ #category : 'events' }
 ReplayDrag >> mouseMoveEventFrom: startPoint to: endPoint hand: aHand [
 
 	^ MouseMoveEvent new
@@ -184,62 +87,9 @@ ReplayDrag >> mouseMoveEventFrom: startPoint to: endPoint hand: aHand [
 		startPoint: startPoint
 		endPoint: endPoint
 		trail: { startPoint. endPoint }
-		buttons: (self flags bitOr: self modifiers)
+		buttons: (self buttons bitOr: self modifiers)
 		hand: aHand
 		stamp: Time millisecondClockValue
-]
-
-{ #category : 'running' }
-ReplayDrag >> mouseUpEventAt: aPoint hand: aHand [
-
-	^ MouseButtonEvent new
-		setType: #mouseUp
-		position: aPoint
-		which: self flags
-		buttons: self modifiers
-		hand: aHand
-		stamp: Time millisecondClockValue
-]
-
-{ #category : 'running' }
-ReplayDrag >> newHandAt: aPoint [
-
-	^ HandMorph new
-		position: aPoint;
-		privateOwner: self currentWorld;
-		yourself
-]
-
-{ #category : 'editing' }
-ReplayDrag >> pointPresenterOn: editor label: label value: point update: updateBlock [
-
-	| xInput yInput targetName |
-	targetName := (label allButLast copyReplaceAll: ' ' with: ' ') asLowercase.
-	xInput := editor newNumberInput.
-	xInput
-		numberType: Float;
-		number: point x;
-		whenNumberChangedDo: [ :number |
-			updateBlock value: number @ point y.
-			editor actionChanged: self ].
-	yInput := editor newNumberInput.
-	yInput
-		numberType: Float;
-		number: point y;
-		whenNumberChangedDo: [ :number |
-			updateBlock value: point x @ number.
-			editor actionChanged: self ].
-	editor registerReplayPresenter: xInput named: 'Action ' , targetName , ' x'.
-	editor registerReplayPresenter: yInput named: 'Action ' , targetName , ' y'.
-	^ SpBoxLayout newTopToBottom
-		add: label expand: false;
-		add: (SpBoxLayout newLeftToRight
-			add: 'X' expand: false;
-			add: xInput;
-			add: 'Y' expand: false;
-			add: yInput;
-			yourself) expand: false;
-		yourself
 ]
 
 { #category : 'printing' }
@@ -252,29 +102,13 @@ ReplayDrag >> printOn: stream [
 		stream nextPutAll: ' to '; print: point ].
 	self steps = 1 ifFalse: [
 		stream nextPutAll: ' steps='; print: self steps ].
-	self flags = MouseEvent redButton ifFalse: [
-		stream nextPutAll: ' button='; print: self flags ].
-	self modifiers = 0 ifFalse: [
-		stream nextPutAll: ' modifiers='; print: self modifiers ]
-]
-
-{ #category : 'removing' }
-ReplayDrag >> removeModifiers: anInteger [
-
-	self modifiers: (self modifiers bitClear: anInteger).
-	^ anInteger
+	self printButtonsAndModifiersOn: stream
 ]
 
 { #category : 'running' }
-ReplayDrag >> runOn: runner onUI: ui [
+ReplayDrag >> runOnMorph: aMorph [
 
-	self dragOn: ui
-]
-
-{ #category : 'running' }
-ReplayDrag >> runOn: runner resolvedUI: resolvedUI [
-
-	resolvedUI runDrag: self
+	self dragOn: aMorph
 ]
 
 { #category : 'editing' }
@@ -315,10 +149,11 @@ ReplayDrag >> startPositionOrZero [
 ReplayDrag >> startPositionPresenterOn: editor [
 
 	^ self
-		pointPresenterOn: editor
-		label: 'Start offset:'
-		value: self startPositionOrZero
-		update: [ :point | self startPosition: point ]
+		  offsetPresenterOn: editor
+		  labeled: 'Start offset:'
+		  named: 'start offset'
+		  get: [ self startPositionOrZero ]
+		  set: [ :point | self startPosition: point ]
 ]
 
 { #category : 'accessing' }
@@ -351,26 +186,4 @@ ReplayDrag >> stepsPresenterOn: editor [
 		add: 'Move steps:' expand: false;
 		add: input expand: false;
 		yourself
-]
-
-{ #category : 'running' }
-ReplayDrag >> targetStartingAt: aMorph handling: selector with: anEvent [
-
-	| target |
-	target := aMorph.
-	[ target notNil and: [ (target perform: selector with: anEvent) not ] ]
-		whileTrue: [ target := target owner ].
-	^ target ifNil: [ aMorph ]
-]
-
-{ #category : 'running' }
-ReplayDrag >> worldEndPositionIn: aMorph [
-
-	^ aMorph pointInWorld: (self localEndPositionIn: aMorph)
-]
-
-{ #category : 'running' }
-ReplayDrag >> worldStartPositionIn: aMorph [
-
-	^ aMorph pointInWorld: (self localStartPositionIn: aMorph)
 ]

@@ -124,3 +124,82 @@ ReplayUIManagerTest >> testWithoutUIUsesDefaultBackend [
 	self assert: empty managedUI isNil.
 	self assert: empty managedPresenter isNil
 ]
+
+{ #category : 'support' }
+ReplayUIManagerTest >> enter: aWrapper from: aPoint [
+	"Send aWrapper the mouse enter of a hand moving from aPoint to its center"
+
+	| hand |
+	hand := HandMorph new
+		        privateOwner: self currentWorld;
+		        yourself.
+	aWrapper onMouseEnter: (MouseMoveEvent new
+			 setType: #mouseEnter
+			 startPoint: aPoint
+			 endPoint: aWrapper center
+			 trail: { aPoint. aWrapper center }
+			 buttons: 0
+			 hand: hand
+			 stamp: Time millisecondClockValue)
+]
+
+{ #category : 'support' }
+ReplayUIManagerTest >> openWrappedDuring: aBlock [
+	"Open the managed UI, wrap it for edition, and evaluate aBlock with the root wrapper"
+
+	[
+		| rootWrapper |
+		manager openLabeled: 'Replay wrapper test'.
+		self currentWorld doOneCycle.
+		rootWrapper := manager wrapMorph: root atDepth: 1.
+		manager overlay addMorph: rootWrapper.
+		aBlock value: rootWrapper ] ensure: [ manager close ]
+]
+
+{ #category : 'tests' }
+ReplayUIManagerTest >> testWrapperDoesNotTakeHighlightFromAnotherWrapper [
+	"The wrapper the hand comes from passes the highlight on its mouse leave"
+
+	self openWrappedDuring: [ :rootWrapper |
+		| first second |
+		first := rootWrapper submorphs first.
+		second := rootWrapper submorphs second.
+		self enter: first from: second center.
+		self assert: first color isTransparent ]
+]
+
+{ #category : 'tests' }
+ReplayUIManagerTest >> testWrapperHighlightsWhenEnteredFromItsOwner [
+
+	self openWrappedDuring: [ :rootWrapper |
+		| child |
+		child := rootWrapper submorphs first.
+		rootWrapper highlight.
+		self enter: child from: rootWrapper topLeft + (5 @ 5).
+		self deny: child color isTransparent.
+		self assert: rootWrapper color isTransparent ]
+]
+
+{ #category : 'tests' }
+ReplayUIManagerTest >> testWrapperHighlightsWhenEnteredFromOutside [
+
+	self openWrappedDuring: [ :rootWrapper |
+		| child |
+		child := rootWrapper submorphs first.
+		self enter: child from: rootWrapper topLeft - (20 @ 20).
+		self deny: child color isTransparent ]
+]
+
+{ #category : 'tests' }
+ReplayUIManagerTest >> testWrapperReferencesItsWrappedMorph [
+
+	| rootWrapper wrapper resolved |
+	rootWrapper := manager wrapMorph: root atDepth: 1.
+	wrapper := rootWrapper submorphs second submorphs first.
+
+	self assert: wrapper reference equals: (ReplayUIReference morphicPath: #( 2 1 )).
+	self assert: rootWrapper reference equals: (ReplayUIReference morphicPath: #(  )).
+	manager resolver resolve: wrapper reference thenDo: [ :element | resolved := element ].
+	self assert: resolved morph identicalTo: wrapper wrappedMorph.
+	self assert: wrapper wrappedMorph identicalTo: (root submorphs second submorphs first)
+]

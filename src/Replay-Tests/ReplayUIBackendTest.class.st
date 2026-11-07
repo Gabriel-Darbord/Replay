@@ -3,7 +3,7 @@ Headless tests for Replay UI backend selection.
 "
 Class {
 	#name : 'ReplayUIBackendTest',
-	#superclass : 'TestCase',
+	#superclass : 'ReplayTestCase',
 	#category : 'Replay-Tests',
 	#package : 'Replay-Tests'
 }
@@ -431,7 +431,7 @@ ReplayUIBackendTest >> testClickActionDelegatesToResolvedUIBackend [
 
 	action runOn: ReplayRunner new resolvedUI: resolved.
 
-	self assert: backend lastInteraction equals: #click.
+	self assert: backend lastInteraction equals: #run.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
 ]
@@ -542,7 +542,7 @@ ReplayUIBackendTest >> testDeleteTextActionDelegatesToResolvedUIBackend [
 		nativeElement: RubEditingArea new
 		morph: Morph new.
 	action runOn: ReplayRunner new resolvedUI: resolved.
-	self assert: backend lastInteraction equals: #deleteText.
+	self assert: backend lastInteraction equals: #run.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
 ]
@@ -688,7 +688,7 @@ ReplayUIBackendTest >> testDragActionDelegatesToResolvedUIBackend [
 		nativeElement: Object new
 		morph: ReplayEventRecorderMorph new.
 	action runOn: ReplayRunner new resolvedUI: resolved.
-	self assert: backend lastInteraction equals: #drag.
+	self assert: backend lastInteraction equals: #run.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
 ]
@@ -734,7 +734,7 @@ ReplayUIBackendTest >> testFocusActionDelegatesToResolvedUIBackend [
 
 	action runOn: ReplayRunner new resolvedUI: resolved.
 
-	self assert: backend lastInteraction equals: #focus.
+	self assert: backend lastInteraction equals: #run.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
 ]
@@ -811,7 +811,7 @@ ReplayUIBackendTest >> testManagingPresenterUsesSpecResolver [
 	manager := ReplayUIManager new managePresenter: presenter; yourself.
 
 	self assert: manager resolver class equals: ReplaySpecResolver.
-	self assert: manager backend root equals: presenter.
+	self assert: manager managedPresenter equals: presenter.
 	self assert: manager surfaceMorph isMorph
 ]
 
@@ -962,7 +962,7 @@ ReplayUIBackendTest >> testPressKeyActionDelegatesToResolvedUIBackend [
 
 	action runOn: ReplayRunner new resolvedUI: resolved.
 
-	self assert: backend lastInteraction equals: #pressKey.
+	self assert: backend lastInteraction equals: #run.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
 ]
@@ -1110,7 +1110,7 @@ ReplayUIBackendTest >> testPressKeySettingsPresenterBuilds [
 ]
 
 { #category : 'tests' }
-ReplayUIBackendTest >> testResolvedUIElementClickTargetRequiresMorph [
+ReplayUIBackendTest >> testClickRequiresMorphWhenItCannotClickNatively [
 
 	| resolved |
 	resolved := ReplayResolvedUIElement
@@ -1120,55 +1120,63 @@ ReplayUIBackendTest >> testResolvedUIElementClickTargetRequiresMorph [
 		morph: nil.
 
 	self
-		should: [ resolved clickTarget ]
+		should: [ ReplayClick new runOn: ReplayRunner new resolvedUI: resolved ]
 		raise: ReplayMissingUIError
 		withExceptionDo: [ :error |
-			self assert: (error messageText includesSubstring: 'click').
+			self assert: (error messageText includesSubstring: 'Click').
 			self assert: error subject equals: resolved ]
 ]
 
 { #category : 'tests' }
-ReplayUIBackendTest >> testResolvedUIElementFocusTargetFallsBackToMorph [
+ReplayUIBackendTest >> testFocusFallsBackToMorph [
 
 	| morph resolved |
-	morph := Morph new.
+	morph := ReplayEventRecorderMorph new.
 	resolved := ReplayResolvedUIElement
 		backend: ReplayUIBackend new
 		reference: (ReplayUIReference named: 'Field')
 		nativeElement: nil
 		morph: morph.
 
-	self assert: resolved focusTarget == morph
+	ReplayFocus new runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: morph eventLabels asArray equals: #( takeKeyboardFocus )
 ]
 
 { #category : 'tests' }
-ReplayUIBackendTest >> testResolvedUIElementFocusTargetPrefersNativeElement [
+ReplayUIBackendTest >> testFocusPrefersNativeElement [
 
 	| native morph resolved |
-	native := Morph new.
-	morph := Morph new.
+	native := ReplayEventRecorderMorph new.
+	morph := ReplayEventRecorderMorph new.
 	resolved := ReplayResolvedUIElement
 		backend: ReplayUIBackend new
 		reference: (ReplayUIReference named: 'Field')
 		nativeElement: native
 		morph: morph.
 
-	self assert: resolved focusTarget == native
+	ReplayFocus new runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: native eventLabels asArray equals: #( takeKeyboardFocus ).
+	self assert: morph eventLabels isEmpty
 ]
 
 { #category : 'tests' }
-ReplayUIBackendTest >> testResolvedUIElementKeyboardTargetUsesMorph [
+ReplayUIBackendTest >> testTypeRunsOnMorphRatherThanNativeElement [
 
 	| native morph resolved |
-	native := Object new.
-	morph := Morph new.
+	native := ReplayEventRecorderMorph new.
+	morph := ReplayEventRecorderMorph new.
 	resolved := ReplayResolvedUIElement
 		backend: ReplayUIBackend new
 		reference: (ReplayUIReference named: 'Field')
 		nativeElement: native
 		morph: morph.
 
-	self assert: resolved keyboardTarget == morph
+	(ReplayType new text: 'a') runOn: ReplayRunner new resolvedUI: resolved.
+
+	self assert: morph eventLabels asArray equals: #( keystroke ).
+	self assert: native eventLabels isEmpty
 ]
 
 { #category : 'tests' }
@@ -1183,7 +1191,7 @@ ReplayUIBackendTest >> testScrollActionDelegatesToResolvedUIBackend [
 		nativeElement: Object new
 		morph: ReplayEventRecorderMorph new.
 	action runOn: ReplayRunner new resolvedUI: resolved.
-	self assert: backend lastInteraction equals: #scroll.
+	self assert: backend lastInteraction equals: #run.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
 ]
@@ -1224,7 +1232,7 @@ ReplayUIBackendTest >> testSelectTextActionDelegatesToResolvedUIBackend [
 
 	action runOn: ReplayRunner new resolvedUI: resolved.
 
-	self assert: backend lastInteraction equals: #selectText.
+	self assert: backend lastInteraction equals: #run.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
 ]
@@ -1340,7 +1348,7 @@ ReplayUIBackendTest >> testShortcutActionDelegatesToResolvedUIBackend [
 
 	action runOn: ReplayRunner new resolvedUI: resolved.
 
-	self assert: backend lastInteraction equals: #shortcut.
+	self assert: backend lastInteraction equals: #run.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
 ]
@@ -1381,7 +1389,7 @@ ReplayUIBackendTest >> testSpecBackendKeepsNonLeftButtonClickOnMorphicFallback [
 	button action: [ clicked := true ].
 	backend := ReplaySpecBackend presenter: button morph: nil.
 	action := ReplayClick new.
-	action flags: MouseEvent yellowButton.
+	action buttons: MouseEvent yellowButton.
 	resolved := ReplayResolvedUIElement
 		backend: backend
 		reference: (ReplayUIReference named: 'Button')
@@ -1389,10 +1397,10 @@ ReplayUIBackendTest >> testSpecBackendKeepsNonLeftButtonClickOnMorphicFallback [
 		morph: nil.
 
 	self
-		should: [ backend runClick: action on: resolved ]
+		should: [ backend run: action on: resolved ]
 		raise: ReplayMissingUIError
 		withExceptionDo: [ :error |
-			self assert: (error messageText includesSubstring: 'click') ].
+			self assert: (error messageText includesSubstring: 'Click') ].
 	self deny: clicked
 ]
 
@@ -1426,7 +1434,7 @@ ReplayUIBackendTest >> testSpecBackendRunsNativeButtonClick [
 		nativeElement: button
 		morph: nil.
 
-	backend runClick: action on: resolved.
+	backend run: action on: resolved.
 
 	self assert: clicked
 ]
@@ -1447,9 +1455,9 @@ ReplayUIBackendTest >> testSpecResolverDoesNotResolveNonNativeClickBeforeMorphEx
 	presenter := ReplayButtonSemanticPresenter new.
 	backend := ReplaySpecBackend presenter: presenter morph: nil.
 	action := ReplayClick new.
-	action flags: MouseEvent yellowButton.
+	action buttons: MouseEvent yellowButton.
 	resolver := ReplaySpecResolver on: backend.
-	resolver maxAttempts: 1.
+	resolver timeout: Duration zero.
 
 	resolver
 		resolve: (ReplayUIReference named: 'Button')
@@ -1477,18 +1485,23 @@ ReplayUIBackendTest >> testSpecResolverKeepsSemanticPresenterAsNativeElement [
 ]
 
 { #category : 'tests' }
-ReplayUIBackendTest >> testSpecResolverReportsMissingSemanticNameImmediately [
+ReplayUIBackendTest >> testSpecResolverRetriesMissingSemanticNameUntilTimeout [
 
-	| presenter manager capturedError |
+	| presenter manager resolver capturedError |
 	presenter := ReplaySemanticPresenter new.
 	manager := ReplayUIManager new managePresenter: presenter.
+	resolver := manager resolver timeout: 100 milliSeconds.
 
-	manager resolver
+	resolver
 		resolve: (ReplayUIReference named: 'Missing')
 		thenDo: [ :element | self fail ]
 		onMissing: [ :error | capturedError := error ].
 
-	self assert: capturedError class equals: ReplayMissingUIError
+	self assert: capturedError isNil.
+	self waitUntil: [ capturedError notNil ].
+	self assert: capturedError class equals: ReplayMissingUIError.
+	self assert: (capturedError messageText includesSubstring: 'No Spec presenter named ''Missing''').
+	self assert: (capturedError messageText includesSubstring: 'Gave up after 100 ms')
 ]
 
 { #category : 'tests' }
@@ -1581,7 +1594,7 @@ ReplayUIBackendTest >> testTypeActionDelegatesToResolvedUIBackend [
 
 	action runOn: ReplayRunner new resolvedUI: resolved.
 
-	self assert: backend lastInteraction equals: #type.
+	self assert: backend lastInteraction equals: #run.
 	self assert: backend lastAction equals: action.
 	self assert: backend lastResolvedUI equals: resolved
 ]
@@ -1602,49 +1615,46 @@ ReplayUIBackendTest >> testTypeActionRequiresKeyboardTargetFromResolvedUI [
 		should: [ action runOn: ReplayRunner new resolvedUI: resolved ]
 		raise: ReplayMissingUIError
 		withExceptionDo: [ :error |
-			self assert: (error messageText includesSubstring: 'keyboard') ]
+			self assert: (error messageText includesSubstring: 'Type') ]
 ]
 
 { #category : 'tests' }
 ReplayUIBackendTest >> testUIHandlerClearingSemanticNameReturnsToWorldTarget [
 
-	| action reference |
+	| action |
 	action := ReplayFocus new.
 	action targetNamed: 'Field'.
 	action targetName: '   '.
-	reference := action uiReference.
 
-	self assert: action reference isNil.
-	self assert: reference isWorld.
+	self assert: action target isWorld.
 	self deny: action hasSpecificTarget
 ]
 
 { #category : 'tests' }
-ReplayUIBackendTest >> testUIHandlerPathClearsSemanticReference [
+ReplayUIBackendTest >> testUIHandlerKeepsOneTarget [
 
-	| action reference |
+	| action |
 	action := ReplayFocus new.
 	action targetNamed: 'Field'.
-	action path: #( 1 2 ).
-	reference := action uiReference.
+	action target: (ReplayUIReference morphicPath: #( 1 2 )).
 
-	self assert: action reference isNil.
-	self assert: reference isMorphicPath.
-	self assert: reference value equals: #( 1 2 ).
-	self assert: action hasSpecificTarget
+	self assert: action target equals: (ReplayUIReference morphicPath: #( 1 2 )).
+	self assert: action targetName equals: ''.
+	self assert: action hasSpecificTarget.
+	action target: ReplayUIReference world.
+	self deny: action hasSpecificTarget
 ]
 
 { #category : 'tests' }
 ReplayUIBackendTest >> testUIHandlerTargetNamedCreatesSemanticReference [
 
-	| action reference |
+	| action |
 	action := ReplayFocus new.
 	action targetNamed: 'Field'.
-	reference := action uiReference.
 
-	self assert: reference isNamed.
-	self assert: reference value equals: 'Field'.
-	self assert: action path isNil.
+	self assert: action target isNamed.
+	self assert: action target value equals: 'Field'.
+	self assert: action targetName equals: 'Field'.
 	self assert: action hasSpecificTarget
 ]
 
@@ -1660,16 +1670,13 @@ ReplayUIBackendTest >> testUIHandlerTargetPresenterBuildsForSemanticTarget [
 ]
 
 { #category : 'tests' }
-ReplayUIBackendTest >> testUIResolverMaxAttemptsIsAtLeastOne [
+ReplayUIBackendTest >> testUIResolverTimeout [
 
 	| resolver |
 	resolver := ReplaySpecResolver on: (ReplaySpecBackend presenter: ReplayEditor new morph: Morph new).
-	resolver maxAttempts: 0.
-	self assert: resolver maxAttempts equals: 1.
-	resolver maxAttempts: -5.
-	self assert: resolver maxAttempts equals: 1.
-	resolver maxAttempts: 3.
-	self assert: resolver maxAttempts equals: 3
+	self assert: resolver timeout equals: ReplayUIResolver defaultTimeout.
+	resolver timeout: 50 milliSeconds.
+	self assert: resolver timeout equals: 50 milliSeconds
 ]
 
 { #category : 'tests' }
@@ -1686,4 +1693,193 @@ ReplayUIBackendTest >> testUIResolverSchedulesRetryThroughBackend [
 	self assert: backend deferredBlockCount equals: 1.
 	backend runDeferredBlocks.
 	self assert: ran
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testAnnotateWithoutTargetRaisesMissingUI [
+
+	self
+		should: [ (ReplayAnnotate new text: 'Nowhere') runOn: ReplayRunner new ]
+		raise: ReplayMissingUIError
+		withExceptionDo: [ :error |
+			self assert: (error messageText includesSubstring: 'Annotate needs a target') ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testClickPhasesReachTheOwnerHandlingMouseDown [
+	"A split click sends its mouse up to the morph that got the mouse down"
+
+	| handler leaf |
+	handler := ReplayEventRecorderMorph new.
+	leaf := Morph new bounds: (10 @ 10 extent: 20 @ 20).
+	handler addMorph: leaf.
+
+	(ReplayClick new mousePhase: #down; yourself) clickOn: leaf.
+	(ReplayClick new mousePhase: #up; yourself) clickOn: leaf.
+
+	self assert: handler eventLabels asArray equals: #( mouseDown mouseUp )
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testDebugClickResolvesNamedTargetThroughManager [
+
+	| presenter manager click |
+	presenter := ReplayButtonSemanticPresenter new.
+	manager := ReplayUIManager new managePresenter: presenter.
+	click := ReplayDebugClickSpy new.
+	click targetNamed: 'Button'.
+
+	click debugClickIn: manager.
+
+	self assert: click debuggedBlock notNil.
+	self deny: presenter clicked.
+	click debuggedBlock value.
+	self assert: presenter clicked
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testLabeledAnnotationShowsItsLabelOnceInWorld [
+
+	| root target manager annotation |
+	root := Morph new bounds: (100 @ 100 extent: 300 @ 200).
+	target := Morph new bounds: (110 @ 110 extent: 80 @ 40).
+	root addMorph: target.
+	manager := ReplayUIManager new attachTo: target.
+	annotation := ReplayAnnotation annotate: target bounds label: 'Shown later'.
+	manager addOverlay: annotation.
+	self deny: annotation label isInWorld.
+
+	[
+		root openInWorld.
+		self assert: annotation label isInWorld.
+		self assert: annotation line isInWorld ] ensure: [
+			manager close.
+			root delete ].
+	self deny: annotation label isInWorld
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecBackendRunsTextActionsOnTextPresenters [
+
+	{ SpTextInputFieldPresenter. SpTextPresenter } do: [ :presenterClass |
+		| presenter morph backend resolved |
+		presenter := presenterClass new.
+		presenter text: 'abcdef'.
+		morph := presenter build.
+		backend := ReplaySpecBackend presenter: presenter morph: morph.
+		resolved := ReplayResolvedUIElement
+			backend: backend
+			reference: (ReplayUIReference named: 'Text')
+			nativeElement: presenter
+			morph: morph.
+		[
+			(ReplaySelectText new startIndex: 2; stopIndex: 4; yourself) runOn: ReplayRunner new resolvedUI: resolved.
+			self assert: morph textArea selectionInterval equals: (2 to: 4).
+			(ReplayDeleteText new direction: #backward; yourself) runOn: ReplayRunner new resolvedUI: resolved.
+			self assert: presenter text asString equals: 'aef'.
+			(ReplayType new text: 'X') runOn: ReplayRunner new resolvedUI: resolved.
+			self assert: presenter text asString equals: 'aXef' ] ensure: [ morph delete ] ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecNativeClickSkipsDisabledButton [
+
+	| clicked button morph resolved |
+	clicked := false.
+	button := SpButtonPresenter new.
+	button
+		action: [ clicked := true ];
+		disable.
+	self deny: (ReplayClick new canRunNativelyOn: button).
+
+	morph := button build.
+	resolved := ReplayResolvedUIElement
+		backend: (ReplaySpecBackend presenter: button morph: morph)
+		reference: (ReplayUIReference named: 'Button')
+		nativeElement: button
+		morph: morph.
+	[ ReplayClick new runOn: ReplayRunner new resolvedUI: resolved ] ensure: [ morph delete ].
+
+	self deny: clicked
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecNativeClickSkipsHiddenButton [
+
+	| button |
+	button := SpButtonPresenter new.
+	button hide.
+
+	self deny: (ReplayClick new canRunNativelyOn: button)
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecNativeClickOnToolbarButtonsActsLikeTheirWidgets [
+
+	| button toggle received |
+	button := SpToolbarButtonPresenter new.
+	button action: [ :presenter | received := presenter ].
+	ReplayClick new runNativelyOn: button.
+	self assert: received identicalTo: button.
+
+	toggle := SpToolbarToggleButtonPresenter new.
+	toggle action: [ :presenter | received := presenter ].
+	received := nil.
+	self deny: toggle isSelected.
+	ReplayClick new runNativelyOn: toggle.
+	self assert: toggle isSelected.
+	self assert: received identicalTo: toggle.
+	ReplayClick new runNativelyOn: toggle.
+	self deny: toggle isSelected
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecResolverTimesOutOnNamedPresenterThatNeverRenders [
+
+	| presenter resolver capturedError |
+	presenter := ReplayButtonSemanticPresenter new.
+	resolver := (ReplaySpecResolver on: (ReplaySpecBackend presenter: presenter morph: nil))
+		timeout: 100 milliSeconds;
+		yourself.
+
+	resolver
+		resolve: (ReplayUIReference named: 'Button')
+		forAction: (ReplayClick new buttons: MouseEvent yellowButton; yourself)
+		thenDo: [ :element | self fail: 'Unexpected resolution without widget' ]
+		onMissing: [ :error | capturedError := error ].
+
+	self waitUntil: [ capturedError notNil ].
+	self assert: (capturedError messageText includesSubstring: 'was found, but it has no rendered widget').
+	self assert: (capturedError messageText includesSubstring: 'Gave up after 100 ms')
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testSpecResolverWaitsForTheWidgetOfANamedPresenter [
+
+	| presenter resolved morph |
+	presenter := ReplayButtonSemanticPresenter new.
+
+	(ReplaySpecResolver on: (ReplaySpecBackend presenter: presenter morph: nil))
+		resolve: (ReplayUIReference named: 'Button')
+		forAction: (ReplayClick new buttons: MouseEvent yellowButton; yourself)
+		thenDo: [ :element | resolved := element ]
+		onMissing: [ :error | self fail: error messageText ].
+
+	self assert: resolved isNil.
+	morph := presenter build.
+	[
+		self waitUntil: [ resolved notNil ].
+		self assert: resolved nativeElement identicalTo: presenter button.
+		self assert: resolved morph identicalTo: presenter button adapter widget ] ensure: [ morph delete ]
+]
+
+{ #category : 'tests' }
+ReplayUIBackendTest >> testUIReferencesAreValues [
+
+	self assert: (ReplayUIReference named: 'Field') equals: (ReplayUIReference named: 'Field').
+	self assert: (ReplayUIReference named: 'Field') hash equals: (ReplayUIReference named: 'Field') hash.
+	self assert: (ReplayUIReference morphicPath: #( 1 2 )) equals: (ReplayUIReference morphicPath: #( 1 2 )).
+	self deny: (ReplayUIReference named: 'Field') equals: (ReplayUIReference named: 'Other').
+	self deny: (ReplayUIReference morphicPath: #( 1 )) equals: (ReplayUIReference named: #( 1 )).
+	self assert: ReplayUIReference world equals: ReplayUIReference world
 ]

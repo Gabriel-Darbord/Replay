@@ -103,6 +103,12 @@ ReplayEventRecorderMorph >> initialize [
 	self extent: 100 @ 60
 ]
 
+{ #category : 'event handling' }
+ReplayEventRecorderMorph >> takeKeyboardFocus [
+
+	self record: #takeKeyboardFocus event: nil
+]
+
 { #category : 'accessing' }
 ReplayEventRecorderMorph >> lastEvent [
 

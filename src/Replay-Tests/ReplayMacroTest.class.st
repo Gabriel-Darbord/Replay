@@ -286,7 +286,7 @@ ReplayMacroTest >> testStonHoldsTheKeyBindingAlone [
 	ston := STON toString: (self macroNamed: 'Save macro' keyBinding: (ReplayKeyBinding fromKMCombination: $s command)).
 
 	self assert: (ston includesSubstring: '#keyBinding:ReplayKeyBinding[ReplayKeyChord[#S,64]]').
-	#( 'ReplayShortcut' 'reference' 'path' 'flags' 'text' ) do: [ :field |
+	#( 'ReplayShortcut' 'target' 'buttons' 'text' ) do: [ :field |
 		self deny: (ston includesSubstring: field) ]
 ]
 

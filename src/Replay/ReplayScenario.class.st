@@ -27,7 +27,7 @@ ReplayScenario class >> example [
 { #category : 'examples' }
 ReplayScenario class >> exampleSton [
 
-	^ 'ReplayScenario{#title:''Example Scenario'',#steps:OrderedCollection[ReplayStep{#actions:OrderedCollection[ReplayBrowseClass{#target:#ReplayScenario},ReplayAnnotate{#path:[3,6,1,3,7,1,3],#text:''Where the magic happens.''}],#navigation:ReplayNavigate{#skip:false,#text:''Thus concludes this example.''}}]}'
+	^ 'ReplayScenario{#title:''Example Scenario'',#steps:OrderedCollection[ReplayStep{#actions:OrderedCollection[ReplayBrowseClass{#target:#ReplayScenario},ReplayAnnotate{#target:ReplayUIReference{#kind:#morphicPath,#value:[3,6,1,3,7,1,3]},#text:''Where the magic happens.''}],#navigation:ReplayNavigate{#skip:false,#text:''Thus concludes this example.''}}]}'
 ]
 
 { #category : 'adding' }
