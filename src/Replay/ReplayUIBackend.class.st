@@ -30,6 +30,17 @@ ReplayUIBackend >> managedUI [
 ]
 
 { #category : 'resolving' }
+ReplayUIBackend >> resolve: aReference forAction: anAction readyWhen: readyBlock thenDo: foundBlock onMissing: missingBlock [
+
+	^ self resolver
+		  resolve: aReference
+		  forAction: anAction
+		  readyWhen: readyBlock
+		  thenDo: foundBlock
+		  onMissing: missingBlock
+]
+
+{ #category : 'resolving' }
 ReplayUIBackend >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
 
 	^ self resolver

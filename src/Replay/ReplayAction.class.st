@@ -79,6 +79,13 @@ ReplayAction >> controlsRunnerContinuation [
 	^ false
 ]
 
+{ #category : 'running' }
+ReplayAction >> resolutionTimeout [
+	"How long to wait for my UI targets to be found and ready, a Duration, or nil for the default of resolvers"
+
+	^ nil
+]
+
 { #category : 'recording' }
 ReplayAction >> copyWithoutRecordedTiming [
 	| copy |

@@ -293,6 +293,17 @@ ReplayUIManager >> ownsUI [
 ]
 
 { #category : 'resolving' }
+ReplayUIManager >> resolve: aReference forAction: anAction readyWhen: readyBlock thenDo: foundBlock onMissing: missingBlock [
+
+	^ self backend
+		  resolve: aReference
+		  forAction: anAction
+		  readyWhen: readyBlock
+		  thenDo: foundBlock
+		  onMissing: missingBlock
+]
+
+{ #category : 'resolving' }
 ReplayUIManager >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
 
 	^ self backend

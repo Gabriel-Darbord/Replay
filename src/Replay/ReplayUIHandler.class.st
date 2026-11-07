@@ -108,6 +108,23 @@ ReplayUIHandler >> runNativelyOn: anObject [
 ]
 
 { #category : 'running' }
+ReplayUIHandler >> ensureReady: aResolvedUIElement on: runner [
+	"Check that I am ready to run on aResolvedUIElement (see ensureReadyOn:). An error other than a missing UI stops the runner."
+
+	^ [ self ensureReadyOn: aResolvedUIElement ]
+		  on: Error
+		  do: [ :error |
+			  (error isKindOf: ReplayMissingUIError) ifFalse: [ runner stop ].
+			  error pass ]
+]
+
+{ #category : 'running' }
+ReplayUIHandler >> ensureReadyOn: aResolvedUIElement [
+	"Signal a ReplayMissingUIError while I am not ready to run on aResolvedUIElement, my resolved target, so that a run waits for it like for a missing target.
+	Only runs check it, not the editor while it shows the target. I am always ready by default."
+]
+
+{ #category : 'running' }
 ReplayUIHandler >> runOn: runner [
 	"Has control over runner continuation."
 
@@ -115,15 +132,27 @@ ReplayUIHandler >> runOn: runner [
 	self target isWorld ifTrue: [ ^ self runOnWorldOf: runner ].
 	manager := runner manager.
 	manager ifNil: [ ^ self missingManagerFor: runner ].
-	self
-		resolveTargetWith: manager
-		thenDo: [ :resolved |
-			runner isStopped ifFalse: [
-				runner protect: [ self runOn: runner resolvedUI: resolved ].
-				"Let UI process action effects before continuing."
-				runner defer: [ runner nextAction ] ] ]
-		onMissing: [ :error |
-			runner isStopped ifFalse: [ runner protect: [ error signal ] ] ]
+	manager
+		resolve: self target
+		forAction: self
+		readyWhen: [ :resolved | self ensureReady: resolved on: runner ]
+		thenDo: [ :resolved | self runOn: runner found: resolved ]
+		onMissing: [ :error | self runOn: runner missing: error ]
+]
+
+{ #category : 'running' }
+ReplayUIHandler >> runOn: runner found: aResolvedUIElement [
+
+	runner isStopped ifTrue: [ ^ self ].
+	runner protect: [ self runOn: runner resolvedUI: aResolvedUIElement ].
+	"Let UI process action effects before continuing."
+	runner defer: [ runner nextAction ]
+]
+
+{ #category : 'running' }
+ReplayUIHandler >> runOn: runner missing: aReplayMissingUIError [
+
+	runner isStopped ifFalse: [ runner protect: [ aReplayMissingUIError signal ] ]
 ]
 
 { #category : 'running' }
@@ -150,15 +179,22 @@ ReplayUIHandler >> runOnNative: anObject [
 ReplayUIHandler >> runOnWorldOf: runner [
 	"Act on the current World, which needs no managed UI. Has control over runner continuation."
 
-	| world |
+	| world resolver element |
 	self allowsWorldTarget ifFalse: [ ^ self missingTarget ].
 	world := self currentWorld.
-	self runOn: runner resolvedUI: (ReplayResolvedUIElement
-			 backend: runner backend
-			 reference: self target
-			 nativeElement: world
-			 morph: world).
-	runner defer: [ runner nextAction ]
+	element := ReplayResolvedUIElement
+		           backend: runner backend
+		           reference: self target
+		           nativeElement: world
+		           morph: world.
+	resolver := runner backend resolver.
+	resolver
+		retry: [
+			self ensureReady: element on: runner.
+			element ]
+		for: (resolver timeoutFor: self)
+		thenDo: [ :resolved | self runOn: runner found: resolved ]
+		onMissing: [ :error | self runOn: runner missing: error ]
 ]
 
 { #category : 'accessing' }

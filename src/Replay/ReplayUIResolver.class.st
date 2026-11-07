@@ -83,9 +83,10 @@ ReplayUIResolver >> missingError: aReference because: aString details: aDictiona
 ]
 
 { #category : 'resolving' }
-ReplayUIResolver >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
+ReplayUIResolver >> resolve: aReference forAction: anAction readyWhen: readyBlock thenDo: foundBlock onMissing: missingBlock [
 	"Resolve aReference for anAction, now or in a later UI cycle, then evaluate foundBlock with the resolved element.
-	When the lookup still fails after my timeout, evaluate missingBlock with the ReplayMissingUIError of its last attempt."
+	readyBlock is evaluated with each element found, and signals a ReplayMissingUIError while the element is not ready, which waits for it like for a missing element.
+	When the lookup still fails after the timeout of anAction or mine, evaluate missingBlock with the ReplayMissingUIError of its last attempt."
 
 	| lookup |
 	lookup := self lookupFor: aReference forAction: anAction.
@@ -95,8 +96,25 @@ ReplayUIResolver >> resolve: aReference forAction: anAction thenDo: foundBlock o
 				   because: self class name , ' cannot resolve ' , aReference printString , '.'
 				   details: Dictionary new) ].
 	^ self
-		  retry: lookup
-		  until: DateAndTime now + self timeout
+		  retry: [
+			  | found |
+			  found := lookup value.
+			  readyBlock value: found.
+			  found ]
+		  for: (self timeoutFor: anAction)
+		  thenDo: foundBlock
+		  onMissing: missingBlock
+]
+
+{ #category : 'resolving' }
+ReplayUIResolver >> resolve: aReference forAction: anAction thenDo: foundBlock onMissing: missingBlock [
+	"Resolve aReference for anAction, now or in a later UI cycle, then evaluate foundBlock with the resolved element.
+	When the lookup still fails after my timeout, evaluate missingBlock with the ReplayMissingUIError of its last attempt."
+
+	^ self
+		  resolve: aReference
+		  forAction: anAction
+		  readyWhen: [ :found | "always ready" ]
 		  thenDo: foundBlock
 		  onMissing: missingBlock
 ]
@@ -131,7 +149,20 @@ ReplayUIResolver >> resolvedElementFor: aReference nativeElement: anObject morph
 ]
 
 { #category : 'resolving' }
-ReplayUIResolver >> retry: lookupBlock until: aDateAndTime thenDo: foundBlock onMissing: missingBlock [
+ReplayUIResolver >> retry: lookupBlock for: aDuration thenDo: foundBlock onMissing: missingBlock [
+	"Evaluate lookupBlock now, and again in the next UI cycles while it signals a ReplayMissingUIError, for at most aDuration.
+	Then evaluate foundBlock with its answer, or missingBlock with its last error."
+
+	^ self
+		  retry: lookupBlock
+		  until: DateAndTime now + aDuration
+		  timeout: aDuration
+		  thenDo: foundBlock
+		  onMissing: missingBlock
+]
+
+{ #category : 'resolving' }
+ReplayUIResolver >> retry: lookupBlock until: aDateAndTime timeout: aDuration thenDo: foundBlock onMissing: missingBlock [
 	"Evaluate lookupBlock now, and again in the next UI cycle while it fails before aDateAndTime"
 
 	| found failure |
@@ -144,9 +175,10 @@ ReplayUIResolver >> retry: lookupBlock until: aDateAndTime thenDo: foundBlock on
 			  self
 				  retry: lookupBlock
 				  until: aDateAndTime
+				  timeout: aDuration
 				  thenDo: foundBlock
 				  onMissing: missingBlock ] ].
-	failure messageText: failure messageText , ' Gave up after ' , self timeout asMilliSeconds printString , ' ms.'.
+	failure messageText: failure messageText , ' Gave up after ' , aDuration asMilliSeconds printString , ' ms.'.
 	^ missingBlock value: failure
 ]
 
@@ -161,6 +193,13 @@ ReplayUIResolver >> timeout [
 	"How long to retry a lookup that fails, a Duration"
 
 	^ timeout ifNil: [ self class defaultTimeout ]
+]
+
+{ #category : 'accessing' }
+ReplayUIResolver >> timeoutFor: anAction [
+	"How long to retry a lookup for anAction: its own timeout when it has one, or mine"
+
+	^ ((anAction respondsTo: #resolutionTimeout) ifTrue: [ anAction resolutionTimeout ]) ifNil: [ self timeout ]
 ]
 
 { #category : 'accessing' }
