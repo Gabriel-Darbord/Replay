@@ -123,7 +123,8 @@ ReplayMacroTest >> testInstalledMacroUsesReplacedScenarioWhenShortcutRuns [
 ReplayMacroTest >> testInstalledTextEditorMacroIsVisibleToCategoryBinding [
 
 	| macro binding keymap |
-	macro := self macroNamed: 'Find macro' keyBinding: (self controlShortcut: 'f').
+	"No text editor shortcut uses J, so the binding can only answer the macro, whatever Meta is on this platform"
+	macro := self macroNamed: 'Text editor macro' keyBinding: (self controlShortcut: 'j').
 	macro contextNames: { #RubTextEditor }.
 	macro install.
 	binding := (KMRepository default categoryForName: #RubTextEditor) bindToObject: nil andMorph: nil.

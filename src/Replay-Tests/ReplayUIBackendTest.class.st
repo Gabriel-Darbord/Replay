@@ -1362,7 +1362,8 @@ ReplayUIBackendTest >> testShortcutSendsAKeyDownPerChordWithItsModifiers [
 
 	self assert: target eventLabels asArray equals: #( keyDown keyDown ).
 	self assert: target events first value key equals: (KeyboardKey named: #T).
-	self assert: target events first value buttons equals: ReplayKeyModifiers command.
+	"Meta is the modifier of the platform: Command on macOS, Control elsewhere"
+	self assert: target events first value buttons equals: KMModifier meta replayModifiers.
 	self assert: target events first value keyCharacter equals: $t.
 	self assert: target events second value key equals: (KeyboardKey named: #S).
 	self assert: target events second value buttons equals: 0

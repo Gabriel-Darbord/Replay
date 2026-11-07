@@ -304,14 +304,16 @@ ReplayKeyBindingTest >> testKeysPresenterShowsSpecialKeys [
 
 { #category : 'tests' }
 ReplayKeyBindingTest >> testRoundTripsChordSequences [
-	"Each chord keeps its own modifiers: Cmd + T then S is not Cmd + T then Cmd + S"
+	"Each chord keeps its own modifiers: Meta + T then S is not Meta + T then Meta + S.
+	Meta is the modifier of the platform: Command on macOS, Control elsewhere."
 
-	| sequence binding |
+	| sequence binding meta |
 	sequence := $t meta , $s.
 	binding := ReplayKeyBinding fromKMCombination: sequence.
+	meta := ReplayKeyChord character: $t modifiers: KMModifier meta replayModifiers.
 
-	self assert: binding chords equals: { self command: $t. ReplayKeyChord character: $s }.
-	self assert: binding displayString equals: (self command: $t) asKMShortcut asString , ', S'.
+	self assert: binding chords equals: { meta. ReplayKeyChord character: $s }.
+	self assert: binding displayString equals: meta asKMShortcut asString , ', S'.
 	self assert: (ReplayKeyBinding fromKMCombination: binding asKMShortcut) equals: binding.
 	self assert: (binding matchesKeymap: (KMKeymap named: #sequence shortcut: sequence action: [ ])).
 	self deny: (binding matchesKeymap: (KMKeymap named: #sequence shortcut: $t meta , $s meta action: [ ]))
