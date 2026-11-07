@@ -21,16 +21,3 @@ TReplayActionWithDebugging >> debug: aBlock [
 		  submit;
 		  debugSession
 ]
-
-{ #category : 'editing' }
-TReplayActionWithDebugging >> debugButtonPresenterOn: editor labeled: label action: aBlock [
-
-	^ SpBoxLayout newLeftToRight
-		  spacing: 10;
-		  add: (editor newButton
-				   icon: (self iconNamed: #bug);
-				   label: label;
-				   action: aBlock)
-		  withConstraints: [ :c | c width: 200 ];
-		  yourself
-]

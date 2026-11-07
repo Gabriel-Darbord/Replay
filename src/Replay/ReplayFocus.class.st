@@ -32,10 +32,3 @@ ReplayFocus >> runOnNative: anObject [
 
 	anObject takeKeyboardFocus
 ]
-
-{ #category : 'editing' }
-ReplayFocus >> settingsPresenterOn: editor [
-	"There's only the UI target to edit. Can target the World."
-
-	^ self targetPresenterOn: editor
-]

@@ -12,6 +12,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayDelay class >> editorClass [
+
+	^ ReplayDelayEditor
+]
+
 { #category : 'accessing' }
 ReplayDelay class >> displayName [
 
@@ -30,14 +36,6 @@ ReplayDelay class >> seconds: aNumber [
 ReplayDelay >> controlsRunnerContinuation [
 
 	^ true
-]
-
-{ #category : 'editing' }
-ReplayDelay >> editionPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (self secondsPresenterOn: editor labeled: 'Delay in seconds:');
-		yourself
 ]
 
 { #category : 'running' }
@@ -74,26 +72,6 @@ ReplayDelay >> seconds [
 ReplayDelay >> seconds: aNumber [
 
 	seconds := aNumber
-]
-
-{ #category : 'editing' }
-ReplayDelay >> secondsPresenterOn: editor labeled: label [
-
-	| textPresenter |
-	(textPresenter := editor newNumberInput)
-		minimum: 0;
-		numberType: Float;
-		number: self seconds;
-		whenNumberChangedDo: [ :aNumber |
-				self seconds: aNumber.
-				editor actionChanged: self ].
-	editor registerReplayPresenter: textPresenter named: 'Action seconds'.
-	editor registerReplayPresenter: textPresenter named: 'Delay seconds'.
-
-	^ SpBoxLayout newTopToBottom
-		 add: label expand: false;
-		 add: textPresenter expand: false;
-		 yourself
 ]
 
 { #category : 'recording' }

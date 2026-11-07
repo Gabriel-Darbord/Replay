@@ -13,6 +13,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayOpenPresenter class >> editorClass [
+
+	^ ReplayOpenPresenterEditor
+]
+
 { #category : 'accessing' }
 ReplayOpenPresenter class >> displayName [
 
@@ -28,26 +34,6 @@ ReplayOpenPresenter >> presenterOn: runner [
 	(presenter isKindOf: SpAbstractPresenter) ifFalse: [
 		self unexpectedScriptResult: presenter expected: 'a Spec presenter' ].
 	^ presenter
-]
-
-{ #category : 'editing' }
-ReplayOpenPresenter >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: (self
-						scriptPresenterOn: editor
-						labeled: 'Write the script that creates and returns the Spec presenter:');
-				add: (self placementPresenterOn: editor) expand: false;
-				yourself);
-		yourself
-]
-
-{ #category : 'accessing' }
-ReplayOpenPresenter >> settingsViewName [
-
-	^ 'Presenter settings'
 ]
 
 { #category : 'managing UI' }

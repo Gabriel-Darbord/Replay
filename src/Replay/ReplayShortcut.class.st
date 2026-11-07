@@ -1,7 +1,7 @@
 "
 I replay a key binding (a ReplayKeyBinding) on a resolved UI target: I send a key down event for each of its chords, with the modifiers of the chord, as Keymapping dispatches shortcuts on key down.
 
-My settings edit the binding with a ReplayKeyBindingPresenter, or adopt the binding of a keymap listed by a ReplayShortcutDescriptionPresenter.
+My editor (ReplayShortcutEditor) edits the binding with a ReplayKeyBindingPresenter, or adopts the binding of a keymap listed by a ReplayShortcutDescriptionPresenter.
 "
 Class {
 	#name : 'ReplayShortcut',
@@ -13,6 +13,12 @@ Class {
 	#package : 'Replay',
 	#tag : 'Actions'
 }
+
+{ #category : 'editing' }
+ReplayShortcut class >> editorClass [
+
+	^ ReplayShortcutEditor
+]
 
 { #category : 'accessing' }
 ReplayShortcut class >> displayName [
@@ -40,18 +46,6 @@ ReplayShortcut >> keyBinding: aReplayKeyBinding [
 	keyBinding := aReplayKeyBinding
 ]
 
-{ #category : 'editing' }
-ReplayShortcut >> keyBindingPresenterOn: editor [
-
-	| presenter |
-	presenter := ReplayKeyBindingPresenter on: self keyBinding whenChangedDo: [ :binding |
-		             self keyBinding: binding.
-		             editor actionChanged: self ].
-	presenter registerReplayPresentersOn: editor named: 'Action shortcut'.
-	presenter registerReplayPresentersOn: editor named: self class displayName.
-	^ presenter
-]
-
 { #category : 'printing' }
 ReplayShortcut >> printOn: stream [
 
@@ -63,42 +57,6 @@ ReplayShortcut >> printOn: stream [
 ReplayShortcut >> runOnMorph: aMorph [
 
 	self shortcutOn: aMorph
-]
-
-{ #category : 'editing' }
-ReplayShortcut >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: (self targetPresenterOn: editor) expand: false;
-				add: (self keyBindingPresenterOn: editor) expand: false;
-				add: (self shortcutDescriptionPresenterOn: editor);
-				yourself);
-		yourself
-]
-
-{ #category : 'editing' }
-ReplayShortcut >> shortcutDescriptionPresenterOn: editor [
-
-	| presenter descriptionPresenter |
-	presenter := editor newPresenter.
-	(descriptionPresenter := ReplayShortcutDescriptionPresenter new)
-		owner: presenter;
-		categories: KMRepository default categories keys;
-		selectKeymapOf: self keyBinding.
-
-	"Adopt the binding of a keymap when it is selected"
-	descriptionPresenter shortcutList whenSelectedDo: [ :keymap |
-		(ReplayKeyBinding fromKeymap: keymap) ifNotNil: [ :binding |
-			self keyBinding: binding.
-			editor buildActionEditor: [ self editionPresenterOn: editor ] ] ].
-
-	presenter layout: (SpBoxLayout newTopToBottom
-			 add: 'Select a shortcut in the list to use it:' expand: false;
-			 add: descriptionPresenter;
-			 yourself).
-	^ presenter
 ]
 
 { #category : 'running' }

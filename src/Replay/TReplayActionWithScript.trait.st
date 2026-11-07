@@ -1,5 +1,5 @@
 "
-I add script storage, evaluation, editing UI, and debugging support to actions that execute Smalltalk source.
+I add script storage, evaluation, and debugging support to actions that execute Smalltalk source.
 
 My users choose the receiver of the script with `scriptReceiverOn:` (the runner by default). The same receiver is used to run and to debug the script. Compilation errors, runtime errors, and unexpected results are all signaled as ReplayScriptError, keeping the original error as cause.
 "
@@ -34,13 +34,6 @@ TReplayActionWithScript >> compileScriptFor: receiver [
 ]
 
 { #category : 'debugging' }
-TReplayActionWithScript >> debugScriptInEditor: editor [
-	"Debug my script from the editor, with the receiver it would have when running the edited scenario."
-
-	self debugScriptOn: (ReplayRunner on: editor scenario)
-]
-
-{ #category : 'debugging' }
 TReplayActionWithScript >> debugScriptOn: runner [
 	"Open a debugger stopped at the start of my script, evaluated with the same receiver as when running."
 
@@ -61,38 +54,10 @@ TReplayActionWithScript >> evaluateScriptOn: runner [
 		  do: [ :error | self signalScriptError: error ]
 ]
 
-{ #category : 'editing' }
-TReplayActionWithScript >> helpPresenterOn: editor aboutScript: error [
-	"Explain why the script failed and offer to debug it"
+{ #category : 'testing' }
+TReplayActionWithScript >> hasScript [
 
-	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (SpBoxLayout newLeftToRight
-						    spacing: 10;
-						    add: (self iconNamed: #error) expand: false;
-						    add: error messageText;
-						    yourself)
-				   expand: false;
-				   add: (SpBoxLayout newTopToBottom
-						    add: (error cause
-								     ifNil: [ 'Printing the unexpected value:' ]
-								     ifNotNil: [ 'Original error:' ])
-						    expand: false;
-						    add: (editor newText
-								     beWrapWord;
-								     editable: false;
-								     text: (error cause
-										      ifNil: [ error subject printString ]
-										      ifNotNil: [ :cause | cause description ]));
-						    yourself);
-				   add: (self
-						    debugButtonPresenterOn: editor
-						    labeled: 'Debug the script'
-						    action: [ self debugScriptInEditor: editor ])
-				   expand: false;
-				   yourself);
-		  yourself
+	^ true
 ]
 
 { #category : 'printing' }
@@ -112,24 +77,6 @@ TReplayActionWithScript >> script [
 TReplayActionWithScript >> script: aString [
 
 	script := aString
-]
-
-{ #category : 'editing' }
-TReplayActionWithScript >> scriptPresenterOn: editor labeled: label [
-
-	| codePresenter |
-	(codePresenter := editor newCode)
-		text: self script;
-		whenTextChangedDo: [ :aString |
-			self script: aString.
-			editor actionChanged: self ].
-	editor registerReplayPresenter: codePresenter named: 'Action script'.
-	editor registerReplayPresenter: codePresenter named: self scriptTargetName.
-
-	^ SpBoxLayout newTopToBottom
-		 add: label expand: false;
-		 add: codePresenter;
-		 yourself
 ]
 
 { #category : 'debugging' }
@@ -153,13 +100,6 @@ TReplayActionWithScript >> scriptReceiverOn: runner [
 	"Answer the object my script is evaluated with as self, when run or debugged."
 
 	^ runner
-]
-
-{ #category : 'editing' }
-TReplayActionWithScript >> scriptTargetName [
-
-	self class displayName = 'Script' ifTrue: [ ^ 'Script source' ].
-	^ self class displayName , ' script'
 ]
 
 { #category : 'error handling' }

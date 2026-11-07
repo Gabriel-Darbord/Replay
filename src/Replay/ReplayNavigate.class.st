@@ -21,6 +21,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayNavigate class >> editorClass [
+
+	^ ReplayNavigateEditor
+]
+
 { #category : 'accessing' }
 ReplayNavigate class >> displayName [
 
@@ -63,38 +69,6 @@ ReplayNavigate >> controlsRunnerContinuation [
 	^ true
 ]
 
-{ #category : 'editing' }
-ReplayNavigate >> editionPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: (editor newCheckBox
-						label: 'Skip user navigation';
-						state: self skip;
-						whenActivatedDo: [ self skip: true ];
-						whenDeactivatedDo: [ self skip: false ])
-				expand: false;
-				add: (SpBoxLayout newTopToBottom
-						add: 'Continue label:' expand: false;
-						add: (editor newText
-								text: self acceptLabel;
-								whenTextChangedDo: [ :aString |
-									self acceptLabel: aString ]))
-				expand: false;
-				add: (SpBoxLayout newTopToBottom
-						add: 'Cancel label:' expand: false;
-						add: (editor newText
-								text: self cancelLabel;
-								whenTextChangedDo: [ :aString |
-									self cancelLabel: aString ]))
-				expand: false;
-				add: (self textPresenterOn: editor labeled: 'Write rich text display on navigation window:');
-				add: (self placementPresenterOn: editor) expand: false;
-				yourself);
-		yourself
-]
-
 { #category : 'testing' }
 ReplayNavigate >> isDefault [
 	"Answer whether I behave and edit like a new navigation, so I need not be serialized."
@@ -118,17 +92,6 @@ ReplayNavigate >> placement: aReplayPlacement [
 	placement := (aReplayPlacement isNil or: [ aReplayPlacement isEmpty ])
 		ifTrue: [ nil ]
 		ifFalse: [ aReplayPlacement ]
-]
-
-{ #category : 'editing' }
-ReplayNavigate >> placementPresenterOn: editor [
-
-	^ (placement ifNil: [ ReplayPlacement new ])
-		presenterOn: editor
-		targetPrefixes: { 'Navigation'. self class displayName }
-		whenChangedDo: [ :aPlacement |
-			self placement: aPlacement.
-			editor actionChanged: self ]
 ]
 
 { #category : 'running' }

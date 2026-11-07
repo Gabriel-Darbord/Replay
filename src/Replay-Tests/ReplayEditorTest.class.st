@@ -117,10 +117,10 @@ ReplayEditorTest >> testChooserPicksTheKindOfActionThatPlusAdds [
 	chooser selectItem: ReplayClick.
 	self assert: editor currentStep actions isEmpty.
 
-	editor actions addButton click.
-	editor actions addButton click.
+	editor actionList addButton click.
+	editor actionList addButton click.
 	self assert: (editor currentStep actions collect: [ :action | action class ]) asArray equals: { ReplayClick. ReplayClick }.
-	self assert: editor actions items asArray equals: editor currentStep actions asArray.
+	self assert: editor actionList items asArray equals: editor currentStep actions asArray.
 	self assert: editor currentAction identicalTo: editor currentStep actions last
 ]
 
@@ -134,7 +134,7 @@ ReplayEditorTest >> testCurrentStepAndActionAreTheSelections [
 
 	self assert: editor currentStep identicalTo: editor scenario steps first.
 	self assert: editor currentAction identicalTo: click.
-	editor steps selectIndex: 2.
+	editor stepList selectIndex: 2.
 	self assert: editor currentStep identicalTo: editor scenario steps second.
 	self assert: editor currentAction identicalTo: type
 ]
@@ -151,7 +151,7 @@ ReplayEditorTest >> testDeletingTheLastStepShowsNoActionAndDisablesStepTools [
 	self assert: editor scenario steps isEmpty.
 	self assert: editor currentStep isNil.
 	self assert: editor currentAction isNil.
-	self assert: editor actions items isEmpty.
+	self assert: editor actionList items isEmpty.
 	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ #missing ]) equals: #missing.
 	self shouldnt: [ editor editStepNavigation ] raise: Error.
 	self shouldnt: [ editor runStep ] raise: Error.
@@ -190,9 +190,11 @@ ReplayEditorTest >> testOtherPanesUnselectTheActionSoItCanBeShownAgain [
 	#( #editScenarioData #editStepNavigation ) do: [ :selector |
 		editor perform: selector.
 		self assert: editor currentAction isNil.
-		self assert: (editor replayPresenterAt: 'Type text' ifAbsent: [ #missing ]) equals: #missing.
-		editor actions selectItem: type.
-		self assert: (editor replayPresenterAt: 'Type text' ifAbsent: [ nil ]) notNil ]
+		self deny: (editor actionEditor isKindOf: ReplayTypeEditor).
+		editor actionList selectItem: type.
+		self assert: (editor actionEditor isKindOf: ReplayTypeEditor).
+		self assert: editor actionEditor action identicalTo: type.
+		self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) notNil ]
 ]
 
 { #category : 'tests' }
@@ -201,9 +203,9 @@ ReplayEditorTest >> testRemoveButtonWithoutSelectionRemovesNothing [
 	| click editor |
 	click := ReplayClick new.
 	editor := ReplayEditor on: (self scenarioWithSteps: { { click } }).
-	editor actions selectIndex: 0.
+	editor actionList selectIndex: 0.
 
-	self shouldnt: [ editor actions removeButton click ] raise: Error.
+	self shouldnt: [ editor actionList removeButton click ] raise: Error.
 	self assert: editor currentStep actions asArray equals: { click }
 ]
 
@@ -219,7 +221,7 @@ ReplayEditorTest >> testRemovingAStepSelectsTheNextOneAndItsFirstAction [
 	self assert: editor scenario steps size equals: 1.
 	self assert: editor currentStep identicalTo: editor scenario steps first.
 	self assert: editor currentAction identicalTo: type.
-	editor actions removeButton click.
+	editor actionList removeButton click.
 	self assert: editor currentStep actions isEmpty.
 	self assert: editor currentAction isNil
 ]
@@ -232,12 +234,12 @@ ReplayEditorTest >> testRemovingAnActionSelectsTheNextOne [
 	second := ReplayType new.
 	third := ReplayDelay new.
 	editor := ReplayEditor on: (self scenarioWithSteps: { { first. second. third } }).
-	editor actions selectItem: second.
+	editor actionList selectItem: second.
 	editor removeAction: second.
 	self assert: editor currentAction identicalTo: third.
 	editor removeAction: third.
 	self assert: editor currentAction identicalTo: first.
-	self assert: editor actions items asArray equals: { first }
+	self assert: editor actionList items asArray equals: { first }
 ]
 
 { #category : 'tests' }
@@ -251,5 +253,5 @@ ReplayEditorTest >> testSettingsEditsRefreshTheActionLabel [
 	editor actionChanged: type.
 
 	self assert: editor currentAction identicalTo: type.
-	self assert: editor actions items asArray equals: { type }
+	self assert: editor actionList items asArray equals: { type }
 ]

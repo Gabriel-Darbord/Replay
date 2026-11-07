@@ -9,46 +9,16 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayBrowseMethod class >> editorClass [
+
+	^ ReplayBrowseMethodEditor
+]
+
 { #category : 'accessing' }
 ReplayBrowseMethod class >> displayName [
 
 	^ 'Browse Method'
-]
-
-{ #category : 'editing' }
-ReplayBrowseMethod >> settingsPresenterOn: editor [
-	"The method browser selects its first method by itself: the target is only changed when the user selects a method."
-
-	| presenter classList methodList method classes |
-	classes := OrderedCollection new.
-	self class environment allClassesDo: [ :each |
-		classes
-			add: each;
-			add: each class ].
-	(presenter := SpClassMethodBrowser new)
-		owner: editor;
-		classes: (classes sort: [ :a :b | a name <= b name ]) asArray.
-	editor registerReplayPresenter: presenter named: 'Browse method browser'.
-
-	classList := presenter instVarNamed: #classListPresenter.
-	methodList := presenter instVarNamed: #methodListPresenter.
-	editor registerReplayPresenter: methodList named: 'Browse method target'.
-	target ifNotNil: [
-		method := self targetMethod.
-		classList selectItem: method methodClass scrollToSelection: true.
-		methodList selectItem: method scrollToSelection: true ].
-
-	methodList whenSelectedDo: [ :aMethod |
-		aMethod ifNotNil: [
-			self targetMethod: aMethod.
-			editor actionChanged: self ] ].
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: presenter;
-				add: (self placementPresenterOn: editor) expand: false;
-				yourself);
-		yourself
 ]
 
 { #category : 'accessing' }
@@ -70,12 +40,6 @@ ReplayBrowseMethod >> targetMethod [
 ReplayBrowseMethod >> targetMethod: aMethod [
 
 	target := aMethod methodClass name , '#' , aMethod selector
-]
-
-{ #category : 'accessing' }
-ReplayBrowseMethod >> targetType [
-
-	^ CompiledMethod
 ]
 
 { #category : 'managing UI' }

@@ -43,20 +43,8 @@ ReplayBrowse >> printOn: stream [
 ]
 
 { #category : 'accessing' }
-ReplayBrowse >> settingsViewName [
-
-	^ 'Select ' , self targetType name
-]
-
-{ #category : 'accessing' }
 ReplayBrowse >> target [
 	"Answer the name of the browsed class, method, or package, or nil when none is chosen."
 
 	^ target
-]
-
-{ #category : 'accessing' }
-ReplayBrowse >> targetType [
-
-	self subclassResponsibility
 ]

@@ -16,6 +16,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayUIHandler class >> editorClass [
+
+	^ ReplayUIHandlerEditor
+]
+
 { #category : 'testing' }
 ReplayUIHandler class >> isAbstract [
 
@@ -58,35 +64,6 @@ ReplayUIHandler >> hasSpecificTarget [
 	^ self target isWorld not
 ]
 
-{ #category : 'editing' }
-ReplayUIHandler >> helpPresenterOn: editor aboutMissingUI: error [
-
-	| buttons |
-	buttons := SpGridLayout build: [ :grid |
-		           ReplayAction actionsThatOpenUI do: [ :action |
-			           grid add: (editor newButton
-					            icon: (self iconNamed: #add);
-					            label: action displayName;
-					            action: [ editor addAction: action new before: self ]) ] ].
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (SpBoxLayout newLeftToRight
-						    spacing: 10;
-						    add: (self iconNamed: #error) expand: false;
-						    add: error messageText;
-						    yourself)
-				   expand: false;
-				   add: (SpBoxLayout newTopToBottom
-						    spacing: -15;
-						    add: 'Choose an action that opens a UI:' expand: false;
-						    add: buttons;
-						    yourself);
-				   yourself);
-		  yourself
-]
-
 { #category : 'testing' }
 ReplayUIHandler >> isUIHandler [
 
@@ -109,18 +86,6 @@ ReplayUIHandler >> missingTarget [
 		messageText: self class displayName , ' needs a target: choose one in its settings.';
 		subject: self;
 		signal
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> missingTargetPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newLeftToRight
-				spacing: 10;
-				add: (self iconNamed: #error) expand: false;
-				add: 'Missing target. Use UI edition view to select one.' expand: false;
-				yourself);
-		yourself
 ]
 
 { #category : 'running' }
@@ -196,25 +161,6 @@ ReplayUIHandler >> runOnWorldOf: runner [
 	runner defer: [ runner nextAction ]
 ]
 
-{ #category : 'editing' }
-ReplayUIHandler >> semanticTargetPresenterOn: editor [
-
-	| targetNamePresenter |
-	(targetNamePresenter := editor newText)
-		text: self targetName;
-		whenTextChangedDo: [ :aString |
-			self targetName: aString.
-			editor actionChanged: self ].
-	editor registerReplayPresenter: targetNamePresenter named: 'Action target name'.
-	editor registerReplayPresenter: targetNamePresenter named: self class displayName , ' target name'.
-
-	^ SpBoxLayout newTopToBottom
-		spacing: 4;
-		add: 'Semantic target name:' expand: false;
-		add: targetNamePresenter expand: false;
-		yourself
-]
-
 { #category : 'accessing' }
 ReplayUIHandler >> target [
 	"The reference to the UI element I act on, the current World by default"
@@ -228,23 +174,6 @@ ReplayUIHandler >> target: aReplayUIReference [
 
 	target := (aReplayUIReference notNil and: [ aReplayUIReference isWorld not ])
 		          ifTrue: [ aReplayUIReference ]
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> targetControlsPresenterOn: editor [
-
-	| layout |
-	layout := SpBoxLayout newLeftToRight
-		vAlignStart;
-		spacing: 10;
-		yourself.
-	self allowsWorldTarget ifTrue: [
-		layout add: (self targetWorldButtonPresenterOn: editor) expand: false ].
-	layout add: (self targetStatePresenterOn: editor) expand: false.
-
-	^ editor newPresenter
-		layout: layout;
-		yourself
 ]
 
 { #category : 'accessing' }
@@ -274,110 +203,8 @@ ReplayUIHandler >> targetNamed: aString [
 	self target: (ReplayUIReference named: aString)
 ]
 
-{ #category : 'editing' }
-ReplayUIHandler >> targetNamedPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newLeftToRight
-				spacing: 10;
-				add: (self iconNamed: #smallOk) expand: false;
-				add: ('Semantic target: ' , self targetName) expand: false;
-				yourself);
-		yourself
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> targetPathPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newLeftToRight
-				spacing: 10;
-				add: (self iconNamed: #smallOk) expand: false;
-				add: 'Target set.' expand: false;
-				yourself);
-		yourself
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> targetPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: (self targetControlsPresenterOn: editor) expand: false;
-				add: (self semanticTargetPresenterOn: editor) expand: false;
-				yourself);
-		yourself
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> targetStatePresenterOn: editor [
-
-	self target isNamed ifTrue: [ ^ self targetNamedPresenterOn: editor ].
-	self target isMorphicPath ifTrue: [ ^ self targetPathPresenterOn: editor ].
-	^ self allowsWorldTarget
-		ifTrue: [ self worldTargetPresenterOn: editor ]
-		ifFalse: [ self missingTargetPresenterOn: editor ]
-]
-
 { #category : 'accessing' }
 ReplayUIHandler >> targetWorld [
 
 	target := nil
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> targetWorldButtonPresenterOn: editor [
-
-	^ editor newButton
-		icon: (self iconNamed: #edit);
-		label: 'Target World';
-		action: [
-			self targetWorld.
-			editor actionEditor view rebuildLayout ];
-		yourself
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> uiEditionPresenterOn: editor [
-	"Presenter that highlights the current target and allows changing it"
-
-	| builder |
-	builder := ReplayUIBuilder on: editor scenario.
-
-	builder whenDone: [
-		| manager highlight |
-		manager := builder manager editor: editor.
-
-		self hasSpecificTarget ifTrue: [ "Highlight the current target"
-			self
-				resolveTargetWith: manager
-				thenDo: [ :resolved |
-					resolved hasMorph ifTrue: [
-						highlight := ReplayAnnotation annotateMorph: resolved morph.
-						manager overlay addMorphBack: highlight ] ]
-				onMissing: [ :error | "Nothing to highlight" ] ].
-
-		manager clickBlock: [ :event :wrapper | "Update target highlight"
-			highlight ifNotNil: [ highlight delete ].
-			self target: wrapper reference.
-			highlight := ReplayAnnotation annotateMorph: wrapper.
-			manager overlay addMorphBack: highlight ].
-
-		manager wrapForEdition ].
-
-	^ editor newMorph morph:
-		  (builder uiForAction: self inStep: editor currentStep)
-]
-
-{ #category : 'editing' }
-ReplayUIHandler >> worldTargetPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newLeftToRight
-				spacing: 10;
-				add: (self iconNamed: #smallInfo) expand: false;
-				add: 'Targeting current World. Use UI edition view to change target.' expand: false;
-				yourself);
-		yourself
 ]

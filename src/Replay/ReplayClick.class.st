@@ -20,6 +20,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayClick class >> editorClass [
+
+	^ ReplayClickEditor
+]
+
 { #category : 'accessing' }
 ReplayClick class >> displayName [
 
@@ -55,26 +61,6 @@ ReplayClick >> clickCount: anInteger [
 	clickCount := 1 max: anInteger asInteger
 ]
 
-{ #category : 'editing' }
-ReplayClick >> clickCountPresenterOn: editor [
-
-	| input |
-	input := editor newNumberInput.
-	input
-		minimum: 1;
-		numberType: Integer;
-		number: self clickCount;
-		whenNumberChangedDo: [ :number |
-			self clickCount: number.
-			editor actionChanged: self ].
-	editor registerReplayPresenter: input named: 'Action click count'.
-	editor registerReplayPresenter: input named: self class displayName , ' count'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Click count:' expand: false;
-		add: input expand: false;
-		yourself
-]
-
 { #category : 'running' }
 ReplayClick >> clickOn: aMorph [
 
@@ -107,23 +93,6 @@ ReplayClick >> debugClickIn: aReplayUIManager [
 		resolveTargetWith: aReplayUIManager
 		thenDo: [ :resolved | self debug: [ resolved run: self ] ]
 		onMissing: [ :error | error signal ]
-]
-
-{ #category : 'debugging' }
-ReplayClick >> debugClickOn: editor [
-
-	| builder |
-	builder := ReplayUIBuilder on: editor scenario.
-
-	builder whenDone: [ self debugClickIn: builder manager ].
-
-	"We need to open the window for the UI to load correctly"
-	(SpMorphPresenter new morph:
-			 (builder uiForAction: self inStep: editor currentStep))
-		asWindow
-		title: 'Debugging Click Event';
-		open;
-		maximize
 ]
 
 { #category : 'testing' }
@@ -166,30 +135,6 @@ ReplayClick >> mousePhaseLabel [
 		ifNone: [ self class mousePhaseChoices first ]) value
 ]
 
-{ #category : 'editing' }
-ReplayClick >> mousePhasePresenterOn: editor [
-
-	| dropList choices |
-	choices := self class mousePhaseChoices.
-	dropList := editor newDropList.
-	dropList
-		items: choices;
-		display: [ :association | association value ];
-		whenSelectedItemChangedDo: [ :association |
-			association ifNotNil: [
-				self mousePhase: association key.
-				editor actionChanged: self ] ].
-	dropList selectItem: (choices
-		detect: [ :association | association key = self mousePhase ]
-		ifNone: [ choices first ]).
-	editor registerReplayPresenter: dropList named: 'Action click phase'.
-	editor registerReplayPresenter: dropList named: self class displayName , ' phase'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Mouse phase:' expand: false;
-		add: dropList expand: false;
-		yourself
-]
-
 { #category : 'accessing' }
 ReplayClick >> position [
 	"My offset from the top-left corner of the target, nil to click its center"
@@ -207,17 +152,6 @@ ReplayClick >> position: aPoint [
 ReplayClick >> positionOrZero [
 
 	^ self position ifNil: [ 0 @ 0 ]
-]
-
-{ #category : 'editing' }
-ReplayClick >> positionPresenterOn: editor [
-
-	^ self
-		  offsetPresenterOn: editor
-		  labeled: 'Offset from target top-left:'
-		  named: 'click'
-		  get: [ self positionOrZero ]
-		  set: [ :point | self position: point ]
 ]
 
 { #category : 'printing' }
@@ -261,29 +195,4 @@ ReplayClick >> sendsMouseUp [
 ReplayClick >> sendsSyntheticClick [
 
 	^ self mousePhase = #click
-]
-
-{ #category : 'editing' }
-ReplayClick >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-			spacing: 10;
-			add: (self targetPresenterOn: editor) expand: false;
-			add: (self mousePhasePresenterOn: editor) expand: false;
-			add: (self buttonsPresenterOn: editor) expand: false;
-			add: (self modifiersPresenterOn: editor) expand: false;
-			add: (self positionPresenterOn: editor) expand: false;
-			add: (self clickCountPresenterOn: editor) expand: false;
-			in: [ :layout |
-				self hasSpecificTarget ifTrue: [
-					layout add: (self debugButtonPresenterOn: editor labeled: ' Debug click event' action: [ self debugClickOn: editor ]) expand: false ] ];
-			yourself);
-		yourself
-]
-
-{ #category : 'accessing' }
-ReplayClick >> settingsViewName [
-
-	^ 'Click settings'
 ]

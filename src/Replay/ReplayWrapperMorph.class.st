@@ -1,7 +1,7 @@
 "
 I am a transparent overlay morph wrapped around a managed Morphic child while editing scenarios. Wrappers nest like the morphs they wrap: I keep the index of my wrapped morph among the submorphs of its owner, so the indexes of my wrapper owners give the path of my wrapped morph from the managed UI (see reference).
 
-I highlight while the hand is over me, and my menu creates actions targeting my wrapped morph.
+I highlight while the hand is over me. My clicks go to the ReplayUIEditSession that created me, which can create actions targeting my wrapped morph (see reference).
 "
 Class {
 	#name : 'ReplayWrapperMorph',
@@ -34,23 +34,6 @@ ReplayWrapperMorph >> initialize [
 	super initialize.
 	self beTransparent.
 	self highlightColor: (Color red alpha: 0.5)
-]
-
-{ #category : 'editing' }
-ReplayWrapperMorph >> menuPresenterOn: editor [
-	"Menu when clicking a wrapper that allows creating actions"
-
-	| menu |
-	menu := SpMenuPresenter new.
-	ReplayAction actionsForMenu do: [ :action |
-		menu addItem: [ :item |
-			item
-				name: action displayName;
-				action: [
-					editor
-						addAction: (action target: self reference)
-						after: editor currentAction ] ] ].
-	^ menu
 ]
 
 { #category : 'event handling' }

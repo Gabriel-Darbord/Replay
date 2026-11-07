@@ -1,5 +1,7 @@
 "
 I am the abstract root of executable Replay scenario actions. Subclasses carry editable action state and know how to run themselves in a ReplayRunner.
+
+Actions are model objects, serialized with STON: they build no UI. The ReplayEditor edits an action with an instance of the class its class answers to editorClass (a ReplayActionEditor subclass).
 "
 Class {
 	#name : 'ReplayAction',
@@ -8,6 +10,13 @@ Class {
 	#package : 'Replay',
 	#tag : 'Actions'
 }
+
+{ #category : 'editing' }
+ReplayAction class >> editorClass [
+	"The class of the presenters that edit my instances in a ReplayEditor"
+
+	^ ReplayActionEditor
+]
 
 { #category : 'editing' }
 ReplayAction class >> actionsForDropList [
@@ -78,52 +87,11 @@ ReplayAction >> copyWithoutRecordedTiming [
 	^ copy
 ]
 
-{ #category : 'editing' }
-ReplayAction >> editionPresenterOn: editor [
-	"Build a presenter on the editor to configure the action"
+{ #category : 'testing' }
+ReplayAction >> hasScript [
+	"Whether I evaluate a script (see TReplayActionWithScript)"
 
-	^ self noEditionPresenterOn: editor
-]
-
-{ #category : 'editing' }
-ReplayAction >> helpPresenterOn: editor about: error [
-	"If an error happens during editing, the action may present some help"
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   spacing: 10;
-				   add: (SpBoxLayout newLeftToRight
-						    spacing: 10;
-						    add: (self iconNamed: #error) expand: false;
-						    add:
-							    'Something went wrong, and this action is unable to help.';
-						    yourself)
-				   expand: false;
-				   add: (SpBoxLayout newTopToBottom
-						    add: ' Exception message:' expand: false;
-						    add: (editor newText beNotEditable text: error printString);
-						    yourself);
-				   add: (editor newButton
-						    icon: (self iconNamed: #bug);
-						    label: 'Debug exception';
-						    action: [ error debug ])
-				   withConstraints: [ :c | c height: 70 ];
-				   yourself);
-		  yourself
-]
-
-{ #category : 'editing' }
-ReplayAction >> helpPresenterOn: editor aboutMissingUI: error [
-	"Actions that need a UI can explain how to provide one"
-
-	^ self helpPresenterOn: editor about: error
-]
-
-{ #category : 'editing' }
-ReplayAction >> helpPresenterOn: editor aboutScript: error [
-	"Actions with a script can explain how it failed"
-
-	^ self helpPresenterOn: editor about: error
+	^ false
 ]
 
 { #category : 'testing' }
@@ -148,20 +116,6 @@ ReplayAction >> isUIHandler [
 ReplayAction >> isUIOpener [
 
 	^ false
-]
-
-{ #category : 'editing' }
-ReplayAction >> noEditionPresenterOn: editor [
-	"For actions that cannot be edited"
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newLeftToRight
-				   vAlignStart;
-				   spacing: 10;
-				   add: (self iconNamed: #info) expand: false;
-				   add: 'This action cannot be edited.';
-				   yourself);
-		  yourself
 ]
 
 { #category : 'running' }

@@ -54,30 +54,6 @@ ReplayScenario >> edit [
 	^ ReplayEditor openOn: self
 ]
 
-{ #category : 'editing' }
-ReplayScenario >> editionPresenterOn: editor [
-
-	| titlePresenter descriptionPresenter |
-	(titlePresenter := editor newText)
-		text: self title;
-		whenTextChangedDo: [ :aString | self title: aString ].
-	editor registerReplayPresenter: titlePresenter named: 'Scenario title'.
-
-	(descriptionPresenter := editor newText)
-		text: self description;
-		whenTextChangedDo: [ :aString | self description: aString ].
-	editor registerReplayPresenter: descriptionPresenter named: 'Scenario description'.
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout newTopToBottom
-				   add: 'Title:' expand: false;
-				   add: titlePresenter expand: false;
-				   add: 'Description:' expand: false;
-				   add: descriptionPresenter;
-				   yourself);
-		  yourself
-]
-
 { #category : 'running' }
 ReplayScenario >> run [
 

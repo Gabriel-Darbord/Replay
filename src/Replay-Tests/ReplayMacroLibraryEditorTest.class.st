@@ -10,11 +10,13 @@ Class {
 
 { #category : 'support' }
 ReplayMacroLibraryEditorTest >> displayedLabelsOf: anEditor [
-	"The strings shown by the macro list of an open library window"
+	"The strings shown by the macro list of an open library window.
+	The table creates its rows when it is drawn, which a headless image never does by itself: draw it offscreen first."
 
 	| strings |
 	strings := OrderedCollection new.
 	anEditor macroList list withAdapterDo: [ :adapter |
+		adapter widget fullDrawOn: (Form extent: adapter widget extent depth: 32) getCanvas.
 		adapter widget allMorphsDo: [ :morph |
 			(morph isKindOf: StringMorph) ifTrue: [ strings add: morph contents asString ] ] ].
 	^ strings

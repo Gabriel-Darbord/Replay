@@ -1,5 +1,5 @@
 "
-Tests semantic target registration in the Replay editor.
+Tests the semantic names of the Replay editor: its own widgets, and the names of the pane shown in its action editor, which follow one scheme for action panes: 'Action <field>'.
 "
 Class {
 	#name : 'ReplayEditorSemanticTargetTest',
@@ -9,9 +9,32 @@ Class {
 }
 
 { #category : 'support' }
+ReplayEditorSemanticTargetTest >> assertEditor: editor names: names [
+
+	names do: [ :name |
+		self
+			assert: (editor replayPresenterAt: name ifAbsent: [ nil ]) notNil
+			description: name , ' should be registered' ]
+]
+
+{ #category : 'support' }
 ReplayEditorSemanticTargetTest >> newEditor [
 
 	^ ReplayEditor on: ReplayScenario new
+]
+
+{ #category : 'tests' }
+ReplayEditorSemanticTargetTest >> testActionPanesUseOnlyTheActionScheme [
+	"No name of an action pane is built from the name of its action class"
+
+	| editor |
+	editor := self newEditor.
+	(ReplayAction allSubclasses reject: [ :each | each isAbstract ]) do: [ :actionClass |
+		| actionEditor |
+		actionEditor := editor editAction: actionClass new.
+		(actionEditor instVarNamed: #fields) keysDo: [ :name |
+			self assert: (name beginsWith: 'Action ') description: name.
+			self deny: (name includesSubstring: actionClass displayName) description: name ] ]
 ]
 
 { #category : 'tests' }
@@ -19,20 +42,15 @@ ReplayEditorSemanticTargetTest >> testBrowseTargetsAreRegistered [
 
 	| editor |
 	editor := self newEditor.
-	ReplayBrowseClass new settingsPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Browse class target' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action extent width' ifAbsent: [ nil ]) notNil.
+	editor editAction: ReplayBrowseClass new.
+	self assertEditor: editor names: #( 'Action class' 'Action extent width' ).
 
-	editor clearReplayPresenterTargets.
-	ReplayBrowsePackage new settingsPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Browse package target' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action bounds left' ifAbsent: [ nil ]) notNil.
+	editor editAction: ReplayBrowsePackage new.
+	self assertEditor: editor names: #( 'Action package' 'Action bounds left' ).
+	self assert: (editor replayPresenterAt: 'Action class' ifAbsent: [ #missing ]) equals: #missing.
 
-	editor clearReplayPresenterTargets.
-	ReplayBrowseMethod new settingsPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Browse method browser' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Browse method target' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action clear placement' ifAbsent: [ nil ]) notNil
+	editor editAction: ReplayBrowseMethod new.
+	self assertEditor: editor names: #( 'Action method browser' 'Action method' 'Action clear placement' )
 ]
 
 { #category : 'tests' }
@@ -40,16 +58,12 @@ ReplayEditorSemanticTargetTest >> testFlagTargetsAreRegistered [
 
 	| editor |
 	editor := self newEditor.
-	ReplayClick new buttonsPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Action left click' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Click left click' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action right click' ifAbsent: [ nil ]) notNil.
+	editor editAction: ReplayClick new.
+	self assertEditor: editor names: #( 'Action left button' 'Action right button' 'Action middle button' 'Action shift' 'Action control' 'Action alt option' 'Action command' ).
 
-	editor clearReplayPresenterTargets.
-	ReplayPressKey new modifierPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Action shift' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Press key shift' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action alt option' ifAbsent: [ nil ]) notNil
+	editor editAction: ReplayPressKey new.
+	self assertEditor: editor names: #( 'Action shift' 'Action alt option' ).
+	self assert: (editor replayPresenterAt: 'Action left button' ifAbsent: [ #missing ]) equals: #missing
 ]
 
 { #category : 'tests' }
@@ -57,15 +71,8 @@ ReplayEditorSemanticTargetTest >> testOpenPlacementTargetsAreRegistered [
 
 	| editor |
 	editor := self newEditor.
-	ReplayOpenPresenter new settingsPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Action extent width' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Open Presenter extent width' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action extent height' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action bounds left' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action bounds top' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action bounds right' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action bounds bottom' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action clear placement' ifAbsent: [ nil ]) notNil
+	editor editAction: ReplayOpenPresenter new.
+	self assertEditor: editor names: #( 'Action script' 'Action position x' 'Action position y' 'Action extent width' 'Action extent height' 'Action bounds left' 'Action bounds top' 'Action bounds right' 'Action bounds bottom' 'Action clear placement' )
 ]
 
 { #category : 'tests' }
@@ -79,26 +86,14 @@ ReplayEditorSemanticTargetTest >> testRecordingStatusShowsShortcut [
 ]
 
 { #category : 'tests' }
-ReplayEditorSemanticTargetTest >> testRegistersAndClearsDynamicReplayTargets [
-
-	| editor presenter |
-	editor := self newEditor.
-	presenter := editor newText.
-	editor registerReplayPresenter: presenter named: 'Registered target'.
-
-	self assert: (editor replayPresenterAt: 'Registered target' ifAbsent: [ nil ]) equals: presenter.
-	editor clearReplayPresenterTargets.
-	self assert: (editor replayPresenterAt: 'Registered target' ifAbsent: [ #missing ]) equals: #missing
-]
-
-{ #category : 'tests' }
 ReplayEditorSemanticTargetTest >> testScenarioFieldsAreRegistered [
 
 	| editor |
 	editor := self newEditor.
-	editor scenario editionPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Scenario title' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Scenario description' ifAbsent: [ nil ]) notNil
+	editor editScenarioData.
+	self assertEditor: editor names: #( 'Scenario title' 'Scenario description' ).
+	editor showHome.
+	self assert: (editor replayPresenterAt: 'Scenario title' ifAbsent: [ #missing ]) equals: #missing
 ]
 
 { #category : 'tests' }
@@ -116,6 +111,7 @@ ReplayEditorSemanticTargetTest >> testSelectingActionReplacesDynamicTargets [
 
 	editor selectAction: typeAction.
 	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) notNil.
+	self assert: (editor replayPresenterAt: 'Action editor' ifAbsent: [ nil ]) identicalTo: editor actionEditor.
 	editor selectAction: scriptAction.
 	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ #missing ]) equals: #missing.
 	self assert: (editor replayPresenterAt: 'Action script' ifAbsent: [ nil ]) notNil
@@ -126,17 +122,13 @@ ReplayEditorSemanticTargetTest >> testSelectionAndTargetNameFieldTargetsAreRegis
 
 	| editor |
 	editor := self newEditor.
-	ReplaySelectText new startIndexPresenterOn: editor.
-	ReplaySelectText new stopIndexPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Action selection start' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Select text selection start' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Action selection stop' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Select text selection stop' ifAbsent: [ nil ]) notNil.
+	editor editAction: ReplaySelectText new.
+	self assertEditor: editor names: #( 'Action start index' 'Action stop index' 'Action target name' 'Action target world' ).
 
-	editor clearReplayPresenterTargets.
-	ReplayType new semanticTargetPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Action target name' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Type target name' ifAbsent: [ nil ]) notNil
+	editor editAction: ReplayAnnotate new.
+	self assertEditor: editor names: #( 'Action target name' 'Action placement' 'Action text' ).
+	"Annotate needs a target: it cannot target the World"
+	self assert: (editor replayPresenterAt: 'Action target world' ifAbsent: [ #missing ]) equals: #missing
 ]
 
 { #category : 'tests' }
@@ -144,34 +136,33 @@ ReplayEditorSemanticTargetTest >> testSharedActionFieldTargetsAreRegistered [
 
 	| editor |
 	editor := self newEditor.
-	ReplayType new textPresenterOn: editor labeled: 'Text:'.
-	self assert: (editor replayPresenterAt: 'Action text' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Type text' ifAbsent: [ nil ]) notNil.
-
-	editor clearReplayPresenterTargets.
-	ReplayScript new scriptPresenterOn: editor labeled: 'Script:'.
-	self assert: (editor replayPresenterAt: 'Action script' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Script source' ifAbsent: [ nil ]) notNil
+	{ ReplayType new. ReplayInform new. ReplayNavigate new } do: [ :action |
+		editor editAction: action.
+		self assertEditor: editor names: #( 'Action text' ) ].
+	{ ReplayScript new. ReplayPresenterScript new. ReplayAttachUI new. ReplayOpenPresenter new } do: [ :action |
+		editor editAction: action.
+		self assertEditor: editor names: #( 'Action script' ) ]
 ]
 
 { #category : 'tests' }
 ReplayEditorSemanticTargetTest >> testShortcutActionRegistersVisibleKeyEditors [
 
-	| editor action presenter |
+	| editor action actionEditor presenter |
 	editor := self newEditor.
 	action := ReplayShortcut keyBinding: (ReplayKeyBinding character: Character arrowLeft modifiers: 0).
-	presenter := action keyBindingPresenterOn: editor.
+	actionEditor := editor editAction: action.
+	presenter := actionEditor keyBindingPresenter.
 	self assert: presenter class equals: ReplayKeyBindingPresenter.
-	self assert: (editor replayPresenterAt: 'Action shortcut keys' ifAbsent: [ nil ]) identicalTo: presenter.
-	self assert: (editor replayPresenterAt: 'Action shortcut key list' ifAbsent: [ nil ]) identicalTo: presenter keyList.
-	self assert: (editor replayPresenterAt: 'Action shortcut capture shortcut button' ifAbsent: [ nil ]) identicalTo: presenter captureShortcutButton.
-	self assert: (editor replayPresenterAt: 'Shortcut key list' ifAbsent: [ nil ]) identicalTo: presenter keyList.
+	self assert: (editor replayPresenterAt: 'Action key binding' ifAbsent: [ nil ]) identicalTo: presenter.
+	self assert: (editor replayPresenterAt: 'Action key list' ifAbsent: [ nil ]) identicalTo: presenter keyList.
+	self assert: (editor replayPresenterAt: 'Action capture shortcut button' ifAbsent: [ nil ]) identicalTo: presenter captureShortcutButton.
 	self
-		assert: (editor replayPresenterAt: 'Shortcut command' ifAbsent: [ nil ])
+		assert: (editor replayPresenterAt: 'Action command' ifAbsent: [ nil ])
 		identicalTo: presenter modifiersPresenter commandCheckBox.
 	self
-		assert: (editor replayPresenterAt: 'Action shortcut alt option' ifAbsent: [ nil ])
-		identicalTo: presenter modifiersPresenter altCheckBox
+		assert: (editor replayPresenterAt: 'Action alt option' ifAbsent: [ nil ])
+		identicalTo: presenter modifiersPresenter altCheckBox.
+	self assert: (editor replayPresenterAt: 'Action keymap list' ifAbsent: [ nil ]) notNil
 ]
 
 { #category : 'tests' }
@@ -179,11 +170,16 @@ ReplayEditorSemanticTargetTest >> testSpecificActionFieldTargetsAreRegistered [
 
 	| editor |
 	editor := self newEditor.
-	ReplayPressKey new keyPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Action key' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Press key selector' ifAbsent: [ nil ]) notNil.
-	editor clearReplayPresenterTargets.
-	ReplayPressKey new repeatCountPresenterOn: editor.
-	self assert: (editor replayPresenterAt: 'Action repeat count' ifAbsent: [ nil ]) notNil.
-	self assert: (editor replayPresenterAt: 'Press key repeat count' ifAbsent: [ nil ]) notNil
+	editor editAction: ReplayPressKey new.
+	self assertEditor: editor names: #( 'Action key' 'Action count' ).
+	editor editAction: ReplayScroll new.
+	self assertEditor: editor names: #( 'Action direction' 'Action count' 'Action x' 'Action y' ).
+	editor editAction: ReplayDeleteText new.
+	self assertEditor: editor names: #( 'Action direction' 'Action count' ).
+	editor editAction: ReplayDrag new.
+	self assertEditor: editor names: #( 'Action start x' 'Action start y' 'Action end x' 'Action end y' 'Action steps' ).
+	editor editAction: ReplayClick new.
+	self assertEditor: editor names: #( 'Action phase' 'Action x' 'Action y' 'Action count' ).
+	editor editAction: ReplayDelay new.
+	self assertEditor: editor names: #( 'Action seconds' )
 ]

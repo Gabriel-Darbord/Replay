@@ -14,6 +14,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayOpenUI class >> editorClass [
+
+	^ ReplayOpenUIEditor
+]
+
 { #category : 'testing' }
 ReplayOpenUI class >> isAbstract [
 
@@ -42,17 +48,6 @@ ReplayOpenUI >> placement: aReplayPlacement [
 		ifFalse: [ aReplayPlacement ]
 ]
 
-{ #category : 'editing' }
-ReplayOpenUI >> placementPresenterOn: editor [
-
-	^ (placement ifNil: [ ReplayPlacement new ])
-		presenterOn: editor
-		targetPrefixes: { 'Action'. self class displayName }
-		whenChangedDo: [ :aPlacement |
-			self placement: aPlacement.
-			editor actionChanged: self ]
-]
-
 { #category : 'managing UI' }
 ReplayOpenUI >> previewManagerOn: aReplayUIBuilder [
 	"Answer a manager on a fresh copy of my UI for an editor preview."
@@ -69,15 +64,6 @@ ReplayOpenUI >> runOn: runner [
 	manager openLabeled: runner scenario title placement: self placement
 ]
 
-{ #category : 'editing' }
-ReplayOpenUI >> uiEditionPresenterOn: editor [
-
-	| manager |
-	manager := (self uiManagerOn: (ReplayRunner on: editor scenario)) editor: editor.
-	manager wrapForEdition.
-	^ editor newMorph morph: manager ui
-]
-
 { #category : 'managing UI' }
 ReplayOpenUI >> uiManagerOn: runner [
 
@@ -89,10 +75,4 @@ ReplayOpenUI >> uiOn: runner [
 	"Return the configured UI as a Morph"
 
 	self subclassResponsibility
-]
-
-{ #category : 'accessing' }
-ReplayOpenUI >> uiViewName [
-
-	^ 'Add UI interaction'
 ]

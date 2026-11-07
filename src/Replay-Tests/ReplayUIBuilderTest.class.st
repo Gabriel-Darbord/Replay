@@ -174,12 +174,15 @@ ReplayUIBuilderTest >> testMissingOpenerSignalsMissingUI [
 { #category : 'tests' }
 ReplayUIBuilderTest >> testMissingUIHelpDefaultsToGenericHelp [
 
-	| presenter |
+	| actionEditor presenter |
+	actionEditor := ReplayEditor new editAction: ReplayOpenPresenter new.
 	presenter := ReplayMissingUIError new
 		messageText: 'No UI';
-		helpPresenterOn: ReplayEditor new for: ReplayInform new.
+		helpPresenterFor: actionEditor.
 
-	self assert: presenter notNil
+	self assert: presenter notNil.
+	self assert: ((self allPresentersIn: presenter) anySatisfy: [ :each |
+		(each isKindOf: SpButtonPresenter) and: [ each label = 'Debug exception' ] ])
 ]
 
 { #category : 'tests' }
@@ -207,7 +210,7 @@ ReplayUIBuilderTest >> testScriptErrorHelpIsReportedAgainstTheFailingAction [
 	self scenarioWithSteps: { { ReplayOpenPresenter new script: '42'. target } }.
 	editor := ReplayEditor on: scenario.
 
-	presenter := target tryUIEditionPresenterOn: editor.
+	presenter := (editor editAction: target) tryNewUIEditionPresenter.
 
 	debugButtons := (self allPresentersIn: presenter) select: [ :each |
 		(each isKindOf: SpButtonPresenter) and: [ each label = 'Debug the script' ] ].
@@ -220,9 +223,11 @@ ReplayUIBuilderTest >> testScriptErrorHelpWithoutScriptDefaultsToGenericHelp [
 	| presenter |
 	presenter := ReplayScriptError new
 		messageText: 'Failure';
-		helpPresenterOn: ReplayEditor new for: ReplayInform new.
+		helpPresenterFor: (ReplayEditor new editAction: ReplayFocus new).
 
-	self assert: presenter notNil
+	self assert: presenter notNil.
+	self assert: ((self allPresentersIn: presenter) anySatisfy: [ :each |
+		(each isKindOf: SpButtonPresenter) and: [ each label = 'Debug exception' ] ])
 ]
 
 { #category : 'tests' }

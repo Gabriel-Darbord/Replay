@@ -7,7 +7,9 @@ Recording: Record and Stop recording, or the recording key binding (Cmd + R, see
 
 Library: a standalone editor offers to add its scenario to the macro library (Add to library), which hands it over to the library window. The library window embeds one of me on the scenario of its selected macro (see onMacro:inLibrary:) and opens and closes my session. Then my Edit shortcut button shows a ReplayMacroEditor on the macro settings, and I notify the library window when those settings or the scenario title, which names the macro, change.
 
-Semantic names: replayPresenterAt:ifAbsent: answers my widgets by stable names for Replay actions ('Step list', 'Action list', 'Action chooser', 'Record button', ...). The presenters of the action editor register their own names (registerReplayPresenter:named:) while buildActionEditor: builds them, and are forgotten when the pane is replaced. The settings of the macro are found while they are shown.
+Action editor: the right pane shows the presenter that buildActionEditor: builds: an editor of the current action or of the navigation of the current step (a ReplayActionEditor, of the class that the action class answers to editorClass), the scenario data (a ReplayScenarioDataEditor), the macro settings (a ReplayMacroEditor), or a home message. Action editors notify me after each edit with actionChanged:, and I show the new label of the action.
+
+Semantic names: replayPresenterAt:ifAbsent: answers my widgets by stable names for Replay actions ('Step list', 'Action list', 'Action chooser', 'Record button', 'Action editor', ...), then the names of the pane shown in the action editor, such as 'Action text' or 'Scenario title', which are forgotten when the pane is replaced.
 "
 Class {
 	#name : 'ReplayEditor',
@@ -24,7 +26,6 @@ Class {
 		'recordingStatusPresenter',
 		'shortcutButton',
 		'namedPresenters',
-		'replayPresenters',
 		'recorder',
 		'macro',
 		'macroLibrary',
@@ -100,7 +101,7 @@ ReplayEditor class >> recordingKeyBinding [
 
 { #category : 'editing' }
 ReplayEditor >> actionChanged: anAction [
-	"Sent by the settings of anAction after they edit it: show its new label"
+	"Sent by the editor of anAction after each edit: show its new label"
 
 	actionList list refresh
 ]
@@ -113,7 +114,7 @@ ReplayEditor >> actionEditor [
 ]
 
 { #category : 'accessing' }
-ReplayEditor >> actions [
+ReplayEditor >> actionList [
 	"The action list presenter"
 
 	^ actionList
@@ -166,24 +167,16 @@ ReplayEditor >> addRecordedActions: aCollectionOfActions [
 
 { #category : 'action editor' }
 ReplayEditor >> buildActionEditor: aBlock [
-	"Show in the right pane the presenter that aBlock builds. The semantic names of the previous pane are forgotten before aBlock registers the ones of the new pane."
+	"Show in the right pane the presenter that aBlock builds, which replaces the previous pane and its semantic names"
 
 	| pane |
 	self stopShortcutCaptures.
-	self clearReplayPresenterTargets.
 	pane := aBlock value.
-	self registerReplayPresenter: pane named: 'Action editor'.
 	actionEditor presenters
 		ifEmpty: [ actionEditor add: pane ]
 		ifNotEmpty: [ actionEditor replaceAtIndex: 1 with: pane ].
 	pane takeKeyboardFocus.
 	^ pane
-]
-
-{ #category : 'replay' }
-ReplayEditor >> clearReplayPresenterTargets [
-
-	replayPresenters := Dictionary new
 ]
 
 { #category : 'session' }
@@ -262,12 +255,10 @@ ReplayEditor >> editScenarioButton [
 ReplayEditor >> editScenarioData [
 
 	self unselectAction.
-	self buildActionEditor: [ self scenario editionPresenterOn: self ].
-	self isInLibrary ifTrue: [
-		self replayPresenters
-			at: 'Scenario title'
-			ifPresent: [ :titlePresenter |
-			titlePresenter whenTextChangedDo: [ self scenarioTitleChanged ] ] ]
+	self buildActionEditor: [
+		(self instantiate: ReplayScenarioDataEditor on: self scenario)
+			whenTitleChangedDo: [ self isInLibrary ifTrue: [ self scenarioTitleChanged ] ];
+			yourself ]
 ]
 
 { #category : 'macro' }
@@ -282,7 +273,14 @@ ReplayEditor >> editStepNavigation [
 
 	self currentStep ifNil: [ ^ self ].
 	self unselectAction.
-	self buildActionEditor: [ self currentStep navigation editionPresenterOn: self ]
+	self editAction: self currentStep navigation
+]
+
+{ #category : 'action editor' }
+ReplayEditor >> editAction: anAction [
+	"Show the editor of anAction, an action or a step navigation, in the right pane"
+
+	^ self buildActionEditor: [ anAction class editorClass on: anAction in: self ]
 ]
 
 { #category : 'editing' }
@@ -509,13 +507,6 @@ ReplayEditor >> recordingTargetMorph [
 	^ ReplayAttachActiveWindow activeWindowMorphFromHand: self hand
 ]
 
-{ #category : 'replay' }
-ReplayEditor >> registerReplayPresenter: aPresenter named: aString [
-
-	self replayPresenters at: aString put: aPresenter.
-	^ aPresenter
-]
-
 { #category : 'editing' }
 ReplayEditor >> removeAction: action [
 	"When removing an action with the editable list"
@@ -549,19 +540,12 @@ ReplayEditor >> removeStep: step [
 
 { #category : 'replay' }
 ReplayEditor >> replayPresenterAt: aPresenterName ifAbsent: absentBlock [
+	"My own widgets, then the names of the pane shown in the action editor"
 
-	^ namedPresenters at: aPresenterName ifAbsent: [
-		  self replayPresenters at: aPresenterName ifAbsent: [
-			  self shownMacroEditor
-				  ifNil: absentBlock
-				  ifNotNil: [ :editor | editor replayPresenterAt: aPresenterName ifAbsent: absentBlock ] ] ]
-]
-
-{ #category : 'replay' }
-ReplayEditor >> replayPresenters [
-	"The semantic names registered by the presenters of the action editor"
-
-	^ replayPresenters ifNil: [ replayPresenters := Dictionary new ]
+	aPresenterName = 'Action editor' ifTrue: [ ^ self actionEditor ].
+	^ namedPresenters
+		  at: aPresenterName
+		  ifAbsent: [ self actionEditor replayPresenterAt: aPresenterName ifAbsent: absentBlock ]
 ]
 
 { #category : 'tools' }
@@ -615,7 +599,7 @@ ReplayEditor >> scenarioTitleChanged [
 ReplayEditor >> selectAction: action [
 	"When an action has been selected in the action list"
 
-	self buildActionEditor: [ action editionPresenterOn: self ]
+	self editAction: action
 ]
 
 { #category : 'editing' }
@@ -652,15 +636,6 @@ ReplayEditor >> showActionsSelecting: anAction [
 ReplayEditor >> showHome [
 
 	^ self buildActionEditor: [ self homePresenter ]
-]
-
-{ #category : 'macro' }
-ReplayEditor >> shownMacroEditor [
-	"The settings of my macro when they are shown, or nil"
-
-	^ (macroEditor notNil and: [ self actionEditor == macroEditor ])
-		  ifTrue: [ macroEditor ]
-		  ifFalse: [ nil ]
 ]
 
 { #category : 'recording' }
@@ -701,7 +676,7 @@ ReplayEditor >> stepNavigationEditor [
 ]
 
 { #category : 'accessing' }
-ReplayEditor >> steps [
+ReplayEditor >> stepList [
 	"The step list presenter"
 
 	^ stepList

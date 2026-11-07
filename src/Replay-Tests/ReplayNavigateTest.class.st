@@ -104,7 +104,7 @@ ReplayNavigateTest >> testEditionPresenterBuilds [
 
 	| action presenter |
 	action := ReplayNavigate new.
-	presenter := action editionPresenterOn: ReplayEditor new.
+	presenter := ReplayEditor new editAction: action.
 
 	self assert: presenter notNil.
 	self assert: action isDefault

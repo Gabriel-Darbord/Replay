@@ -15,9 +15,10 @@ Class {
 }
 
 { #category : 'editing' }
-ReplayError >> helpPresenterOn: editor for: action [
+ReplayError >> helpPresenterFor: aReplayUIActionEditor [
+	"The presenter that explains me in the editor of an action that met me while building its preview"
 
-	^ action helpPresenterOn: editor about: self
+	^ aReplayUIActionEditor helpAbout: self
 ]
 
 { #category : 'accessing' }

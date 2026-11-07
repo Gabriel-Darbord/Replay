@@ -1,5 +1,5 @@
 "
-Tests for browse actions: targets, missing targets, and settings presenters.
+Tests for browse actions: targets, missing targets, and their editors.
 "
 Class {
 	#name : 'ReplayBrowseTest',
@@ -30,9 +30,9 @@ ReplayBrowseTest >> testBrowseClassSettingsKeepUnsetTarget [
 	action := ReplayBrowseClass new.
 	editor := self newEditor.
 
-	action settingsPresenterOn: editor.
+	editor editAction: action.
 
-	list := editor replayPresenterAt: 'Browse class target' ifAbsent: [ nil ].
+	list := editor replayPresenterAt: 'Action class' ifAbsent: [ nil ].
 	self assert: list selectedItem isNil.
 	self assert: action target isNil.
 	self assert: list items first name <= list items second name
@@ -45,9 +45,9 @@ ReplayBrowseTest >> testBrowseClassSettingsSelectTarget [
 	action := ReplayBrowseClass new targetClass: ReplayStep; yourself.
 	editor := self newEditor.
 
-	action settingsPresenterOn: editor.
+	editor editAction: action.
 
-	list := editor replayPresenterAt: 'Browse class target' ifAbsent: [ nil ].
+	list := editor replayPresenterAt: 'Action class' ifAbsent: [ nil ].
 	self assert: list selectedItem equals: ReplayStep.
 	self assert: action targetClass equals: ReplayStep
 ]
@@ -78,7 +78,7 @@ ReplayBrowseTest >> testBrowseMethodSettingsKeepUnsetTarget [
 	| action |
 	action := ReplayBrowseMethod new.
 
-	action settingsPresenterOn: self newEditor.
+	self newEditor editAction: action.
 
 	self assert: action target isNil
 ]
@@ -90,9 +90,9 @@ ReplayBrowseTest >> testBrowseMethodSettingsSelectTarget [
 	action := ReplayBrowseMethod new targetMethod: ReplayScenario class >> #exampleSton; yourself.
 	editor := self newEditor.
 
-	action settingsPresenterOn: editor.
+	editor editAction: action.
 
-	methodList := editor replayPresenterAt: 'Browse method target' ifAbsent: [ nil ].
+	methodList := editor replayPresenterAt: 'Action method' ifAbsent: [ nil ].
 	self assert: action target equals: 'ReplayScenario class#exampleSton'.
 	self assert: methodList selectedItem equals: ReplayScenario class >> #exampleSton
 ]
@@ -113,9 +113,9 @@ ReplayBrowseTest >> testBrowsePackageSettingsKeepUnsetTarget [
 	action := ReplayBrowsePackage new.
 	editor := self newEditor.
 
-	action settingsPresenterOn: editor.
+	editor editAction: action.
 
-	list := editor replayPresenterAt: 'Browse package target' ifAbsent: [ nil ].
+	list := editor replayPresenterAt: 'Action package' ifAbsent: [ nil ].
 	self assert: list selectedItem isNil.
 	self assert: action target isNil
 ]
@@ -127,9 +127,9 @@ ReplayBrowseTest >> testBrowsePackageSettingsSelectTarget [
 	action := ReplayBrowsePackage new targetPackage: ReplayStep package; yourself.
 	editor := self newEditor.
 
-	action settingsPresenterOn: editor.
+	editor editAction: action.
 
-	list := editor replayPresenterAt: 'Browse package target' ifAbsent: [ nil ].
+	list := editor replayPresenterAt: 'Action package' ifAbsent: [ nil ].
 	self assert: list selectedItem equals: ReplayStep package.
 	self assert: action targetPackage equals: ReplayStep package
 ]

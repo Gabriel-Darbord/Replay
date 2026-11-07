@@ -4,6 +4,8 @@ I am a requested window placement, used by actions that open a window (ReplayOpe
 I hold either exact bounds, or a position and/or an extent. Bounds exclude the other two: setting bounds forgets the position and extent, and setting a position or an extent forgets the bounds. A nil field leaves the choice to the window system, and an empty placement requests nothing.
 
 I am a value object compared by my fields, and serialize to STON with my non-nil fields only. Actions keep nil instead of an empty placement.
+
+My editing helpers (positionX:, extentWidth:, boundsLeft:, ...) change one coordinate, starting from the values shown while editing (positionForEditing, ...). The action editors apply them to a copy of the placement of the action (see ReplayActionEditor>>placementField:set:).
 "
 Class {
 	#name : 'ReplayPlacement',
@@ -110,36 +112,6 @@ ReplayPlacement >> boundsLeft: aNumber [
 ]
 
 { #category : 'editing' }
-ReplayPlacement >> boundsPresenterOn: editor targetPrefixes: prefixes whenChangedDo: aBlock [
-
-	| current |
-	current := self boundsForEditing.
-	^ SpBoxLayout newTopToBottom
-		add: 'Bounds:' expand: false;
-		add: (SpBoxLayout newLeftToRight
-				spacing: 8;
-				add: 'Left' expand: false;
-				add: (self numberPresenterOn: editor targetPrefixes: prefixes named: 'bounds left' value: current left update: [ :number |
-						self boundsLeft: number ] whenChangedDo: aBlock);
-				add: 'Top' expand: false;
-				add: (self numberPresenterOn: editor targetPrefixes: prefixes named: 'bounds top' value: current top update: [ :number |
-						self boundsTop: number ] whenChangedDo: aBlock);
-				yourself)
-		expand: false;
-		add: (SpBoxLayout newLeftToRight
-				spacing: 8;
-				add: 'Right' expand: false;
-				add: (self numberPresenterOn: editor targetPrefixes: prefixes named: 'bounds right' value: current right update: [ :number |
-						self boundsRight: number ] whenChangedDo: aBlock);
-				add: 'Bottom' expand: false;
-				add: (self numberPresenterOn: editor targetPrefixes: prefixes named: 'bounds bottom' value: current bottom update: [ :number |
-						self boundsBottom: number ] whenChangedDo: aBlock);
-				yourself)
-		expand: false;
-		yourself
-]
-
-{ #category : 'editing' }
 ReplayPlacement >> boundsRight: aNumber [
 
 	| current |
@@ -206,26 +178,6 @@ ReplayPlacement >> extentHeight: aNumber [
 ]
 
 { #category : 'editing' }
-ReplayPlacement >> extentPresenterOn: editor targetPrefixes: prefixes whenChangedDo: aBlock [
-
-	| current |
-	current := self extentForEditing.
-	^ SpBoxLayout newTopToBottom
-		add: 'Extent:' expand: false;
-		add: (SpBoxLayout newLeftToRight
-				spacing: 8;
-				add: 'Width' expand: false;
-				add: (self numberPresenterOn: editor targetPrefixes: prefixes named: 'extent width' value: current x update: [ :number |
-						self extentWidth: number ] whenChangedDo: aBlock);
-				add: 'Height' expand: false;
-				add: (self numberPresenterOn: editor targetPrefixes: prefixes named: 'extent height' value: current y update: [ :number |
-						self extentHeight: number ] whenChangedDo: aBlock);
-				yourself)
-		expand: false;
-		yourself
-]
-
-{ #category : 'editing' }
 ReplayPlacement >> extentWidth: aNumber [
 
 	self extent: aNumber asNumber @ self extentForEditing y
@@ -241,21 +193,6 @@ ReplayPlacement >> hash [
 ReplayPlacement >> isEmpty [
 
 	^ position isNil and: [ extent isNil and: [ bounds isNil ] ]
-]
-
-{ #category : 'editing' }
-ReplayPlacement >> numberPresenterOn: editor targetPrefixes: prefixes named: targetName value: value update: updateBlock whenChangedDo: aBlock [
-
-	| input |
-	(input := editor newNumberInput)
-		numberType: Float;
-		number: value;
-		whenNumberChangedDo: [ :number |
-			updateBlock value: number.
-			aBlock value: self ].
-	prefixes do: [ :prefix |
-		editor registerReplayPresenter: input named: prefix , ' ' , targetName ].
-	^ input
 ]
 
 { #category : 'accessing' }
@@ -280,26 +217,6 @@ ReplayPlacement >> positionForEditing [
 ]
 
 { #category : 'editing' }
-ReplayPlacement >> positionPresenterOn: editor targetPrefixes: prefixes whenChangedDo: aBlock [
-
-	| current |
-	current := self positionForEditing.
-	^ SpBoxLayout newTopToBottom
-		add: 'Position:' expand: false;
-		add: (SpBoxLayout newLeftToRight
-				spacing: 8;
-				add: 'X' expand: false;
-				add: (self numberPresenterOn: editor targetPrefixes: prefixes named: 'position x' value: current x update: [ :number |
-						self positionX: number ] whenChangedDo: aBlock);
-				add: 'Y' expand: false;
-				add: (self numberPresenterOn: editor targetPrefixes: prefixes named: 'position y' value: current y update: [ :number |
-						self positionY: number ] whenChangedDo: aBlock);
-				yourself)
-		expand: false;
-		yourself
-]
-
-{ #category : 'editing' }
 ReplayPlacement >> positionX: aNumber [
 
 	self position: aNumber asNumber @ self positionForEditing y
@@ -309,29 +226,6 @@ ReplayPlacement >> positionX: aNumber [
 ReplayPlacement >> positionY: aNumber [
 
 	self position: self positionForEditing x @ aNumber asNumber
-]
-
-{ #category : 'editing' }
-ReplayPlacement >> presenterOn: editor targetPrefixes: prefixes whenChangedDo: aBlock [
-	"Build the layout editing me. Each input is registered in the editor under every prefix,
-	for example 'Action extent width'. aBlock receives me after each change."
-
-	| clearButton |
-	clearButton := editor newButton
-		label: 'Clear placement';
-		action: [
-			self clear.
-			aBlock value: self ];
-		yourself.
-	prefixes do: [ :prefix |
-		editor registerReplayPresenter: clearButton named: prefix , ' clear placement' ].
-	^ SpBoxLayout newTopToBottom
-		spacing: 10;
-		add: (self positionPresenterOn: editor targetPrefixes: prefixes whenChangedDo: aBlock) expand: false;
-		add: (self extentPresenterOn: editor targetPrefixes: prefixes whenChangedDo: aBlock) expand: false;
-		add: (self boundsPresenterOn: editor targetPrefixes: prefixes whenChangedDo: aBlock) expand: false;
-		add: clearButton expand: false;
-		yourself
 ]
 
 { #category : 'printing' }

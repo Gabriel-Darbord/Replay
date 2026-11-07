@@ -13,6 +13,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplaySelectText class >> editorClass [
+
+	^ ReplaySelectTextEditor
+]
+
 { #category : 'accessing' }
 ReplaySelectText class >> displayName [
 
@@ -31,26 +37,6 @@ ReplaySelectText >> canSelectTextIn: anObject [
 	^ anObject notNil and: [
 		(anObject respondsTo: #selectionInterval:)
 			or: [ anObject respondsTo: #selectFrom:to: ] ]
-]
-
-{ #category : 'editing' }
-ReplaySelectText >> indexPresenterOn: editor labeled: label value: value update: updateBlock [
-
-	| input targetName |
-	(input := editor newNumberInput)
-		minimum: 1;
-		numberType: Integer;
-		number: value;
-		whenNumberChangedDo: [ :number |
-				updateBlock value: number.
-				editor actionChanged: self ].
-	targetName := label allButLast asLowercase.
-	editor registerReplayPresenter: input named: 'Action ' , targetName.
-	editor registerReplayPresenter: input named: self class displayName , ' ' , targetName.
-	^ SpBoxLayout newTopToBottom
-		add: label expand: false;
-		add: input expand: false;
-		yourself
 ]
 
 { #category : 'printing' }
@@ -90,19 +76,6 @@ ReplaySelectText >> selectionInterval [
 	^ self startIndex to: (self stopIndex max: self startIndex)
 ]
 
-{ #category : 'editing' }
-ReplaySelectText >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: (self targetPresenterOn: editor) expand: false;
-				add: (self startIndexPresenterOn: editor) expand: false;
-				add: (self stopIndexPresenterOn: editor) expand: false;
-				yourself);
-		yourself
-]
-
 { #category : 'accessing' }
 ReplaySelectText >> startIndex [
 
@@ -115,13 +88,6 @@ ReplaySelectText >> startIndex: anInteger [
 	startIndex := 1 max: anInteger asInteger
 ]
 
-{ #category : 'editing' }
-ReplaySelectText >> startIndexPresenterOn: editor [
-
-	^ self indexPresenterOn: editor labeled: 'Selection start:' value: self startIndex update: [ :number |
-		self startIndex: number ]
-]
-
 { #category : 'accessing' }
 ReplaySelectText >> stopIndex [
 
@@ -132,13 +98,6 @@ ReplaySelectText >> stopIndex [
 ReplaySelectText >> stopIndex: anInteger [
 
 	stopIndex := 0 max: anInteger asInteger
-]
-
-{ #category : 'editing' }
-ReplaySelectText >> stopIndexPresenterOn: editor [
-
-	^ self indexPresenterOn: editor labeled: 'Selection stop:' value: self stopIndex update: [ :number |
-		self stopIndex: number ]
 ]
 
 { #category : 'error handling' }

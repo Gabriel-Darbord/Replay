@@ -96,7 +96,7 @@ ReplayPlacementTest >> testPresenterEditsAnUnsetActionPlacement [
 	| editor action input |
 	editor := ReplayEditor on: ReplayScenario new.
 	action := ReplayOpenPresenter new.
-	action placementPresenterOn: editor.
+	editor editAction: action.
 	input := editor replayPresenterAt: 'Action extent width' ifAbsent: [ nil ].
 
 	input number: 1234.

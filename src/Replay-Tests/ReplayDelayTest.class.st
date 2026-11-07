@@ -24,7 +24,7 @@ ReplayDelayTest >> testEditionPresenterBuilds [
 
 	| action presenter |
 	action := ReplayDelay seconds: 1.
-	presenter := action editionPresenterOn: ReplayEditor new.
+	presenter := ReplayEditor new editAction: action.
 
 	self assert: presenter notNil
 ]

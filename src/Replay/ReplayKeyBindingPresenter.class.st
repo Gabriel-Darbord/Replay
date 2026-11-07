@@ -217,7 +217,7 @@ ReplayKeyBindingPresenter >> initializePresenters [
 		action: [ self startShortcutCapture ];
 		yourself.
 	modifiersPresenter := self instantiate: ReplayKeyModifiersPresenter.
-	modifiersPresenter whenChangedDo: [ :modifiers | self editSelectedChordModifiers: modifiers ].
+	modifiersPresenter whenModifiersChangedDo: [ :modifiers | self editSelectedChordModifiers: modifiers ].
 	self updateCaptureShortcutButtonLabel.
 	self refreshKeyList
 ]
@@ -289,21 +289,6 @@ ReplayKeyBindingPresenter >> refreshKeyList [
 	self showSelectedChordModifiers
 ]
 
-{ #category : 'replay' }
-ReplayKeyBindingPresenter >> registerReplayPresentersOn: anEditor named: aPrefix [
-
-	anEditor registerReplayPresenter: self named: aPrefix , ' keys'.
-	anEditor registerReplayPresenter: keyList named: aPrefix , ' key list'.
-	anEditor registerReplayPresenter: keyDropList named: aPrefix , ' key chooser'.
-	anEditor registerReplayPresenter: addKeyButton named: aPrefix , ' add key button'.
-	anEditor registerReplayPresenter: characterTextPresenter named: aPrefix , ' character text'.
-	anEditor registerReplayPresenter: addCharacterButton named: aPrefix , ' add character button'.
-	anEditor registerReplayPresenter: removeKeyButton named: aPrefix , ' remove key button'.
-	anEditor registerReplayPresenter: clearKeysButton named: aPrefix , ' clear keys button'.
-	anEditor registerReplayPresenter: captureShortcutButton named: aPrefix , ' capture shortcut button'.
-	modifiersPresenter registerReplayPresentersOn: anEditor named: aPrefix
-]
-
 { #category : 'accessing' }
 ReplayKeyBindingPresenter >> removeKeyButton [
 
@@ -317,6 +302,21 @@ ReplayKeyBindingPresenter >> removeSelectedChord [
 	selectedIndex := keyList selectedIndex.
 	(selectedIndex isNil or: [ selectedIndex = 0 ]) ifTrue: [ ^ self ].
 	self editKeyBinding: (self keyBinding copyWithoutChordAt: selectedIndex)
+]
+
+{ #category : 'replay' }
+ReplayKeyBindingPresenter >> namedPresenters [
+	"My parts by field name, for the editors that show me to register them, such as 'key list' or 'shift'"
+
+	^ {
+		  ('key list' -> keyList).
+		  ('key chooser' -> keyDropList).
+		  ('add key button' -> addKeyButton).
+		  ('character text' -> characterTextPresenter).
+		  ('add character button' -> addCharacterButton).
+		  ('remove key button' -> removeKeyButton).
+		  ('clear keys button' -> clearKeysButton).
+		  ('capture shortcut button' -> captureShortcutButton) } , modifiersPresenter namedCheckBoxes
 ]
 
 { #category : 'replay' }

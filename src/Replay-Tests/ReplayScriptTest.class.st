@@ -68,8 +68,12 @@ ReplayScriptTest >> testOpenersReportUnexpectedResultsAsScriptErrors [
 { #category : 'tests' }
 ReplayScriptTest >> testPresenterScriptHasItsOwnLabel [
 
-	self deny: ReplayPresenterScript new scriptLabel equals: ReplayScript new scriptLabel.
-	self assert: (ReplayPresenterScript new scriptLabel includesSubstring: 'presenter')
+	| editor |
+	editor := ReplayEditor new.
+	self
+		deny: (editor editAction: ReplayPresenterScript new) scriptLabel
+		equals: (editor editAction: ReplayScript new) scriptLabel.
+	self assert: ((editor editAction: ReplayPresenterScript new) scriptLabel includesSubstring: 'presenter')
 ]
 
 { #category : 'tests' }

@@ -11,26 +11,16 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayPresenterScript class >> editorClass [
+
+	^ ReplayPresenterScriptEditor
+]
+
 { #category : 'accessing' }
 ReplayPresenterScript class >> displayName [
 
 	^ 'Presenter Script'
-]
-
-{ #category : 'debugging' }
-ReplayPresenterScript >> debugScriptInEditor: editor [
-	"Build a preview of the managed UI up to me, then debug the script on its presenter.
-	The preview opens in a window so the UI loads correctly."
-
-	| builder ui |
-	builder := ReplayUIBuilder on: editor scenario.
-	builder whenDone: [ self debugScriptOn: builder ].
-	ui := [ builder uiForAction: self inStep: editor currentStep ]
-		      on: ReplayError
-		      do: [ :error | ^ self inform: error messageText ].
-	(SpMorphPresenter new morph: ui) asWindow
-		title: 'Debugging Presenter Script';
-		open
 ]
 
 { #category : 'running' }
@@ -38,12 +28,6 @@ ReplayPresenterScript >> previewOn: aReplayUIBuilder [
 	"Act on the preview presenter like at run time."
 
 	self runOn: aReplayUIBuilder
-]
-
-{ #category : 'editing' }
-ReplayPresenterScript >> scriptLabel [
-
-	^ 'Script evaluated with the managed Spec presenter as self:'
 ]
 
 { #category : 'evaluating' }

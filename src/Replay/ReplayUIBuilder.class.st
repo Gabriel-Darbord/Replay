@@ -2,6 +2,8 @@
 I build a managed UI preview up to a selected step or action for editor tooling and action debugging.
 
 I search backwards from the target action for the last action opening a UI, ask it for a preview manager, then replay the following actions up to the target with `previewOn:` instead of `runOn:`, so actions with effects outside the preview are skipped. Navigation between steps is skipped too. Once the target is reached, I stop without closing the preview and evaluate my callback.
+
+uiForAction: finds the step of the target action in my scenario; uiForAction:inStep: takes it.
 "
 Class {
 	#name : 'ReplayUIBuilder',
@@ -40,6 +42,21 @@ ReplayUIBuilder >> runAction: action [
 	(stepIndex = endStepIndex and: [ actionIndex = endActionIndex ])
 		ifTrue: [ "Reached target action" ^ self finish ].
 	action previewOn: self
+]
+
+{ #category : 'managing UI' }
+ReplayUIBuilder >> uiForAction: targetAction [
+	"Build the UI with the state before the given action, in the step of my scenario that has it."
+
+	^ self
+		  uiForAction: targetAction
+		  inStep: (scenario steps
+				   detect: [ :step | step actions includes: targetAction ]
+				   ifNone: [
+					   ReplayError new
+						   messageText: 'Cannot preview an action that is not in the scenario.';
+						   subject: targetAction;
+						   signal ])
 ]
 
 { #category : 'managing UI' }

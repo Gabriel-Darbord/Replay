@@ -11,28 +11,16 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayInform class >> editorClass [
+
+	^ ReplayInformEditor
+]
+
 { #category : 'accessing' }
 ReplayInform class >> displayName [
 
 	^ 'Inform'
-]
-
-{ #category : 'editing' }
-ReplayInform >> editionPresenterOn: editor [
-
-	^ editor newPresenter
-		  layout: (SpBoxLayout new
-				   add: (self
-						    textPresenterOn: editor
-						    labeled:
-							    'Write the rich text to display with an information event:');
-				   add: (editor newButton
-						    icon: (self iconNamed: #smallDoIt);
-						    label: 'Preview';
-						    action: [ self inform: self text ])
-				   expand: false;
-				   yourself);
-		  yourself
 ]
 
 { #category : 'running' }

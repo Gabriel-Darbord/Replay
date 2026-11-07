@@ -54,7 +54,7 @@ ReplayUIBackendTest >> testAnnotatePlacementSettingsPresenterBuilds [
 
 	| action presenter |
 	action := ReplayAnnotate new placement: #below; text: 'Placed'; yourself.
-	presenter := action settingsPresenterOn: ReplayEditor new.
+	presenter := ReplayEditor new editAction: action.
 
 	self assert: presenter notNil
 ]
@@ -105,19 +105,6 @@ ReplayUIBackendTest >> testAnnotationExplicitPlacementFallsBackWhenPreferredSide
 		ensure: [
 			manager close.
 			root delete ]
-]
-
-{ #category : 'tests' }
-ReplayUIBackendTest >> testAnnotationExplicitPlacementProvidesFallbackCandidates [
-
-	| manager annotation candidates |
-	manager := ReplayUIManager new manage: (Morph new extent: 300 @ 200).
-	annotation := ReplayAnnotation annotate: (20 @ 20 extent: 50 @ 30) label: 'Preferred placement'.
-	annotation placement: #right.
-	manager addOverlay: annotation.
-	candidates := manager labelCandidatesFor: annotation.
-
-	self assert: candidates size > 1
 ]
 
 { #category : 'tests' }
@@ -398,7 +385,7 @@ ReplayUIBackendTest >> testAttachedOverlayDoesNotParticipateInOwnerTableLayout [
 ReplayUIBackendTest >> testClearAnnotationsActionEditionPresenterBuilds [
 
 	| presenter |
-	presenter := ReplayClearAnnotations new editionPresenterOn: ReplayEditor new.
+	presenter := ReplayEditor new editAction: ReplayClearAnnotations new.
 
 	self assert: presenter notNil
 ]
@@ -672,7 +659,7 @@ ReplayUIBackendTest >> testDeleteTextSettingsPresenterBuilds [
 
 	| action presenter |
 	action := ReplayDeleteText new direction: #forward; count: 2; yourself.
-	presenter := action settingsPresenterOn: ReplayEditor new.
+	presenter := ReplayEditor new editAction: action.
 	self assert: presenter notNil
 ]
 
@@ -942,9 +929,9 @@ ReplayUIBackendTest >> testOwnedMorphManagerInstallsBlockingOverlayHandlers [
 { #category : 'tests' }
 ReplayUIBackendTest >> testPointerActionSettingsPresentersBuild [
 
-	self assert: (ReplayClick new settingsPresenterOn: ReplayEditor new) notNil.
-	self assert: (ReplayScroll new settingsPresenterOn: ReplayEditor new) notNil.
-	self assert: (ReplayDrag new settingsPresenterOn: ReplayEditor new) notNil
+	self assert: (ReplayEditor new editAction: ReplayClick new) notNil.
+	self assert: (ReplayEditor new editAction: ReplayScroll new) notNil.
+	self assert: (ReplayEditor new editAction: ReplayDrag new) notNil
 ]
 
 { #category : 'tests' }
@@ -1104,7 +1091,7 @@ ReplayUIBackendTest >> testPressKeySettingsPresenterBuilds [
 		keySelector: #left;
 		repeatCount: 3;
 		modifiers: ReplayKeyModifiers shift.
-	presenter := action settingsPresenterOn: ReplayEditor new.
+	presenter := ReplayEditor new editAction: action.
 
 	self assert: presenter notNil
 ]
@@ -1664,7 +1651,7 @@ ReplayUIBackendTest >> testUIHandlerTargetPresenterBuildsForSemanticTarget [
 	| action presenter |
 	action := ReplayFocus new.
 	action targetNamed: 'Field'.
-	presenter := action targetPresenterOn: ReplayEditor new.
+	presenter := ReplayEditor new editAction: action.
 
 	self assert: presenter notNil
 ]

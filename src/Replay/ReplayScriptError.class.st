@@ -42,8 +42,8 @@ ReplayScriptError >> cause: anException [
 ]
 
 { #category : 'editing' }
-ReplayScriptError >> helpPresenterOn: editor for: anAction [
-	"Report against the action owning the script, which may not be the action being edited."
+ReplayScriptError >> helpPresenterFor: aReplayUIActionEditor [
+	"The help is about the action owning the script, which may not be the action being edited."
 
-	^ (action ifNil: [ anAction ]) helpPresenterOn: editor aboutScript: self
+	^ aReplayUIActionEditor helpAboutScriptError: self
 ]

@@ -35,7 +35,7 @@ ReplayEditorDemo >> addScriptActionInEditor [
 action := ReplayScript new.
 action script: ', self placeholderScript storeString, '.
 self focus addActionLast: action.
-self focus actions selectIndex: self focus actions items size'
+self focus actionList selectIndex: self focus actionList items size'
 ]
 
 { #category : 'actions' }

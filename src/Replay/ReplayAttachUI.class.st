@@ -11,28 +11,16 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayAttachUI class >> editorClass [
+
+	^ ReplayAttachUIEditor
+]
+
 { #category : 'accessing' }
 ReplayAttachUI class >> displayName [
 
 	^ 'Attach UI'
-]
-
-{ #category : 'editing' }
-ReplayAttachUI >> editionPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: (self
-						scriptPresenterOn: editor
-						labeled: 'Write script returning an existing Morph or rendered Spec presenter:');
-				add: (self
-						debugButtonPresenterOn: editor
-						labeled: 'Debug script'
-						action: [ self debugScriptInEditor: editor ])
-				expand: false;
-				yourself);
-		yourself
 ]
 
 { #category : 'managing UI' }

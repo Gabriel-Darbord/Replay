@@ -46,30 +46,6 @@ ReplayPointerAction >> buttons: anInteger [
 	buttons := anInteger
 ]
 
-{ #category : 'editing' }
-ReplayPointerAction >> buttonsPresenterOn: editor [
-	"One check box per mouse button, registered as 'Action left click', 'Click left click'..."
-
-	| layout |
-	layout := SpBoxLayout newLeftToRight spacing: 8.
-	self class buttonChoices do: [ :association |
-		| label checkBox |
-		label := association value , ' ' , self class displayName asLowercase.
-		(checkBox := editor newCheckBox)
-			label: label;
-			state: (self hasButton: association key);
-			whenChangedDo: [ :state |
-				self setButton: association key to: state.
-				editor actionChanged: self ].
-		editor registerReplayPresenter: checkBox named: 'Action ' , label asLowercase.
-		editor registerReplayPresenter: checkBox named: self class displayName , ' ' , label asLowercase.
-		layout add: checkBox expand: false ].
-	^ SpBoxLayout newTopToBottom
-		add: 'Mouse buttons:' expand: false;
-		add: layout expand: false;
-		yourself
-]
-
 { #category : 'accessing' }
 ReplayPointerAction >> defaultButtons [
 
@@ -93,24 +69,6 @@ ReplayPointerAction >> modifiers [
 ReplayPointerAction >> modifiers: anInteger [
 
 	modifiers := anInteger
-]
-
-{ #category : 'editing' }
-ReplayPointerAction >> modifiersPresenterOn: editor [
-
-	| presenter |
-	presenter := editor instantiate: ReplayKeyModifiersPresenter.
-	presenter
-		modifiers: self modifiers;
-		whenChangedDo: [ :newModifiers |
-			self modifiers: newModifiers.
-			editor actionChanged: self ].
-	presenter registerReplayPresentersOn: editor named: 'Action ' , self class displayName asLowercase.
-	presenter registerReplayPresentersOn: editor named: self class displayName.
-	^ SpBoxLayout newTopToBottom
-		add: 'Keyboard modifiers:' expand: false;
-		add: presenter expand: false;
-		yourself
 ]
 
 { #category : 'events' }
@@ -144,38 +102,6 @@ ReplayPointerAction >> newHandAt: aPoint [
 	^ HandMorph new
 		position: aPoint;
 		privateOwner: self currentWorld;
-		yourself
-]
-
-{ #category : 'editing' }
-ReplayPointerAction >> offsetPresenterOn: editor labeled: label named: aString get: getBlock set: setBlock [
-	"Inputs for an offset point, registered as 'Action <aString> x' and 'Action <aString> y'"
-
-	| xInput yInput |
-	xInput := editor newNumberInput.
-	xInput
-		numberType: Float;
-		number: getBlock value x;
-		whenNumberChangedDo: [ :number |
-			setBlock value: number @ getBlock value y.
-			editor actionChanged: self ].
-	yInput := editor newNumberInput.
-	yInput
-		numberType: Float;
-		number: getBlock value y;
-		whenNumberChangedDo: [ :number |
-			setBlock value: getBlock value x @ number.
-			editor actionChanged: self ].
-	editor registerReplayPresenter: xInput named: 'Action ' , aString , ' x'.
-	editor registerReplayPresenter: yInput named: 'Action ' , aString , ' y'.
-	^ SpBoxLayout newTopToBottom
-		add: label expand: false;
-		add: (SpBoxLayout newLeftToRight
-			add: 'X' expand: false;
-			add: xInput;
-			add: 'Y' expand: false;
-			add: yInput;
-			yourself) expand: false;
 		yourself
 ]
 

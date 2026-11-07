@@ -71,7 +71,7 @@ ReplayEditorRecordingTest >> testAppendsRecordedActionsToCurrentStep [
 	editor addRecordedActions: { click. type }.
 
 	self assert: editor currentStep actions asArray equals: { click. type }.
-	self assert: editor actions items asArray equals: { click. type }.
+	self assert: editor actionList items asArray equals: { click. type }.
 	self assert: editor currentAction identicalTo: type
 ]
 

@@ -11,6 +11,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayType class >> editorClass [
+
+	^ ReplayTypeEditor
+]
+
 { #category : 'accessing' }
 ReplayType class >> displayName [
 
@@ -21,18 +27,6 @@ ReplayType class >> displayName [
 ReplayType >> runOnMorph: aMorph [
 
 	self typeOn: aMorph
-]
-
-{ #category : 'editing' }
-ReplayType >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-				spacing: 10;
-				add: (self targetPresenterOn: editor) expand: false;
-				add: (self textPresenterOn: editor labeled: 'Write text to type:');
-				yourself);
-		yourself
 ]
 
 { #category : 'running' }

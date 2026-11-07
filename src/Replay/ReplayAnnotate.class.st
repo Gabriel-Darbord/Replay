@@ -16,6 +16,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayAnnotate class >> editorClass [
+
+	^ ReplayAnnotateEditor
+]
+
 { #category : 'accessing' }
 ReplayAnnotate class >> displayName [
 
@@ -54,30 +60,6 @@ ReplayAnnotate >> placement: aSymbol [
 	placement := aSymbol ifNil: [ #automatic ] ifNotNil: [ aSymbol asSymbol ]
 ]
 
-{ #category : 'editing' }
-ReplayAnnotate >> placementPresenterOn: editor [
-
-	| dropList choices |
-	choices := self class placementChoices.
-	dropList := editor newDropList.
-	dropList
-		items: choices;
-		display: [ :association | association value ];
-		whenSelectedItemChangedDo: [ :association |
-			association ifNotNil: [
-				self placement: association key.
-				editor actionChanged: self ] ].
-	dropList selectItem: (choices
-		detect: [ :association | association key = self placement ]
-		ifNone: [ choices first ]).
-	editor registerReplayPresenter: dropList named: 'Action annotation placement'.
-	editor registerReplayPresenter: dropList named: self class displayName , ' placement'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Label placement:' expand: false;
-		add: dropList expand: false;
-		yourself
-]
-
 { #category : 'printing' }
 ReplayAnnotate >> printOn: stream [
 
@@ -99,19 +81,4 @@ ReplayAnnotate >> runOn: runner resolvedUI: resolvedUI [
 			annotate: bounds
 			label: self text
 			placement: self placement) ]
-]
-
-{ #category : 'editing' }
-ReplayAnnotate >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-			spacing: 10;
-			add: (self targetPresenterOn: editor) expand: false;
-			add: (self placementPresenterOn: editor) expand: false;
-			add: (self
-				textPresenterOn: editor
-				labeled: 'Write rich text display next annotated UI element:');
-			yourself);
-		yourself
 ]

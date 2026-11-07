@@ -239,7 +239,7 @@ ReplayMacroExistingWindowDemo >> targetPayloadScript [
 	^ '| target |
 target := Smalltalk globals at: #ReplayMacroExistingWindowDemoTarget.
 target addActionLast: (ReplayScript new script: ''self inform: ''''macro ran'''' '').
-target actions selectIndex: target actions items size'
+target actionList selectIndex: target actionList items size'
 ]
 
 { #category : 'actions' }
@@ -252,7 +252,7 @@ macro := editor macro.
 keymaps := macro installedKeymaps.
 keymaps isEmpty ifTrue: [ self error: ''Macro keymap was not installed'' ].
 keymaps first action value.
-target actions items isEmpty ifTrue: [ self error: ''Macro did not update existing editor'' ]'
+target actionList items isEmpty ifTrue: [ self error: ''Macro did not update existing editor'' ]'
 ]
 
 { #category : 'steps' }
@@ -270,13 +270,13 @@ ReplayMacroExistingWindowDemo >> triggerUpdatedShortcutAction [
 
 	^ self script: '| editor macro keymaps target originalSize |
 target := Smalltalk globals at: ' , self targetEditorKey storeString , '.
-originalSize := target actions items size.
+originalSize := target actionList items size.
 editor := self focus macroEditor.
 macro := editor macro.
 keymaps := macro installedKeymaps.
 keymaps isEmpty ifTrue: [ self error: ''Macro keymap was not installed'' ].
 keymaps first action value.
-(target actions items size > originalSize) ifFalse: [ self error: ''Updated shortcut did not run macro'' ]'
+(target actionList items size > originalSize) ifFalse: [ self error: ''Updated shortcut did not run macro'' ]'
 ]
 
 { #category : 'steps' }

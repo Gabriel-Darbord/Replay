@@ -16,6 +16,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayDrag class >> editorClass [
+
+	^ ReplayDragEditor
+]
+
 { #category : 'accessing' }
 ReplayDrag class >> displayName [
 
@@ -62,17 +68,6 @@ ReplayDrag >> endPositionOrZero [
 	^ self endPosition ifNil: [ 0 @ 0 ]
 ]
 
-{ #category : 'editing' }
-ReplayDrag >> endPositionPresenterOn: editor [
-
-	^ self
-		  offsetPresenterOn: editor
-		  labeled: 'End offset:'
-		  named: 'end offset'
-		  get: [ self endPositionOrZero ]
-		  set: [ :point | self endPosition: point ]
-]
-
 { #category : 'running' }
 ReplayDrag >> interpolatedPointFrom: startPoint to: endPoint atStep: stepIndex [
 
@@ -111,22 +106,6 @@ ReplayDrag >> runOnMorph: aMorph [
 	self dragOn: aMorph
 ]
 
-{ #category : 'editing' }
-ReplayDrag >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-			spacing: 10;
-			add: (self targetPresenterOn: editor) expand: false;
-			add: (self buttonsPresenterOn: editor) expand: false;
-			add: (self modifiersPresenterOn: editor) expand: false;
-			add: (self startPositionPresenterOn: editor) expand: false;
-			add: (self endPositionPresenterOn: editor) expand: false;
-			add: (self stepsPresenterOn: editor) expand: false;
-			yourself);
-		yourself
-]
-
 { #category : 'accessing' }
 ReplayDrag >> startPosition [
 
@@ -145,17 +124,6 @@ ReplayDrag >> startPositionOrZero [
 	^ self startPosition ifNil: [ 0 @ 0 ]
 ]
 
-{ #category : 'editing' }
-ReplayDrag >> startPositionPresenterOn: editor [
-
-	^ self
-		  offsetPresenterOn: editor
-		  labeled: 'Start offset:'
-		  named: 'start offset'
-		  get: [ self startPositionOrZero ]
-		  set: [ :point | self startPosition: point ]
-]
-
 { #category : 'accessing' }
 ReplayDrag >> steps [
 
@@ -166,24 +134,4 @@ ReplayDrag >> steps [
 ReplayDrag >> steps: anInteger [
 
 	steps := 1 max: anInteger asInteger
-]
-
-{ #category : 'editing' }
-ReplayDrag >> stepsPresenterOn: editor [
-
-	| input |
-	input := editor newNumberInput.
-	input
-		minimum: 1;
-		numberType: Integer;
-		number: self steps;
-		whenNumberChangedDo: [ :number |
-			self steps: number.
-			editor actionChanged: self ].
-	editor registerReplayPresenter: input named: 'Action drag steps'.
-	editor registerReplayPresenter: input named: self class displayName , ' steps'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Move steps:' expand: false;
-		add: input expand: false;
-		yourself
 ]

@@ -16,6 +16,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayScroll class >> editorClass [
+
+	^ ReplayScrollEditor
+]
+
 { #category : 'accessing' }
 ReplayScroll class >> directionChoices [
 
@@ -42,26 +48,6 @@ ReplayScroll >> count [
 ReplayScroll >> count: anInteger [
 
 	count := 1 max: anInteger asInteger
-]
-
-{ #category : 'editing' }
-ReplayScroll >> countPresenterOn: editor [
-
-	| input |
-	input := editor newNumberInput.
-	input
-		minimum: 1;
-		numberType: Integer;
-		number: self count;
-		whenNumberChangedDo: [ :number |
-			self count: number.
-			editor actionChanged: self ].
-	editor registerReplayPresenter: input named: 'Action scroll count'.
-	editor registerReplayPresenter: input named: self class displayName , ' count'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Scroll count:' expand: false;
-		add: input expand: false;
-		yourself
 ]
 
 { #category : 'accessing' }
@@ -94,30 +80,6 @@ ReplayScroll >> directionCharacter [
 	^ Character arrowDown
 ]
 
-{ #category : 'editing' }
-ReplayScroll >> directionPresenterOn: editor [
-
-	| dropList choices |
-	choices := self class directionChoices.
-	dropList := editor newDropList.
-	dropList
-		items: choices;
-		display: [ :association | association value ];
-		whenSelectedItemChangedDo: [ :association |
-			association ifNotNil: [
-				self direction: association key.
-				editor actionChanged: self ] ].
-	dropList selectItem: (choices
-		detect: [ :association | association key = self direction ]
-		ifNone: [ choices second ]).
-	editor registerReplayPresenter: dropList named: 'Action scroll direction'.
-	editor registerReplayPresenter: dropList named: self class displayName , ' direction'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Scroll direction:' expand: false;
-		add: dropList expand: false;
-		yourself
-]
-
 { #category : 'accessing' }
 ReplayScroll >> position [
 	"My offset from the top-left corner of the target, nil to scroll over its center"
@@ -135,17 +97,6 @@ ReplayScroll >> position: aPoint [
 ReplayScroll >> positionOrZero [
 
 	^ self position ifNil: [ 0 @ 0 ]
-]
-
-{ #category : 'editing' }
-ReplayScroll >> positionPresenterOn: editor [
-
-	^ self
-		  offsetPresenterOn: editor
-		  labeled: 'Offset from target top-left:'
-		  named: 'scroll'
-		  get: [ self positionOrZero ]
-		  set: [ :point | self position: point ]
 ]
 
 { #category : 'printing' }
@@ -179,21 +130,6 @@ ReplayScroll >> scrollOn: aMorph [
 	self count timesRepeat: [
 		hand position: worldPoint.
 		(self wheelEventAt: worldPoint hand: hand) sentTo: target ]
-]
-
-{ #category : 'editing' }
-ReplayScroll >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-			spacing: 10;
-			add: (self targetPresenterOn: editor) expand: false;
-			add: (self directionPresenterOn: editor) expand: false;
-			add: (self countPresenterOn: editor) expand: false;
-			add: (self modifiersPresenterOn: editor) expand: false;
-			add: (self positionPresenterOn: editor) expand: false;
-			yourself);
-		yourself
 ]
 
 { #category : 'events' }

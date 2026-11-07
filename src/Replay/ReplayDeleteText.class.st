@@ -15,6 +15,12 @@ Class {
 	#tag : 'Actions'
 }
 
+{ #category : 'editing' }
+ReplayDeleteText class >> editorClass [
+
+	^ ReplayDeleteTextEditor
+]
+
 { #category : 'accessing' }
 ReplayDeleteText class >> directionChoices [
 
@@ -54,26 +60,6 @@ ReplayDeleteText >> count [
 ReplayDeleteText >> count: anInteger [
 
 	count := 1 max: anInteger asInteger
-]
-
-{ #category : 'editing' }
-ReplayDeleteText >> countPresenterOn: editor [
-
-	| input |
-	input := editor newNumberInput.
-	input
-		minimum: 1;
-		numberType: Integer;
-		number: self count;
-		whenNumberChangedDo: [ :number |
-			self count: number.
-			editor actionChanged: self ].
-	editor registerReplayPresenter: input named: 'Action delete count'.
-	editor registerReplayPresenter: input named: self class displayName , ' count'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Delete count:' expand: false;
-		add: input expand: false;
-		yourself
 ]
 
 { #category : 'private' }
@@ -130,30 +116,6 @@ ReplayDeleteText >> direction: aSymbol [
 	direction := aSymbol
 ]
 
-{ #category : 'editing' }
-ReplayDeleteText >> directionPresenterOn: editor [
-
-	| dropList choices |
-	choices := self class directionChoices.
-	dropList := editor newDropList.
-	dropList
-		items: choices;
-		display: [ :association | association value ];
-		whenSelectedItemChangedDo: [ :association |
-			association ifNotNil: [
-				self direction: association key.
-				editor actionChanged: self ] ].
-	dropList selectItem: (choices
-		detect: [ :association | association key = self direction ]
-		ifNone: [ choices first ]).
-	editor registerReplayPresenter: dropList named: 'Action delete direction'.
-	editor registerReplayPresenter: dropList named: self class displayName , ' direction'.
-	^ SpBoxLayout newTopToBottom
-		add: 'Delete direction:' expand: false;
-		add: dropList expand: false;
-		yourself
-]
-
 { #category : 'printing' }
 ReplayDeleteText >> printOn: stream [
 
@@ -174,19 +136,6 @@ ReplayDeleteText >> runOnMorph: aMorph [
 ReplayDeleteText >> runOnNative: anObject [
 
 	self deleteTextIn: anObject
-]
-
-{ #category : 'editing' }
-ReplayDeleteText >> settingsPresenterOn: editor [
-
-	^ editor newPresenter
-		layout: (SpBoxLayout newTopToBottom
-			spacing: 10;
-			add: (self targetPresenterOn: editor) expand: false;
-			add: (self directionPresenterOn: editor) expand: false;
-			add: (self countPresenterOn: editor) expand: false;
-			yourself);
-		yourself
 ]
 
 { #category : 'private' }

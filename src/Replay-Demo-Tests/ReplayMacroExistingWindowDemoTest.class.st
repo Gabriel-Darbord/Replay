@@ -47,10 +47,10 @@ ReplayMacroExistingWindowDemoTest >> testTriggerMacroUpdatesExistingReplayEditor
 	demo configureMacroAction runOn: runner.
 	demo installMacroAction runOn: runner.
 	demo triggerInstalledShortcutAction runOn: runner.
-	self assert: targetEditor actions items size equals: 1.
+	self assert: targetEditor actionList items size equals: 1.
 	demo updateInstalledShortcutAction runOn: runner.
 	demo triggerUpdatedShortcutAction runOn: runner.
-	self assert: targetEditor actions items size equals: 2.
+	self assert: targetEditor actionList items size equals: 2.
 	macro := macroEditor macroEditor macro.
 	demo uninstallMacroAction runOn: runner.
 	self deny: (macro installedInContextNamed: #RubTextEditor)

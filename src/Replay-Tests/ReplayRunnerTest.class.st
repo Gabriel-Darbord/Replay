@@ -60,7 +60,7 @@ ReplayRunnerTest >> testAwaitUIActionDelegatesToManagerBackend [
 ReplayRunnerTest >> testAwaitUIActionEditionPresenterBuilds [
 
 	| presenter |
-	presenter := ReplayAwaitUI new editionPresenterOn: ReplayEditor new.
+	presenter := ReplayEditor new editAction: ReplayAwaitUI new.
 
 	self assert: presenter notNil
 ]

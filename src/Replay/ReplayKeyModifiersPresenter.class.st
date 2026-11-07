@@ -1,7 +1,7 @@
 "
 I edit a set of keyboard modifiers (a ReplayKeyModifiers mask) with one check box per modifier.
 
-I do not own the modifiers: my model shows me a mask with modifiers:, and I give each edit to the block of whenChangedDo:, with the new mask. Showing a mask does not run the block.
+I do not own the modifiers: my model shows me a mask with modifiers:, and I give each edit to the block of whenModifiersChangedDo:, with the new mask. Showing a mask does not run the block.
 "
 Class {
 	#name : 'ReplayKeyModifiersPresenter',
@@ -81,13 +81,11 @@ ReplayKeyModifiersPresenter >> modifiers: anInteger [
 ]
 
 { #category : 'replay' }
-ReplayKeyModifiersPresenter >> registerReplayPresentersOn: anEditor named: aPrefix [
-	"Register my check boxes as '<aPrefix> shift', '<aPrefix> alt option'..."
+ReplayKeyModifiersPresenter >> namedCheckBoxes [
+	"My check boxes by field name, for the editors that show me to register them: 'shift', 'control', 'alt option' and 'command'"
 
-	checkBoxes keysAndValuesDo: [ :mask :checkBox |
-		anEditor
-			registerReplayPresenter: checkBox
-			named: aPrefix , ' ' , ((ReplayKeyModifiers nameOf: mask) copyReplaceAll: '/' with: ' ') asLowercase ]
+	^ ReplayKeyModifiers all collect: [ :mask |
+		  ((ReplayKeyModifiers nameOf: mask) copyReplaceAll: '/' with: ' ') asLowercase -> (self checkBoxFor: mask) ]
 ]
 
 { #category : 'actions' }
@@ -107,7 +105,7 @@ ReplayKeyModifiersPresenter >> shiftCheckBox [
 ]
 
 { #category : 'events' }
-ReplayKeyModifiersPresenter >> whenChangedDo: aBlock [
+ReplayKeyModifiersPresenter >> whenModifiersChangedDo: aBlock [
 	"aBlock receives the new modifiers after each edit"
 
 	changeBlock := aBlock
