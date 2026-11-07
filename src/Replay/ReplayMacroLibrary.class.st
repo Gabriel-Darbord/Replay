@@ -1,11 +1,15 @@
 "
-I hold the ordered collection of macros persisted by ReplayMacroRegistry and provide conflict and installation helpers.
+I am an ordered collection of macros, the unit saved and loaded by a ReplayMacroRegistry.
+
+I also hold the library settings that are saved with the macros: whether the macros are installed when the image starts.
+I install and uninstall my macros together, and detect shortcut conflicts between them.
 "
 Class {
 	#name : 'ReplayMacroLibrary',
 	#superclass : 'Object',
 	#instVars : [
-		'macros'
+		'macros',
+		'installsOnStartup'
 	],
 	#category : 'Replay-Macros',
 	#package : 'Replay',
@@ -21,14 +25,11 @@ ReplayMacroLibrary >> addMacro: aReplayMacro [
 
 { #category : 'adding' }
 ReplayMacroLibrary >> addMacroForScenario: aReplayScenario [
+	"A new macro running aReplayScenario, named after its title"
 
-	| macro scenarioTitle |
-	macro := self newMacro.
-	macro scenario: aReplayScenario.
-	scenarioTitle := aReplayScenario title.
-	(scenarioTitle isEmpty or: [ scenarioTitle = 'Unnamed Scenario' ]) ifFalse: [
-		macro name: scenarioTitle ].
-	^ self addMacro: macro
+	^ self addMacro: (ReplayMacro new
+			   scenario: aReplayScenario;
+			   yourself)
 ]
 
 { #category : 'adding' }
@@ -49,6 +50,15 @@ ReplayMacroLibrary >> externalConflicts [
 	^ self macros flatCollect: [ :macro | macro conflicts ]
 ]
 
+{ #category : 'adding' }
+ReplayMacroLibrary >> importMacro: aReplayMacro [
+	"Add aReplayMacro from another library. It gets a new identifier if one of my macros has its own, so their keymaps stay apart."
+
+	(self macros anySatisfy: [ :macro | macro identifier = aReplayMacro identifier ])
+		ifTrue: [ aReplayMacro identifier: UUID new asString ].
+	^ self addMacro: aReplayMacro
+]
+
 { #category : 'keymapping' }
 ReplayMacroLibrary >> install [
 
@@ -64,7 +74,26 @@ ReplayMacroLibrary >> installedMacroCount [
 { #category : 'keymapping' }
 ReplayMacroLibrary >> installedMacros [
 
-	^ self macros select: [ :macro | macro installedCategories notEmpty ]
+	| installedKeymapNames |
+	installedKeymapNames := ReplayMacro installedKeymaps
+		                        collect: [ :keymap | keymap name ]
+		                        as: Set.
+	^ self macros select: [ :macro |
+		  installedKeymapNames includes: macro keymapName ]
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibrary >> installsOnStartup [
+	"Whether the image installs my macros when it starts"
+
+	^ installsOnStartup ifNil: [ false ]
+]
+
+{ #category : 'accessing' }
+ReplayMacroLibrary >> installsOnStartup: aBoolean [
+	"Not stored when false, so the default is not serialized"
+
+	installsOnStartup := aBoolean ifTrue: [ true ] ifFalse: [ nil ]
 ]
 
 { #category : 'conflicts' }
@@ -114,12 +143,6 @@ ReplayMacroLibrary >> internalConflictsForMacro: aReplayMacro [
 ]
 
 { #category : 'accessing' }
-ReplayMacroLibrary >> macroForScenario: aReplayScenario [
-
-	^ (self macroWithScenario: aReplayScenario) ifNil: [ self addMacroForScenario: aReplayScenario ]
-]
-
-{ #category : 'accessing' }
 ReplayMacroLibrary >> macroWithScenario: aReplayScenario [
 	"The macro running aReplayScenario, or nil if none does"
 
@@ -132,18 +155,15 @@ ReplayMacroLibrary >> macros [
 	^ macros ifNil: [ macros := OrderedCollection new ]
 ]
 
-{ #category : 'accessing' }
-ReplayMacroLibrary >> macros: aCollection [
-
-	macros := aCollection asOrderedCollection
-]
-
 { #category : 'adding' }
 ReplayMacroLibrary >> newMacro [
+	"A macro whose new scenario has a name unused in this library"
 
 	^ ReplayMacro new
-		name: self nextMacroName;
-		yourself
+		  scenario: (ReplayScenario new
+				   title: self nextMacroName;
+				   yourself);
+		  yourself
 ]
 
 { #category : 'adding' }
@@ -168,5 +188,5 @@ ReplayMacroLibrary >> removeMacro: aReplayMacro [
 { #category : 'keymapping' }
 ReplayMacroLibrary >> uninstall [
 
-	self macros do: [ :macro | macro uninstall ]
+	self installedMacros do: [ :macro | macro uninstall ]
 ]

@@ -1,5 +1,5 @@
 "
-Test helper used by ReplayMacroTest to assert that a macro shortcut reaches its scenario through the Keymapping dispatch path.
+I stand for the scenario of a macro in tests, to assert that a macro shortcut reaches its scenario through the Keymapping dispatch path.
 "
 Class {
 	#name : 'ReplayMacroRunSpy',
@@ -21,4 +21,11 @@ ReplayMacroRunSpy >> hasRun [
 ReplayMacroRunSpy >> run [
 
 	hasRun := true
+]
+
+{ #category : 'accessing' }
+ReplayMacroRunSpy >> title [
+	"Macros are named after their scenario"
+
+	^ 'Run spy'
 ]

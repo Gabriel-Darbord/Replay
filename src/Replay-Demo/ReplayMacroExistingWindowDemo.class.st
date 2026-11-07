@@ -92,14 +92,13 @@ Smalltalk globals removeKey: ', self targetEditorKey storeString, ' ifAbsent: [ 
 ReplayMacroExistingWindowDemo >> configureMacroAction [
 
 	^ self script: '| editor context payload step |
-editor := self focus macroEditorPresenter.
-editor namePresenter text: ''Insert script helper''.
-editor shortcutTextPresenter text: ''m''.
+editor := self focus macroEditor.
+editor keyBindingPresenter text: ''m''.
 editor controlCheckBox state ifFalse: [ editor controlCheckBox toggleState ].
 context := editor contextDropList items detect: [ :each | each identifier = #textEditors ].
 editor contextDropList selectItem: context.
 editor addSelectedContext.
-payload := ReplayScenario new title: ''Existing window macro payload''; yourself.
+payload := ReplayScenario new title: ''Insert script helper''; yourself.
 step := ReplayStep new.
 step navigation skip: true.
 step addAction: (ReplayAttachUI new script: ''Smalltalk globals at: #ReplayMacroExistingWindowDemoTarget'').
@@ -115,14 +114,14 @@ ReplayMacroExistingWindowDemo >> configureStep [
 		self clearAnnotationsAction.
 		self addMacroAction.
 		self configureMacroAction.
-		self annotate: 'Shortcut keys' text: 'The macro uses Control+M in text editor contexts.'.
-		self annotate: 'Macro context' text: 'Text editors means the shortcut is active in Rubric text editing widgets.' }
+		self annotate: 'Key binding' text: 'The macro uses Control+M in text editor contexts.'.
+		self annotate: 'Install context picker' text: 'Text editors means the shortcut is active in Rubric text editing widgets.' }
 ]
 
 { #category : 'actions' }
 ReplayMacroExistingWindowDemo >> installMacroAction [
 
-	^ self script: 'self focus macroEditorPresenter installMacro'
+	^ self script: 'self focus macroEditor installMacro'
 ]
 
 { #category : 'steps' }
@@ -132,7 +131,7 @@ ReplayMacroExistingWindowDemo >> installStep [
 		self clearAnnotationsAction.
 		self installMacroAction.
 		self annotate: 'Installation status' text: 'The macro is installed into the selected context.'.
-		self annotate: 'Active UI context status' text: 'Refresh active UI checks the current keyboard focus categories.' }
+		self annotate: 'Install context list' text: 'The macro keymap is installed in each of these contexts.' }
 ]
 
 { #category : 'constants' }
@@ -249,7 +248,7 @@ ReplayMacroExistingWindowDemo >> triggerInstalledShortcutAction [
 
 	^ self script: '| editor macro keymaps target |
 target := Smalltalk globals at: ' , self targetEditorKey storeString , '.
-editor := self focus macroEditorPresenter.
+editor := self focus macroEditor.
 macro := editor macro.
 keymaps := macro installedKeymaps.
 keymaps isEmpty ifTrue: [ self error: ''Macro keymap was not installed'' ].
@@ -273,7 +272,7 @@ ReplayMacroExistingWindowDemo >> triggerUpdatedShortcutAction [
 	^ self script: '| editor macro keymaps target originalSize |
 target := Smalltalk globals at: ' , self targetEditorKey storeString , '.
 originalSize := target actions items size.
-editor := self focus macroEditorPresenter.
+editor := self focus macroEditor.
 macro := editor macro.
 keymaps := macro installedKeymaps.
 keymaps isEmpty ifTrue: [ self error: ''Macro keymap was not installed'' ].
@@ -287,14 +286,14 @@ ReplayMacroExistingWindowDemo >> triggerUpdatedStep [
 	^ self stepNamed: 'Trigger the updated shortcut' with: {
 		self clearAnnotationsAction.
 		self triggerUpdatedShortcutAction.
-		self annotate: 'Shortcut keys' text: 'Control+N now triggers the installed macro.'.
+		self annotate: 'Key binding' text: 'Control+N now triggers the installed macro.'.
 		self annotate: 'Installation status' text: 'The old shortcut was replaced by the new installed keymap.' }
 ]
 
 { #category : 'actions' }
 ReplayMacroExistingWindowDemo >> uninstallMacroAction [
 
-	^ self script: 'self focus macroEditorPresenter uninstallMacro'
+	^ self script: 'self focus macroEditor uninstallMacro'
 ]
 
 { #category : 'steps' }
@@ -303,14 +302,14 @@ ReplayMacroExistingWindowDemo >> uninstallStep [
 	^ self stepNamed: 'Uninstall and clean up' with: {
 		self clearAnnotationsAction.
 		self uninstallMacroAction.
-		self annotate: 'Uninstall macro button' text: 'Uninstall removes the macro keymap from its installed context.'.
+		self annotate: 'Install button' text: 'Uninstall removes the macro keymap from its installed context.'.
 		self annotate: 'Installation status' text: 'After uninstalling, status returns to Not installed.' }
 ]
 
 { #category : 'actions' }
 ReplayMacroExistingWindowDemo >> updateInstalledShortcutAction [
 
-	^ self script: 'self focus macroEditorPresenter shortcutTextPresenter text: ''n'''
+	^ self script: 'self focus macroEditor keyBindingPresenter text: ''n'''
 ]
 
 { #category : 'steps' }
@@ -319,6 +318,6 @@ ReplayMacroExistingWindowDemo >> updateStep [
 	^ self stepNamed: 'Update the installed shortcut' with: {
 		self clearAnnotationsAction.
 		self updateInstalledShortcutAction.
-		self annotate: 'Shortcut keys' text: 'Editing the shortcut updates the installed keymap immediately.'.
+		self annotate: 'Key binding' text: 'Editing the shortcut updates the installed keymap immediately.'.
 		self annotate: 'Installation status' text: 'The macro remains installed after the shortcut changes.' }
 ]

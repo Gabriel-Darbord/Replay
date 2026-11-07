@@ -1,9 +1,19 @@
+"
+I test the demo that runs a macro against an already-open Replay editor.
+"
 Class {
 	#name : 'ReplayMacroExistingWindowDemoTest',
-	#superclass : 'TestCase',
+	#superclass : 'ReplayMacroTestCase',
 	#category : 'Replay-Demo-Tests',
 	#package : 'Replay-Demo-Tests'
 }
+
+{ #category : 'running' }
+ReplayMacroExistingWindowDemoTest >> tearDown [
+
+	[ Smalltalk globals removeKey: ReplayMacroExistingWindowDemo new targetEditorKey ifAbsent: [  ] ] ensure: [
+		super tearDown ]
+]
 
 { #category : 'tests' }
 ReplayMacroExistingWindowDemoTest >> testScenarioStructure [
@@ -21,34 +31,27 @@ ReplayMacroExistingWindowDemoTest >> testScenarioStructure [
 { #category : 'tests' }
 ReplayMacroExistingWindowDemoTest >> testTriggerMacroUpdatesExistingReplayEditor [
 
-	| demo targetScenario targetEditor targetWindow macroEditor runner macro |
+	| demo targetScenario targetEditor macroEditor runner macro |
 	demo := ReplayMacroExistingWindowDemo new.
 	targetScenario := ReplayScenario new title: 'Existing target'; yourself.
 	targetScenario addStep: ReplayStep new.
 	targetEditor := ReplayEditor on: targetScenario.
-	targetWindow := targetEditor asWindow.
-	targetWindow open.
+	targetEditor asWindow open.
 	Smalltalk globals at: demo targetEditorKey put: targetEditor.
 	macroEditor := ReplayMacroLibraryEditor on: ReplayMacroLibrary new.
 	macroEditor addMacro.
 	runner := ReplayRunner on: ReplayScenario new.
 	runner focus: macroEditor.
 
-	[
-		World doOneCycle.
-		demo configureMacroAction runOn: runner.
-		demo installMacroAction runOn: runner.
-		demo triggerInstalledShortcutAction runOn: runner.
-		self assert: targetEditor actions items size equals: 1.
-		demo updateInstalledShortcutAction runOn: runner.
-		demo triggerUpdatedShortcutAction runOn: runner.
-		self assert: targetEditor actions items size equals: 2.
-		macro := macroEditor macroEditorPresenter macro.
-		demo uninstallMacroAction runOn: runner.
-		self deny: (macro installedInContextNamed: #RubTextEditor) ]
-
-		ensure: [
-			ReplayMacro uninstallAllInstalledKeymaps.
-			Smalltalk globals removeKey: demo targetEditorKey ifAbsent: [ ].
-			targetWindow close ]
+	World doOneCycle.
+	demo configureMacroAction runOn: runner.
+	demo installMacroAction runOn: runner.
+	demo triggerInstalledShortcutAction runOn: runner.
+	self assert: targetEditor actions items size equals: 1.
+	demo updateInstalledShortcutAction runOn: runner.
+	demo triggerUpdatedShortcutAction runOn: runner.
+	self assert: targetEditor actions items size equals: 2.
+	macro := macroEditor macroEditor macro.
+	demo uninstallMacroAction runOn: runner.
+	self deny: (macro installedInContextNamed: #RubTextEditor)
 ]

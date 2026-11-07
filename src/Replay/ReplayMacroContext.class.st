@@ -1,5 +1,7 @@
 "
-I describe keymap contexts where macros can be installed and checked for shortcut conflicts.
+I describe a keymap context offered to users for installing macros: a display name and the Keymapping category names a macro is installed in, plus the categories checked for conflicts (a Smalltalk code editor also answers to the text editor shortcuts).
+
+My class side knows the default contexts, falls back to one context per other non-empty category, and turns category names into user-facing names.
 "
 Class {
 	#name : 'ReplayMacroContext',
@@ -49,33 +51,14 @@ ReplayMacroContext class >> categoryNames: firstCategoryNames overlapCategoryNam
 ]
 
 { #category : 'detecting' }
-ReplayMacroContext class >> categoryNamesDirectlyAttachedToMorph: aMorph [
-
-	^ aMorph kmDispatcher targets collect: [ :binding | binding category name ]
-]
-
-{ #category : 'detecting' }
-ReplayMacroContext class >> categoryNamesForMorph: aMorph [
-
-	| categoryNames |
-	aMorph ifNil: [ ^ #() ].
-	(aMorph isKindOf: Morph) ifFalse: [ ^ #() ].
-	categoryNames := OrderedCollection new.
-	aMorph allOwnersDo: [ :owner |
-		categoryNames addAll: (self categoryNamesDirectlyAttachedToMorph: owner) ].
-	aMorph allMorphsDo: [ :morph |
-		categoryNames addAll: (self categoryNamesDirectlyAttachedToMorph: morph) ].
-	^ (categoryNames asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
-]
-
-{ #category : 'detecting' }
 ReplayMacroContext class >> compositeConflictCategoryNamesBetween: firstCategoryNames and: secondCategoryNames [
 
 	| names |
 	names := self defaultContexts
 		select: [ :context |
-			(self categoryNames: firstCategoryNames overlapCategoryNames: context conflictCategoryNames)
-				and: [ self categoryNames: secondCategoryNames overlapCategoryNames: context conflictCategoryNames ] ]
+			context isComposite not and: [
+				(self categoryNames: firstCategoryNames overlapCategoryNames: context conflictCategoryNames)
+					and: [ self categoryNames: secondCategoryNames overlapCategoryNames: context conflictCategoryNames ] ] ]
 		thenCollect: [ :context | context categoryNames first ].
 	^ (names asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
 ]
@@ -85,7 +68,7 @@ ReplayMacroContext class >> conflictCategoryNamesForCategoryName: aSymbol [
 
 	| contexts names |
 	contexts := self defaultContexts select: [ :context |
-		context categoryNames includes: aSymbol ].
+		context isComposite not and: [ context categoryNames includes: aSymbol ] ].
 	contexts ifEmpty: [ ^ { aSymbol } asOrderedCollection ].
 	names := contexts flatCollect: [ :context | context conflictCategoryNames ].
 	^ (names asSet asArray sorted: [ :first :second | first asString <= second asString ]) asOrderedCollection
@@ -112,24 +95,29 @@ ReplayMacroContext class >> defaultContexts [
 		asOrderedCollection
 ]
 
+{ #category : 'formatting' }
+ReplayMacroContext class >> displayNameForCategoryName: aSymbol [
+	"A user-facing name for the keymap category named aSymbol"
+
+	| knownContext technical readable |
+	knownContext := self defaultContexts
+		detect: [ :context | context isComposite not and: [ context categoryNames includes: aSymbol ] ]
+		ifNone: [ nil ].
+	knownContext ifNotNil: [ ^ knownContext displayName ].
+	technical := aSymbol asString.
+	readable := self readableNameForCategoryName: technical.
+	^ readable = technical
+		ifTrue: [ technical ]
+		ifFalse: [ readable , ' (' , technical , ')' ]
+]
+
 { #category : 'instance creation' }
 ReplayMacroContext class >> forCategory: aKMCategory [
 
 	^ self
 		identifier: aKMCategory name
-		displayName: (ReplayShortcutConflict displayNameForCategoryName: aKMCategory name)
+		displayName: (self displayNameForCategoryName: aKMCategory name)
 		categoryNames: { aKMCategory name }
-]
-
-{ #category : 'detecting' }
-ReplayMacroContext class >> forMorph: aMorph [
-
-	| categoryNames displayName |
-	categoryNames := self categoryNamesForMorph: aMorph.
-	displayName := categoryNames isEmpty
-		ifTrue: [ 'Active UI' ]
-		ifFalse: [ 'Active UI: ' , (', ' join: (categoryNames collect: [ :categoryName | ReplayShortcutConflict displayNameForCategoryName: categoryName ])) ].
-	^ self identifier: #activeUI displayName: displayName categoryNames: categoryNames
 ]
 
 { #category : 'instance creation' }
@@ -177,11 +165,22 @@ ReplayMacroContext class >> internalConflictCategoryNamesBetween: firstCategoryN
 		and: secondCategoryNames
 ]
 
-{ #category : 'accessing' }
-ReplayMacroContext >> categories [
+{ #category : 'formatting' }
+ReplayMacroContext class >> readableNameForCategoryName: aString [
 
-	^ self categoryNames collect: [ :categoryName |
-		KMRepository default categoryForName: categoryName ]
+	| source words |
+	source := (aString beginsWith: 'Rub')
+		ifTrue: [ aString allButFirst: 3 ]
+		ifFalse: [ aString ].
+	words := String streamContents: [ :stream |
+		source withIndexDo: [ :character :index |
+			(index > 1 and: [
+				character isUppercase and: [
+					(source at: index - 1) isLowercase
+						or: [ index < source size and: [ (source at: index + 1) isLowercase ] ] ] ])
+				ifTrue: [ stream space ].
+			stream nextPut: character ] ].
+	^ words asLowercase capitalized
 ]
 
 { #category : 'accessing' }
@@ -194,13 +193,6 @@ ReplayMacroContext >> categoryNames [
 ReplayMacroContext >> categoryNames: aCollection [
 
 	categoryNames := aCollection asOrderedCollection
-]
-
-{ #category : 'accessing' }
-ReplayMacroContext >> conflictCategories [
-
-	^ self conflictCategoryNames collect: [ :categoryName |
-		KMRepository default categoryForName: categoryName ]
 ]
 
 { #category : 'accessing' }

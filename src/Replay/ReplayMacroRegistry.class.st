@@ -1,15 +1,19 @@
 "
-I load, save, install, uninstall, and run macros from the persisted Replay macro library.
+I am the owner of a macro library, and optionally of the STON file it is saved to.
+
+Changes to my library go through me so that they are saved and that no keymap keeps running a macro I no longer hold: replaceLibrary: uninstalls the keymaps of the old library before installing the same macros from the new one, and importString: adds macros pasted as STON.
+
+My default instance is on the default file (in the preferences folder, shared by every image) and loads it on first access. Registries created otherwise have no file and never touch the disk unless given one with file:. I register with the SessionManager: when the image starts, the default registry reloads its file and installs the macros if the library says so, without ever breaking the startup.
 "
 Class {
 	#name : 'ReplayMacroRegistry',
 	#superclass : 'Object',
 	#instVars : [
-		'library'
+		'library',
+		'file'
 	],
 	#classInstVars : [
-		'Default',
-		'InstallSavedMacrosOnStartup'
+		'Default'
 	],
 	#category : 'Replay-Macros',
 	#package : 'Replay',
@@ -18,8 +22,16 @@ Class {
 
 { #category : 'accessing' }
 ReplayMacroRegistry class >> default [
+	"The registry on the default file, loaded on first access"
 
-	^ Default ifNil: [ Default := self new ]
+	^ Default ifNil: [ Default := self onFile: self defaultFile ]
+]
+
+{ #category : 'accessing' }
+ReplayMacroRegistry class >> default: aReplayMacroRegistry [
+	"Use aReplayMacroRegistry as the default one, for example a registry on another file"
+
+	Default := aReplayMacroRegistry
 ]
 
 { #category : 'persistence' }
@@ -28,74 +40,116 @@ ReplayMacroRegistry class >> defaultFile [
 	^ FileLocator preferences / 'replay-macros.ston'
 ]
 
-{ #category : 'startup' }
-ReplayMacroRegistry class >> disableStartupInstallation [
+{ #category : 'testing' }
+ReplayMacroRegistry class >> hasDefault [
+	"Whether the default registry exists, so that macros of its library can be in use"
 
-	<script>
-	self startupInstallationEnabled: false
+	^ Default isNotNil
 ]
 
-{ #category : 'startup' }
-ReplayMacroRegistry class >> enableStartupInstallation [
+{ #category : 'class initialization' }
+ReplayMacroRegistry class >> initialize [
 
-	<script>
-	self startupInstallationEnabled: true
-]
-
-{ #category : 'startup' }
-ReplayMacroRegistry class >> installSavedMacrosOnStartup [
-
-	<script>
-	self default installSavedMacrosOnStartup
+	(SessionManager default hasRegistered: self name) ifFalse: [
+		SessionManager default registerUserClassNamed: self name ]
 ]
 
 { #category : 'persistence' }
-ReplayMacroRegistry class >> load [
+ReplayMacroRegistry class >> libraryFromFile: aFileReference [
 
-	self default load
+	^ [ self libraryFromString: aFileReference contents ]
+		  on: FileException
+		  do: [ :error |
+			  ReplayError new
+				  subject: aFileReference;
+				  signal: 'Cannot read ' , aFileReference fullName , ': ' , error messageText ]
 ]
 
 { #category : 'persistence' }
-ReplayMacroRegistry class >> loadAndInstall [
+ReplayMacroRegistry class >> libraryFromString: aString [
+	"The macro library saved as STON in aString"
 
-	self default loadAndInstall
-]
-
-{ #category : 'editing' }
-ReplayMacroRegistry class >> openEditor [
-	<script>
-
-	^ self default openEditor
-]
-
-{ #category : 'initialization' }
-ReplayMacroRegistry class >> resetDefault [
-
-	Default := nil
+	| object |
+	object := self objectFromString: aString.
+	(object isKindOf: ReplayMacroLibrary) ifFalse: [
+		ReplayError new
+			subject: object;
+			signal: 'Expected a Replay macro library, not ' , object class name ].
+	^ object
 ]
 
 { #category : 'persistence' }
-ReplayMacroRegistry class >> save [
+ReplayMacroRegistry class >> macrosFromString: aString [
+	"The macros saved as STON in aString, either one macro or a whole library"
 
-	self default save
+	| object |
+	object := self objectFromString: aString.
+	(object isKindOf: ReplayMacro) ifTrue: [ ^ { object } ].
+	(object isKindOf: ReplayMacroLibrary) ifTrue: [ ^ object macros asArray ].
+	^ ReplayError new
+		  subject: object;
+		  signal: 'Expected a Replay macro or macro library, not ' , object class name
 ]
 
-{ #category : 'startup' }
-ReplayMacroRegistry class >> startupInstallationEnabled [
+{ #category : 'persistence' }
+ReplayMacroRegistry class >> objectFromString: aString [
 
-	^ InstallSavedMacrosOnStartup = true
+	^ [ STON fromString: aString ]
+		  on: Error
+		  do: [ :error |
+			  ReplayError new
+				  subject: aString;
+				  signal: 'Not a valid STON string: ' , error messageText ]
 ]
 
-{ #category : 'startup' }
-ReplayMacroRegistry class >> startupInstallationEnabled: aBoolean [
+{ #category : 'instance creation' }
+ReplayMacroRegistry class >> onFile: aFileReference [
+	"A registry saving to aFileReference, with the library already saved there if any"
 
-	InstallSavedMacrosOnStartup := aBoolean = true
+	^ self new
+		  file: aFileReference;
+		  load;
+		  yourself
 ]
 
-{ #category : 'startup' }
-ReplayMacroRegistry class >> startupInstallationScriptText [
+{ #category : 'system startup' }
+ReplayMacroRegistry class >> startUp: isImageStarting [
+	"Reload the default library from its file, which other images may have changed, and install it if it says so.
+	A missing or bad file never breaks the startup."
 
-	^ 'ReplayMacroRegistry installSavedMacrosOnStartup'
+	isImageStarting ifFalse: [ ^ self ].
+	[
+		Default
+			ifNil: [ self default ]
+			ifNotNil: [ :registry | registry load ].
+		Default installOnStartup ]
+		on: Error
+		do: [ :error | self traceCr: 'Replay macros were not loaded at startup: ' , error messageText ]
+]
+
+{ #category : 'accessing' }
+ReplayMacroRegistry >> file [
+	"The file my library is saved to, or nil"
+
+	^ file
+]
+
+{ #category : 'accessing' }
+ReplayMacroRegistry >> file: aFileReference [
+
+	file := aFileReference
+]
+
+{ #category : 'adding' }
+ReplayMacroRegistry >> importString: aString [
+	"Add the macros of the STON aString, one macro or a whole library, and save.
+	Answer the added macros. Signal a ReplayError without changing the library when aString holds no macro."
+
+	| macros |
+	macros := self class macrosFromString: aString.
+	macros do: [ :macro | self library importMacro: macro ].
+	self save.
+	^ macros
 ]
 
 { #category : 'keymapping' }
@@ -104,20 +158,11 @@ ReplayMacroRegistry >> install [
 	^ self library install
 ]
 
-{ #category : 'startup' }
-ReplayMacroRegistry >> installSavedMacrosOnStartup [
+{ #category : 'system startup' }
+ReplayMacroRegistry >> installOnStartup [
+	"Install my macros if my library says so, as when the image starts"
 
-	self class startupInstallationEnabled ifFalse: [ ^ self ].
-	self loadAndInstall
-]
-
-{ #category : 'startup' }
-ReplayMacroRegistry >> installSavedMacrosOnStartupFromFile: aFileReference [
-
-	self class startupInstallationEnabled ifFalse: [
-		self loadFromFile: aFileReference.
-		^ self ].
-	self loadAndInstallFromFile: aFileReference
+	self library installsOnStartup ifTrue: [ self install ]
 ]
 
 { #category : 'accessing' }
@@ -126,55 +171,33 @@ ReplayMacroRegistry >> library [
 	^ library ifNil: [ library := ReplayMacroLibrary new ]
 ]
 
-{ #category : 'accessing' }
-ReplayMacroRegistry >> library: aReplayMacroLibrary [
-
-	library := aReplayMacroLibrary
-]
-
 { #category : 'persistence' }
 ReplayMacroRegistry >> load [
+	"Use the library saved in my file, if it exists. Signal a ReplayError without changing my library when it cannot be read."
 
-	self loadFromFile: self class defaultFile
+	(file isNotNil and: [ file exists ]) ifFalse: [ ^ self ].
+	self useLibrary: (self class libraryFromFile: file)
 ]
 
-{ #category : 'persistence' }
-ReplayMacroRegistry >> loadAndInstall [
+{ #category : 'adding' }
+ReplayMacroRegistry >> replaceLibrary: aReplayMacroLibrary [
+	"Use aReplayMacroLibrary from now on and save it"
 
-	self loadAndInstallFromFile: self class defaultFile
-]
-
-{ #category : 'persistence' }
-ReplayMacroRegistry >> loadAndInstallFromFile: aFileReference [
-
-	self loadFromFile: aFileReference.
-	self uninstallAllReplayMacros.
-	self install
-]
-
-{ #category : 'persistence' }
-ReplayMacroRegistry >> loadFromFile: aFileReference [
-
-	aFileReference exists ifFalse: [ ^ self ].
-	aFileReference readStreamDo: [ :stream |
-		self library: (STON fromStream: stream) ]
-]
-
-{ #category : 'editing' }
-ReplayMacroRegistry >> openEditor [
-
-	^ ReplayMacroLibraryEditor openOnRegistry: self
+	self useLibrary: aReplayMacroLibrary.
+	self save
 ]
 
 { #category : 'persistence' }
 ReplayMacroRegistry >> save [
 
-	self saveToFile: self class defaultFile
+	file ifNotNil: [ self saveToFile: file ]
 ]
 
 { #category : 'persistence' }
 ReplayMacroRegistry >> saveToFile: aFileReference [
+	"Write over the whole file: a write stream would leave the end of a longer previous content"
 
+	aFileReference ensureDelete.
 	aFileReference writeStreamDo: [ :stream |
 		STON put: self library onStreamPretty: stream ]
 ]
@@ -185,8 +208,15 @@ ReplayMacroRegistry >> uninstall [
 	self library uninstall
 ]
 
-{ #category : 'keymapping' }
-ReplayMacroRegistry >> uninstallAllReplayMacros [
+{ #category : 'private' }
+ReplayMacroRegistry >> useLibrary: aReplayMacroLibrary [
+	"No keymap may keep running a macro of my old library: uninstall them, then install the macros of the new library that replace them (same identifier)"
 
-	ReplayMacro uninstallAllInstalledKeymaps
+	| installedIdentifiers |
+	installedIdentifiers := self library installedMacros collect: [ :macro | macro identifier ].
+	self library uninstall.
+	library := aReplayMacroLibrary.
+	aReplayMacroLibrary macros
+		select: [ :macro | installedIdentifiers includes: macro identifier ]
+		thenDo: [ :macro | macro install ]
 ]

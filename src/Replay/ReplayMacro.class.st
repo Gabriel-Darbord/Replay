@@ -1,12 +1,13 @@
 "
-I represent a named keyboard macro: shortcut, scenario, target contexts, and persistent identity.
+I am a keyboard macro: a scenario run by a key binding (a ReplayShortcut) in keymap contexts (KMCategory names).
+
+My name is the title of my scenario. My identifier is assigned when I am created and saved with me, so the keymaps I install keep the same name across saves and loads. Installing me adds one keymap per context to the Keymapping repository; such keymaps are recognized by their name prefix.
 "
 Class {
 	#name : 'ReplayMacro',
 	#superclass : 'Object',
 	#instVars : [
 		'identifier',
-		'name',
 		'shortcut',
 		'scenario',
 		'contextNames'
@@ -17,13 +18,8 @@ Class {
 }
 
 { #category : 'keymapping' }
-ReplayMacro class >> installedKeymapCount [
-
-	^ self installedKeymapEntries size
-]
-
-{ #category : 'keymapping' }
 ReplayMacro class >> installedKeymapEntries [
+	"Every installed Replay macro keymap, as category -> keymap associations"
 
 	| entries |
 	entries := OrderedCollection new.
@@ -42,7 +38,7 @@ ReplayMacro class >> installedKeymaps [
 { #category : 'keymapping' }
 ReplayMacro class >> isReplayKeymap: aKMKeymap [
 
-	^ aKMKeymap description beginsWith: self keymapDescriptionPrefix
+	^ aKMKeymap name asString beginsWith: self keymapNamePrefix
 ]
 
 { #category : 'keymapping' }
@@ -57,19 +53,31 @@ ReplayMacro class >> keymapNamePrefix [
 	^ 'ReplayMacro-'
 ]
 
+{ #category : 'keymapping' }
+ReplayMacro class >> macroNameOfKeymap: aKMKeymap [
+	"The name of the macro that installed aKMKeymap, as written in its description"
+
+	| description |
+	description := aKMKeymap description ifNil: [ '' ].
+	^ (description beginsWith: self keymapDescriptionPrefix)
+		  ifTrue: [ description allButFirst: self keymapDescriptionPrefix size ]
+		  ifFalse: [ description ]
+]
+
 { #category : 'instance creation' }
-ReplayMacro class >> named: aString shortcut: aReplayShortcut scenario: aReplayScenario [
+ReplayMacro class >> scenario: aReplayScenario shortcut: aReplayShortcut [
 
 	^ self new
-		name: aString;
-		shortcut: aReplayShortcut;
-		scenario: aReplayScenario;
-		yourself
+		  scenario: aReplayScenario;
+		  shortcut: aReplayShortcut;
+		  yourself
 ]
 
 { #category : 'keymapping' }
 ReplayMacro class >> uninstallAllInstalledKeymaps [
+	"Maintenance: remove every Replay macro keymap from the image, including stale ones whose macro is in no library"
 
+	<script>
 	KMRepository default categories values do: [ :category |
 		category allEntries keymaps
 			select: [ :keymap | self isReplayKeymap: keymap ]
@@ -124,12 +132,6 @@ ReplayMacro >> conflictsInCategory: aKMCategory [
 			ReplayShortcutConflict category: aKMCategory keymap: keymap ]
 ]
 
-{ #category : 'conflicts' }
-ReplayMacro >> conflictsInContextNamed: aSymbol [
-
-	^ self conflictsInCategory: (KMRepository default categoryForName: aSymbol)
-]
-
 { #category : 'accessing' }
 ReplayMacro >> contextCategories [
 
@@ -164,7 +166,7 @@ ReplayMacro >> hasKeyBinding [
 { #category : 'accessing' }
 ReplayMacro >> identifier [
 
-	^ identifier ifNil: [ identifier := UUID new asString ]
+	^ identifier
 ]
 
 { #category : 'accessing' }
@@ -173,11 +175,18 @@ ReplayMacro >> identifier: aString [
 	identifier := aString
 ]
 
+{ #category : 'initialization' }
+ReplayMacro >> initialize [
+
+	super initialize.
+	identifier := UUID new asString
+]
+
 { #category : 'keymapping' }
 ReplayMacro >> install [
 
 	self canInstall ifFalse: [ ^ #(  ) ].
-	^ self contextNames collect: [ :contextName | self installInContextNamed: contextName ]
+	^ self contextCategories collect: [ :category | self installInCategory: category ]
 ]
 
 { #category : 'keymapping' }
@@ -192,29 +201,17 @@ ReplayMacro >> installInCategory: aKMCategory [
 ]
 
 { #category : 'keymapping' }
-ReplayMacro >> installInContextNamed: aSymbol [
-
-	^ self installInCategory: (KMRepository default categoryForName: aSymbol)
-]
-
-{ #category : 'keymapping' }
 ReplayMacro >> installedCategories [
 
 	^ KMRepository default categories values select: [ :category |
-	self installedInCategory: category ]
-]
-
-{ #category : 'keymapping' }
-ReplayMacro >> installedContextNames [
-
-	^ self installedCategories collect: [ :category | category name ]
+		  self installedInCategory: category ]
 ]
 
 { #category : 'keymapping' }
 ReplayMacro >> installedInCategory: aKMCategory [
 
 	^ aKMCategory allEntries keymaps anySatisfy: [ :keymap |
-	self isOwnKeymap: keymap ]
+		  self isOwnKeymap: keymap ]
 ]
 
 { #category : 'keymapping' }
@@ -226,7 +223,14 @@ ReplayMacro >> installedInContextNamed: aSymbol [
 { #category : 'keymapping' }
 ReplayMacro >> installedKeymaps [
 
-	^ self installedCategories flatCollect: [ :category | category allEntries keymaps select: [ :keymap | self isOwnKeymap: keymap ] ]
+	^ self installedCategories flatCollect: [ :category |
+		  category allEntries keymaps select: [ :keymap | self isOwnKeymap: keymap ] ]
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> isInstalled [
+
+	^ self installedCategories notEmpty
 ]
 
 { #category : 'conflicts' }
@@ -259,14 +263,9 @@ ReplayMacro >> keymapName [
 
 { #category : 'accessing' }
 ReplayMacro >> name [
+	"I am named after my scenario"
 
-	^ name ifNil: [ 'Unnamed Macro' ]
-]
-
-{ #category : 'accessing' }
-ReplayMacro >> name: aString [
-
-	name := aString
+	^ self scenario title
 ]
 
 { #category : 'printing' }
@@ -318,41 +317,28 @@ ReplayMacro >> shortcut: aReplayShortcut [
 	shortcut := aReplayShortcut
 ]
 
-{ #category : 'accessing' }
-ReplayMacro >> shortcutFromKeymap: aKMKeymap [
-
-	self shortcut: (ReplayShortcut fromKeymap: aKMKeymap)
-]
-
 { #category : 'keymapping' }
 ReplayMacro >> uninstall [
 
 	self installedCategories do: [ :category |
-		self uninstallFromCategory: category ]
-]
-
-{ #category : 'keymapping' }
-ReplayMacro >> uninstallFromCategory: aKMCategory [
-
-	self removeOwnKeymapsFromCategory: aKMCategory
-]
-
-{ #category : 'keymapping' }
-ReplayMacro >> uninstallFromContextNamed: aSymbol [
-
-	self uninstallFromCategory: (KMRepository default categoryForName: aSymbol)
+		self removeOwnKeymapsFromCategory: category ]
 ]
 
 { #category : 'keymapping' }
 ReplayMacro >> updateInstalledKeymaps [
+	"After a change of my key binding or contexts, move my installed keymaps to match it.
+	I stay uninstalled when I was not installed, and I am uninstalled when I can no longer install."
 
-	| installedCategories targetCategories |
-	installedCategories := self installedCategories asOrderedCollection.
-	installedCategories ifNotEmpty: [
-			self canInstall ifFalse: [
-					installedCategories do: [ :category | self uninstallFromCategory: category ].
-					^ self ].
-			targetCategories := self contextCategories.
-			installedCategories do: [ :category | self uninstallFromCategory: category ].
-			targetCategories do: [ :category | self installInCategory: category ] ]
+	| installedCategories |
+	installedCategories := self installedCategories.
+	installedCategories ifEmpty: [ ^ self ].
+	installedCategories do: [ :category | self removeOwnKeymapsFromCategory: category ].
+	self install
+]
+
+{ #category : 'keymapping' }
+ReplayMacro >> updateKeymapDescriptions [
+	"After a change of my name, show it in the description of my installed keymaps"
+
+	self installedKeymaps do: [ :keymap | keymap description: self keymapDescription ]
 ]

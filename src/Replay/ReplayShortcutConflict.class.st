@@ -22,39 +22,6 @@ ReplayShortcutConflict class >> category: aKMCategory keymap: aKMKeymap [
 		yourself
 ]
 
-{ #category : 'formatting' }
-ReplayShortcutConflict class >> displayNameForCategoryName: aSymbol [
-
-	| knownContext technical readable |
-	knownContext := ReplayMacroContext defaultContexts
-		detect: [ :context | context isComposite not and: [ context categoryNames includes: aSymbol ] ]
-		ifNone: [ nil ].
-	knownContext ifNotNil: [ ^ knownContext displayName ].
-	technical := aSymbol asString.
-	readable := self readableNameForCategoryName: technical.
-	^ readable = technical
-		ifTrue: [ technical ]
-		ifFalse: [ readable , ' (' , technical , ')' ]
-]
-
-{ #category : 'formatting' }
-ReplayShortcutConflict class >> readableNameForCategoryName: aString [
-
-	| source words |
-	source := (aString beginsWith: 'Rub')
-		ifTrue: [ aString allButFirst: 3 ]
-		ifFalse: [ aString ].
-	words := String streamContents: [ :stream |
-		source withIndexDo: [ :character :index |
-			(index > 1 and: [
-				character isUppercase and: [
-					(source at: index - 1) isLowercase
-						or: [ index < source size and: [ (source at: index + 1) isLowercase ] ] ] ])
-				ifTrue: [ stream space ].
-			stream nextPut: character ] ].
-	^ words asLowercase capitalized
-]
-
 { #category : 'accessing' }
 ReplayShortcutConflict >> category [
 
@@ -76,7 +43,7 @@ ReplayShortcutConflict >> categoryName [
 { #category : 'accessing' }
 ReplayShortcutConflict >> contextDisplayName [
 
-	^ self class displayNameForCategoryName: self categoryName
+	^ ReplayMacroContext displayNameForCategoryName: self categoryName
 ]
 
 { #category : 'accessing' }
@@ -99,12 +66,11 @@ ReplayShortcutConflict >> keymap: aKMKeymap [
 
 { #category : 'accessing' }
 ReplayShortcutConflict >> name [
+	"The name of the conflicting action, or of the conflicting macro for a Replay keymap"
 
-	| replayPrefix |
-	replayPrefix := 'Replay macro: '.
-	(self description beginsWith: replayPrefix) ifTrue: [
-		^ self description allButFirst: replayPrefix size ].
-	^ self keymap name
+	^ (ReplayMacro isReplayKeymap: self keymap)
+		  ifTrue: [ ReplayMacro macroNameOfKeymap: self keymap ]
+		  ifFalse: [ self keymap name ]
 ]
 
 { #category : 'accessing' }

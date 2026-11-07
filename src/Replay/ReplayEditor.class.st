@@ -1,5 +1,8 @@
 "
 I am the Spec editor for Replay scenarios. I edit scenario metadata, step navigation, action ordering, and per-action settings.
+
+A standalone editor offers to add its scenario to the macro library (Add to library), which hands it over to the library window.
+The library window embeds one of me on the scenario of its selected macro (see onMacro:inLibrary:). Then my Edit shortcut button shows a ReplayMacroEditor on the macro settings, and I notify the library window when those settings or the scenario title, which names the macro, change.
 "
 Class {
 	#name : 'ReplayEditor',
@@ -22,6 +25,7 @@ Class {
 		'macroLibrary',
 		'macroEditor',
 		'macroChangeBlock',
+		'titleChangeBlock',
 		'shortcutButton'
 	],
 	#category : 'Replay-Editing',
@@ -80,12 +84,13 @@ ReplayEditor class >> openOn: aScenario [
 	"Show the editor of aScenario, never a second one.
 	A scenario of the default macro library is edited in the library window."
 
-	| registry |
-	registry := ReplayMacroRegistry default.
-	(registry library macroWithScenario: aScenario) ifNotNil: [ :macro |
+	ReplayMacroRegistry hasDefault ifTrue: [
+		| registry |
+		registry := ReplayMacroRegistry default.
+		(registry library macroWithScenario: aScenario) ifNotNil: [ :macro |
 			^ (ReplayMacroLibraryEditor openOnRegistry: registry)
 				  showMacro: macro;
-				  yourself ].
+				  yourself ] ].
 	^ self openInstances
 		  detect: [ :editor | editor scenario == aScenario ]
 		  ifFound: [ :editor |
@@ -240,7 +245,12 @@ ReplayEditor >> editScenarioButton [
 ReplayEditor >> editScenarioData [
 
 	self clearReplayPresenterTargets.
-	self actionEditor: (self model scenario editionPresenterOn: self)
+	self actionEditor: (self model scenario editionPresenterOn: self).
+	self isInLibrary ifTrue: [
+		self replayPresenters
+			at: 'Scenario title'
+			ifPresent: [ :titlePresenter |
+			titlePresenter whenTextChangedDo: [ self scenarioTitleChanged ] ] ]
 ]
 
 { #category : 'macro' }
@@ -383,19 +393,13 @@ ReplayEditor >> macro [
 
 { #category : 'macro' }
 ReplayEditor >> macroEditor [
-	"The shortcut settings of my macro, shown by the Edit shortcut button"
+	"The settings of my macro, shown by the Edit shortcut button, or nil when my scenario is not in a library"
 
 	macro ifNil: [ ^ nil ].
 	^ macroEditor ifNil: [
-			  macroEditor := (ReplayMacroEditor on: macro inLibrary: macroLibrary)
-				                 whenMacroChangedDo: [ macroChangeBlock ifNotNil: [ macroChangeBlock value ] ];
-				                 yourself ]
-]
-
-{ #category : 'tools' }
-ReplayEditor >> macroForCurrentScenarioIn: aReplayMacroRegistry [
-
-	^ aReplayMacroRegistry library macroForScenario: self model scenario
+		  macroEditor := (ReplayMacroEditor on: macro inLibrary: macroLibrary)
+			                 whenMacroChangedDo: [ macroChangeBlock ifNotNil: [ macroChangeBlock value ] ];
+			                 yourself ]
 ]
 
 { #category : 'macro' }
@@ -425,16 +429,19 @@ ReplayEditor >> modifierFlagsFromEvent: anEvent [
 { #category : 'macro' }
 ReplayEditor >> moveToLibrary [
 
-	^ self moveToLibraryOf: ReplayMacroRegistry default
+	^ [ self moveToLibraryOf: ReplayMacroRegistry default ]
+		  on: ReplayError
+		  do: [ :error |
+			  self inform: error messageText.
+			  nil ]
 ]
 
 { #category : 'macro' }
 ReplayEditor >> moveToLibraryOf: aReplayMacroRegistry [
-	"Hand my scenario over to the library window and close: a scenario has a single editor"
+	"Hand my scenario over to the library window, which saves it, and close: a scenario has a single editor"
 
 	| libraryMacro |
-	libraryMacro := aReplayMacroRegistry library macroForScenario: self scenario.
-	(ReplayMacroLibraryEditor openOnRegistry: aReplayMacroRegistry) showMacro: libraryMacro.
+	libraryMacro := (ReplayMacroLibraryEditor openOnRegistry: aReplayMacroRegistry) showScenario: self scenario.
 	self withWindowDo: [ :window | window close ].
 	^ libraryMacro
 ]
@@ -635,15 +642,25 @@ ReplayEditor >> scenario [
 
 { #category : 'accessing' }
 ReplayEditor >> scenario: scenario [
-	"In a library, my scenario is the one of my macro: replacing one replaces the other"
+	"In a library, my scenario is the one of my macro: replacing one replaces the other, and renames the macro"
 
 	| steps |
-	macro ifNotNil: [ macro scenario: scenario ].
 	self model scenario: scenario.
 	steps := scenario steps.
 	steps ifEmpty: [ self model addStep ].
 	stepList items: steps.
-	stepList selectItem: steps first
+	stepList selectItem: steps first.
+	(macro isNotNil and: [ macro scenario ~~ scenario ]) ifTrue: [
+		macro scenario: scenario.
+		self scenarioTitleChanged ]
+]
+
+{ #category : 'macro' }
+ReplayEditor >> scenarioTitleChanged [
+	"My macro is named after my scenario"
+
+	macro updateKeymapDescriptions.
+	titleChangeBlock ifNotNil: [ titleChangeBlock value ]
 ]
 
 { #category : 'event handling' }
@@ -817,6 +834,14 @@ ReplayEditor >> updateRecordingStatus [
 
 { #category : 'macro' }
 ReplayEditor >> whenMacroChangedDo: aBlock [
+	"Evaluate aBlock after an edit of the settings of my macro"
 
 	macroChangeBlock := aBlock
+]
+
+{ #category : 'macro' }
+ReplayEditor >> whenTitleChangedDo: aBlock [
+	"Evaluate aBlock after my scenario title, which names my macro, changes"
+
+	titleChangeBlock := aBlock
 ]
