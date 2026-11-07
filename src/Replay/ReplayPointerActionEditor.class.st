@@ -22,13 +22,13 @@ ReplayPointerActionEditor >> buttonsField [
 	| layout |
 	layout := SpBoxLayout newLeftToRight spacing: 8.
 	action class buttonChoices do: [ :association |
-		layout
+		ReplayKeyModifiersPresenter
 			add: (self
 					 checkBoxField: association value asLowercase , ' button'
 					 label: association value
 					 get: [ action hasButton: association key ]
 					 set: [ :state | action setButton: association key to: state ])
-			expand: false ].
+			fittedTo: layout ].
 	^ self labeled: 'Mouse buttons:' field: layout
 ]
 

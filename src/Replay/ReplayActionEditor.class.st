@@ -104,7 +104,10 @@ ReplayActionEditor >> debugButton: label action: aBlock [
 				   label: label;
 				   action: aBlock;
 				   yourself)
-		  withConstraints: [ :constraints | constraints width: 200 ];
+		  withConstraints: [ :constraints |
+			  constraints
+				  width: 200;
+				  height: self class buttonHeight ];
 		  yourself
 ]
 

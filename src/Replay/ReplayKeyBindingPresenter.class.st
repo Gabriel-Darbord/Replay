@@ -38,11 +38,17 @@ ReplayKeyBindingPresenter class >> defaultLayout [
 				   vAlignCenter;
 				   add: 'Add key:' expand: false;
 				   add: #keyDropList width: 110;
-				   add: #addKeyButton width: 40;
+				   add: #addKeyButton withConstraints: [ :c |
+					   c width: 40.
+					   c height: self buttonHeight ];
 				   add: 'Add character:' expand: false;
 				   add: #characterTextPresenter width: 170;
-				   add: #addCharacterButton width: 40;
-				   add: #captureShortcutButton width: 190;
+				   add: #addCharacterButton withConstraints: [ :c |
+					   c width: 40.
+					   c height: self buttonHeight ];
+				   add: #captureShortcutButton withConstraints: [ :c |
+					   c width: 190.
+					   c height: self buttonHeight ];
 				   yourself)
 		  expand: false;
 		  add: (SpBoxLayout newLeftToRight

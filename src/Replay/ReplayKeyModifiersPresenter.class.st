@@ -17,6 +17,16 @@ Class {
 	#tag : 'Editing'
 }
 
+{ #category : 'layout' }
+ReplayKeyModifiersPresenter class >> add: aCheckBox fittedTo: aBoxLayout [
+	"Check boxes take a large default width even when not expanded, and a fixed width alone makes them fill the height of their row: fit them to their label, at the height of one line."
+
+	aBoxLayout add: aCheckBox withConstraints: [ :constraints |
+		constraints
+			width: (StandardFonts defaultFont widthOfString: aCheckBox label) + 44;
+			height: self inputTextHeight ]
+]
+
 { #category : 'accessing' }
 ReplayKeyModifiersPresenter >> altCheckBox [
 
@@ -46,7 +56,10 @@ ReplayKeyModifiersPresenter >> defaultLayout [
 
 	| layout |
 	layout := SpBoxLayout newLeftToRight spacing: 8.
-	ReplayKeyModifiers all do: [ :mask | layout add: (self checkBoxFor: mask) expand: false ].
+	ReplayKeyModifiers all do: [ :mask |
+		| checkBox |
+		checkBox := self checkBoxFor: mask.
+		self class add: checkBox fittedTo: layout ].
 	^ layout
 ]
 

@@ -44,7 +44,7 @@ ReplayUIHandlerEditor >> editTargetIn: aReplayUIManager [
 					ifFalse: [ self showTargetNotice: 'The target has no widget to highlight in this preview.' ] ]
 			onMissing: [ :error |
 				highlight ifNil: [
-					self showTargetNotice: 'Target not found in this preview: ' , action target printString , '.' ] ] ].
+					self showTargetNotice: 'Target not found in this preview: ' , action target description , '.' ] ] ].
 	session clickBlock: [ :event :wrapper |
 		highlight ifNotNil: [ highlight delete ].
 		action target: wrapper reference.

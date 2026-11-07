@@ -44,7 +44,9 @@ ReplayMacroEditor class >> defaultLayout [
 				   spacing: 8;
 				   vAlignCenter;
 				   add: #contextDropList width: 420;
-				   add: #contextAddButton width: 40;
+				   add: #contextAddButton withConstraints: [ :c |
+					   c width: 40.
+					   c height: self buttonHeight ];
 				   yourself)
 		  expand: false;
 		  add: (SpBoxLayout newLeftToRight

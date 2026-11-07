@@ -71,6 +71,16 @@ ReplayUIReference >> hash [
 	^ kind hash bitXor: value hash
 ]
 
+{ #category : 'printing' }
+ReplayUIReference >> description [
+	"A phrase naming what I target, for messages shown to users"
+
+	self isNamed ifTrue: [ ^ 'the presenter named ''' , value , '''' ].
+	self isMorphicPath ifTrue: [ ^ 'the morph at path ' , value asArray printString ].
+	self isKeyboardFocus ifTrue: [ ^ 'the morph with the keyboard focus' ].
+	^ 'the World'
+]
+
 { #category : 'testing' }
 ReplayUIReference >> isKeyboardFocus [
 
